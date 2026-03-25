@@ -48,6 +48,9 @@
 | [tech-stack.md](./tech-stack.md) | 技术栈选型（2026 视角） |
 | [system-architecture.md](./system-architecture.md) | 整体架构设计 |
 | [data-flow.md](./data-flow.md) | 数据流向设计 |
+| [coding-standards.md](./coding-standards.md) | 编码规范 |
+| [testing-guide.md](./testing-guide.md) | 测试指南 |
+| [git-workflow.md](./git-workflow.md) | Git 工作流 |
 
 ## 设计原则
 

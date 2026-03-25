@@ -18,6 +18,7 @@
 
 | 文档 | 说明 |
 |------|------|
+| [architecture.md](./architecture.md) | **后端架构详细设计** |
 | [nestjs-modules.md](./nestjs-modules.md) | NestJS 模块设计 |
 | [hocuspocus-gateway.md](./hocuspocus-gateway.md) | Hocuspocus 网关 |
 | [prisma-schema.md](./prisma-schema.md) | 数据模型设计 |

@@ -21,6 +21,7 @@
 
 | 文档 | 说明 |
 |------|------|
+| [architecture.md](./architecture.md) | **前端架构详细设计** |
 | [project-structure.md](./project-structure.md) | 工程化结构 |
 | [tiptap-integration.md](./tiptap-integration.md) | Tiptap 编辑器集成 |
 | [yjs-client.md](./yjs-client.md) | Yjs 客户端配置 |
