@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Development files
+*.log
+*.md
+.env*
+!.env.example
+
+# IDE
+.idea
+.vscode
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Tests
+coverage
+.nyc_output
+__tests__
+*.test.ts
+*.spec.ts
+
+# Docker
+Dockerfile
+docker-compose*
+.docker

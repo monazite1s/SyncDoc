@@ -1,0 +1,153 @@
+// Prisma Schema for Collab Editor
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// User & Authentication
+// ============================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  nickname  String?
+  avatar    String?
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  documents     Document[]
+  collaborations DocumentCollaborator[]
+  versions      DocumentVersion[]
+  sessions      Session[]
+
+  @@index([email])
+  @@index([username])
+  @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([refreshToken])
+  @@map("sessions")
+}
+
+// ============================================
+// Document Management
+// ============================================
+
+model Document {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  content     Json?         // Yjs document state (optional snapshot)
+  isPublic    Boolean       @default(false)
+  status      DocumentStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  authorId       String
+  author         User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  collaborators  DocumentCollaborator[]
+  versions       DocumentVersion[]
+  edits          DocumentEdit[]
+
+  @@index([authorId])
+  @@index([status])
+  @@map("documents")
+}
+
+enum DocumentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  DELETED
+}
+
+model DocumentCollaborator {
+  id         String         @id @default(cuid())
+  documentId String
+  userId     String
+  role       CollaboratorRole @default(VIEWER)
+  addedAt    DateTime       @default(now())
+
+  // Relations
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId])
+  @@index([documentId])
+  @@index([userId])
+  @@map("document_collaborators")
+}
+
+enum CollaboratorRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+// ============================================
+// Version Control
+// ============================================
+
+model DocumentVersion {
+  id          String   @id @default(cuid())
+  documentId  String
+  version     Int
+  content     Json     // Yjs document state snapshot
+  changeLog   String?  // Description of changes
+  createdBy   String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("document_versions")
+}
+
+model DocumentEdit {
+  id          String   @id @default(cuid())
+  documentId  String
+  userId      String
+  operation   Json     // Yjs update operation
+  version     Int      // Document version after this edit
+  timestamp   DateTime @default(now())
+
+  // Relations
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([timestamp])
+  @@map("document_edits")
+}

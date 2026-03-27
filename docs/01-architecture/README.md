@@ -45,6 +45,8 @@
 
 | 文档 | 说明 |
 |------|------|
+| [ai-agent-guidelines.md](./ai-agent-guidelines.md) | **AI Agent 开发指南（必读）** |
+| [code-review-checklist.md](./code-review-checklist.md) | **代码审查检查清单** |
 | [tech-stack.md](./tech-stack.md) | 技术栈选型（2026 视角） |
 | [system-architecture.md](./system-architecture.md) | 整体架构设计 |
 | [data-flow.md](./data-flow.md) | 数据流向设计 |

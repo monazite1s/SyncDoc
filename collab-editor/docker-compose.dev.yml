@@ -1,0 +1,43 @@
+# ============================================
+# Development Override Configuration
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# ============================================
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: collab-editor-backend-dev
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${DB_USER:-collab}:${DB_PASSWORD:-collab123}@postgres:5432/${DB_NAME:-collab_editor}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      PORT: 3001
+    volumes:
+      - ./backend/src:/app/src:ro
+      - ./backend/prisma:/app/prisma:ro
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+      - "9229:9229"  # Debug port
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: collab-editor-frontend-dev
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:3001}
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/app:/app/app:ro
+      - ./frontend/components:/app/components:ro
+      - ./frontend/lib:/app/lib:ro
+      - ./frontend/stores:/app/stores:ro
+      - ./frontend/types:/app/types:ro
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"

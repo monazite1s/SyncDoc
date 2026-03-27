@@ -1,0 +1,98 @@
+# ============================================
+# macOS
+# ============================================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# ============================================
+# Editor / IDE
+# ============================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ============================================
+# Dependencies
+# ============================================
+node_modules/
+.pnpm-store/
+.pnpm-debug.log
+
+# ============================================
+# Build outputs
+# ============================================
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# ============================================
+# Logs
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ============================================
+# Environment files (IMPORTANT: Never commit)
+# ============================================
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ============================================
+# Testing
+# ============================================
+coverage/
+.nyc_output/
+
+# ============================================
+# Prisma
+# ============================================
+prisma/*.db
+prisma/*.db-journal
+
+# ============================================
+# Docker
+# ============================================
+.docker/
+
+# ============================================
+# OS generated files
+# ============================================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ============================================
+# Temporary files
+# ============================================
+*.tmp
+*.temp
+.cache/

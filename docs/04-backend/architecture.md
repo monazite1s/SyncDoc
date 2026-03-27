@@ -236,6 +236,100 @@ backend/
 
 ---
 
+## 3.1 服务层规范
+
+### 单一职责
+
+每个服务只负责一个业务领域：
+
+```typescript
+// ✅ 正确：职责单一
+export class DocumentsService {
+  // 只处理文档相关操作
+  async create() {}
+  async update() {}
+  async delete() {}
+}
+
+// ❌ 错误：职责混乱
+export class DocumentsService {
+  async createDocument() {}
+  async createUser() {} // 应该在 UserService
+  async sendEmail() {}  // 应该在 EmailService
+}
+```
+
+### 依赖注入
+
+通过构造函数注入依赖：
+
+```typescript
+@Injectable()
+export class DocumentsService {
+  constructor(
+    private prisma: PrismaService,
+    private redis: RedisService,
+    private config: ConfigService,
+  ) {}
+}
+```
+
+### 错误处理
+
+抛出明确的业务异常：
+
+```typescript
+// ✅ 正确：明确的业务异常
+if (!document) {
+  throw new NotFoundException('文档不存在');
+}
+
+if (!hasPermission) {
+  throw new ForbiddenException('无权访问此文档');
+}
+```
+
+### 日志记录
+
+使用 NestJS Logger：
+
+```typescript
+import { Logger } from '@nestjs/common';
+
+@Injectable()
+export class DocumentsService {
+  private readonly logger = new Logger(DocumentsService.name);
+
+  async create(data: CreateDocumentDto) {
+    this.logger.log(`Creating document: ${data.title}`);
+    // ...
+  }
+}
+```
+
+---
+
+## 3.2 文件大小限制
+
+| 文件类型 | 推荐行数 | 最大行数 | 说明 |
+|----------|----------|----------|------|
+| Controller | 100-200 | 300 | `*.controller.ts` |
+| Service | 200-400 | 600 | `*.service.ts` |
+| DTO | 50-150 | 150 | `dto/*.ts` |
+| Module | 30-100 | 150 | `*.module.ts` |
+
+### 通用限制
+
+| 限制项 | 值 | 说明 |
+|--------|-----|------|
+| 单函数最大行数 | 50 行 | 超过需要拆分 |
+| 嵌套层级 | 4 层 | 超过需要重构 |
+| 参数数量 | 4 个 | 超过使用 DTO |
+
+> 详细规范请参阅 [AI Agent 开发指南](../01-architecture/ai-agent-guidelines.md)。
+
+---
+
 ## 4. 模块架构设计
 
 ### 4.1 模块依赖图

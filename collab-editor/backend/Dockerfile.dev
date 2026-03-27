@@ -1,0 +1,32 @@
+# ============================================
+# Development Dockerfile for Backend
+# Hot reload enabled with volume mounts
+# ============================================
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install development dependencies
+RUN apk add --no-cache python3 make g++ openssl-dev
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma/
+
+# Install all dependencies (including dev)
+RUN pnpm install
+
+# Copy source code
+COPY . .
+
+# Generate Prisma client
+RUN pnpm db:generate
+
+# Expose ports
+EXPOSE 3001 9229
+
+# Start in development mode with debug support
+CMD ["pnpm", "run", "start:dev"]
