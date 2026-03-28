@@ -1,1 +1,1 @@
-npx lint-staged
+pnpm --filter backend type-check && pnpm --filter frontend type-check && npx lint-staged

@@ -1,3 +1,3 @@
-import collabConfig from '@collab/eslint-config';
+import { createConfig } from '@collab/eslint-config';
 
-export default [...collabConfig];
+export default createConfig({ tsconfigPath: './tsconfig.json' });

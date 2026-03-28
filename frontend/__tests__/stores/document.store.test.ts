@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useDocumentStore } from '@/stores/document.store';
-import type { Document } from '@/types';
+import { DocumentStatus, type Document } from '@/types';
 
 // mock 文档数据
 const mockDocument: Document = {
@@ -8,7 +8,7 @@ const mockDocument: Document = {
     title: '测试文档',
     description: '这是一个测试文档',
     isPublic: false,
-    status: 'DRAFT',
+    status: DocumentStatus.DRAFT,
     authorId: 'user-1',
     createdAt: '2025-01-01T00:00:00.000Z',
     updatedAt: '2025-01-01T00:00:00.000Z',
