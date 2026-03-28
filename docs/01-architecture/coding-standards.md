@@ -12,39 +12,39 @@
 
 ### 0.1 代码修改优先级
 
-| 优先级 | 操作类型 | 需要确认 |
-|--------|----------|----------|
-| **1（最高）** | 修改现有逻辑 | 否 |
-| **2** | 删除冗余代码 | 否 |
-| **3（最低）** | 新增逻辑 | **是（必须）** |
+| 优先级        | 操作类型     | 需要确认       |
+| ------------- | ------------ | -------------- |
+| **1（最高）** | 修改现有逻辑 | 否             |
+| **2**         | 删除冗余代码 | 否             |
+| **3（最低）** | 新增逻辑     | **是（必须）** |
 
 ### 0.2 文件大小限制
 
 #### 前端文件
 
-| 文件类型 | 推荐行数 | 最大行数 |
-|----------|----------|----------|
-| 页面组件 | 200-300 | 400 |
-| UI 组件 | 100-200 | 300 |
-| Hook 文件 | 100-200 | 300 |
-| 工具函数 | 50-150 | 200 |
-| 编辑器核心配置（例外） | 300-500 | 800 |
+| 文件类型               | 推荐行数 | 最大行数 |
+| ---------------------- | -------- | -------- |
+| 页面组件               | 200-300  | 400      |
+| UI 组件                | 100-200  | 300      |
+| Hook 文件              | 100-200  | 300      |
+| 工具函数               | 50-150   | 200      |
+| 编辑器核心配置（例外） | 300-500  | 800      |
 
 #### 后端文件
 
-| 文件类型 | 推荐行数 | 最大行数 |
-|----------|----------|----------|
-| Controller | 100-200 | 300 |
-| Service | 200-400 | 600 |
-| DTO | 50-150 | 150 |
+| 文件类型   | 推荐行数 | 最大行数 |
+| ---------- | -------- | -------- |
+| Controller | 100-200  | 300      |
+| Service    | 200-400  | 600      |
+| DTO        | 50-150   | 150      |
 
 #### 通用限制
 
-| 限制项 | 值 |
-|--------|-----|
+| 限制项         | 值    |
+| -------------- | ----- |
 | 单函数最大行数 | 50 行 |
-| 嵌套层级 | 4 层 |
-| 参数数量 | 4 个 |
+| 嵌套层级       | 4 层  |
+| 参数数量       | 4 个  |
 
 > 详细规范请参阅 [AI Agent 开发指南](./ai-agent-guidelines.md)。
 
@@ -93,9 +93,7 @@ const newArray = [...oldArray, newItem];
 const newArray = oldArray.filter((item) => item.id !== idToRemove);
 
 // 更新元素
-const newArray = oldArray.map((item) =>
-  item.id === id ? { ...item, updated: true } : item,
-);
+const newArray = oldArray.map((item) => (item.id === id ? { ...item, updated: true } : item));
 
 // 排序（sort 会修改原数组）
 const sortedArray = [...oldArray].sort((a, b) => a.name.localeCompare(b.name));
@@ -109,30 +107,30 @@ state.nested.field = value;
 
 // ✅ 正确：使用展开运算符
 const newState = {
-  ...state,
-  nested: {
-    ...state.nested,
-    field: value,
-  },
+    ...state,
+    nested: {
+        ...state.nested,
+        field: value,
+    },
 };
 
 // ✅ 正确：使用 immer（推荐用于深层嵌套）
 import { produce } from 'immer';
 
 const newState = produce(state, (draft) => {
-  draft.nested.deep.field = value;
+    draft.nested.deep.field = value;
 });
 ```
 
 ### 1.5 为什么要不可变？
 
-| 优势 | 说明 |
-|------|------|
-| 可预测性 | 数据变化可追踪，便于调试 |
+| 优势     | 说明                             |
+| -------- | -------------------------------- |
+| 可预测性 | 数据变化可追踪，便于调试         |
 | 性能优化 | React 可高效判断是否需要重新渲染 |
-| 时间旅行 | 支持撤销/重做功能 |
-| 并发安全 | 避免竞态条件和数据竞争 |
-| 测试友好 | 纯函数易于测试 |
+| 时间旅行 | 支持撤销/重做功能                |
+| 并发安全 | 避免竞态条件和数据竞争           |
+| 测试友好 | 纯函数易于测试                   |
 
 ---
 
@@ -187,14 +185,14 @@ export type { Document, DocumentCreateInput } from './types';
 
 ### 2.4 文件命名规范
 
-| 类型 | 规范 | 示例 |
-|------|------|------|
-| 组件 | PascalCase | `DocumentEditor.tsx` |
-| Hook | camelCase + use 前缀 | `useDocument.ts` |
-| 工具函数 | camelCase | `formatDate.ts` |
-| 类型定义 | PascalCase | `Document.ts` |
-| 常量 | UPPER_SNAKE_CASE | `API_ENDPOINTS.ts` |
-| 测试文件 | 原文件名 + .test | `useDocument.test.ts` |
+| 类型     | 规范                 | 示例                  |
+| -------- | -------------------- | --------------------- |
+| 组件     | PascalCase           | `DocumentEditor.tsx`  |
+| Hook     | camelCase + use 前缀 | `useDocument.ts`      |
+| 工具函数 | camelCase            | `formatDate.ts`       |
+| 类型定义 | PascalCase           | `Document.ts`         |
+| 常量     | UPPER_SNAKE_CASE     | `API_ENDPOINTS.ts`    |
+| 测试文件 | 原文件名 + .test     | `useDocument.test.ts` |
 
 ### 2.5 组件使用优先级（前端）
 
@@ -246,9 +244,9 @@ export type { Document, DocumentCreateInput } from './types';
 
 1. **停止当前操作**
 2. **向用户说明**：
-   - 为什么需要新增？
-   - 现有代码为何无法满足？
-   - 有无替代方案？
+    - 为什么需要新增？
+    - 现有代码为何无法满足？
+    - 有无替代方案？
 3. **等待用户确认后继续**
 
 **核心原则**：`修改 > 删除 > 新增`
@@ -289,20 +287,20 @@ function ErrorFallback({ error, resetErrorBoundary }) {
 ```typescript
 // ✅ 异步操作错误处理
 async function fetchDocument(id: string) {
-  try {
-    const response = await api.get(`/documents/${id}`);
-    return response.data;
-  } catch (error) {
-    if (error instanceof AxiosError) {
-      // 处理 HTTP 错误
-      if (error.response?.status === 404) {
-        throw new NotFoundError('文档不存在');
-      }
-      throw new NetworkError('网络请求失败');
+    try {
+        const response = await api.get(`/documents/${id}`);
+        return response.data;
+    } catch (error) {
+        if (error instanceof AxiosError) {
+            // 处理 HTTP 错误
+            if (error.response?.status === 404) {
+                throw new NotFoundError('文档不存在');
+            }
+            throw new NetworkError('网络请求失败');
+        }
+        // 未知错误
+        throw error;
     }
-    // 未知错误
-    throw error;
-  }
 }
 ```
 
@@ -312,43 +310,43 @@ async function fetchDocument(id: string) {
 // ✅ NestJS 异常过滤器
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(GlobalExceptionFilter.name);
+    private readonly logger = new Logger(GlobalExceptionFilter.name);
 
-  catch(exception: unknown, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse();
-    const request = ctx.getRequest();
+    catch(exception: unknown, host: ArgumentsHost) {
+        const ctx = host.switchToHttp();
+        const response = ctx.getResponse();
+        const request = ctx.getRequest();
 
-    // 记录详细错误日志
-    this.logger.error({
-      message: exception instanceof Error ? exception.message : 'Unknown error',
-      stack: exception instanceof Error ? exception.stack : undefined,
-      path: request.url,
-      method: request.method,
-    });
+        // 记录详细错误日志
+        this.logger.error({
+            message: exception instanceof Error ? exception.message : 'Unknown error',
+            stack: exception instanceof Error ? exception.stack : undefined,
+            path: request.url,
+            method: request.method,
+        });
 
-    // 构建响应
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+        // 构建响应
+        const status =
+            exception instanceof HttpException
+                ? exception.getStatus()
+                : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message =
-      process.env.NODE_ENV === 'production'
-        ? '服务器内部错误'
-        : exception instanceof Error
-          ? exception.message
-          : 'Unknown error';
+        const message =
+            process.env.NODE_ENV === 'production'
+                ? '服务器内部错误'
+                : exception instanceof Error
+                  ? exception.message
+                  : 'Unknown error';
 
-    response.status(status).json({
-      success: false,
-      error: {
-        code: status,
-        message,
-      },
-      timestamp: new Date().toISOString(),
-    });
-  }
+        response.status(status).json({
+            success: false,
+            error: {
+                code: status,
+                message,
+            },
+            timestamp: new Date().toISOString(),
+        });
+    }
 }
 ```
 
@@ -357,32 +355,35 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 ```typescript
 // 定义业务错误
 export class AppError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public statusCode: number = 500,
-  ) {
-    super(message);
-    this.name = 'AppError';
-  }
+    constructor(
+        message: string,
+        public code: string,
+        public statusCode: number = 500
+    ) {
+        super(message);
+        this.name = 'AppError';
+    }
 }
 
 export class NotFoundError extends AppError {
-  constructor(resource: string) {
-    super(`${resource}不存在`, 'NOT_FOUND', 404);
-  }
+    constructor(resource: string) {
+        super(`${resource}不存在`, 'NOT_FOUND', 404);
+    }
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(message: string = '未授权访问') {
-    super(message, 'UNAUTHORIZED', 401);
-  }
+    constructor(message: string = '未授权访问') {
+        super(message, 'UNAUTHORIZED', 401);
+    }
 }
 
 export class ValidationError extends AppError {
-  constructor(message: string, public details?: Record<string, string>) {
-    super(message, 'VALIDATION_ERROR', 400);
-  }
+    constructor(
+        message: string,
+        public details?: Record<string, string>
+    ) {
+        super(message, 'VALIDATION_ERROR', 400);
+    }
 }
 ```
 
@@ -404,15 +405,15 @@ import { z } from 'zod';
 
 // 定义 schema
 const loginSchema = z.object({
-  email: z.string().email('请输入有效的邮箱地址'),
-  password: z.string().min(8, '密码至少 8 位'),
+    email: z.string().email('请输入有效的邮箱地址'),
+    password: z.string().min(8, '密码至少 8 位'),
 });
 
 type LoginInput = z.infer<typeof loginSchema>;
 
 // 使用验证
 function validateLogin(input: unknown): LoginInput {
-  return loginSchema.parse(input);
+    return loginSchema.parse(input);
 }
 ```
 
@@ -453,15 +454,15 @@ async login(@Body(new ZodValidationPipe(loginSchema)) body: LoginInput) {
 ```typescript
 // 验证 API 响应
 const userResponseSchema = z.object({
-  id: z.string(),
-  email: z.string().email(),
-  name: z.string(),
-  createdAt: z.string().datetime(),
+    id: z.string(),
+    email: z.string().email(),
+    name: z.string(),
+    createdAt: z.string().datetime(),
 });
 
 async function fetchUser(id: string): Promise<User> {
-  const response = await api.get(`/users/${id}`);
-  return userResponseSchema.parse(response.data);
+    const response = await api.get(`/users/${id}`);
+    return userResponseSchema.parse(response.data);
 }
 ```
 
@@ -481,30 +482,27 @@ async function fetchUser(id: string): Promise<User> {
 
 ### 5.2 命名规范
 
-| 类型 | 规范 | 示例 |
-|------|------|------|
-| 变量 | camelCase，描述性 | `documentList`, `isLoading` |
-| 常量 | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` |
-| 函数 | camelCase，动词开头 | `fetchDocuments`, `handleClick` |
-| 布尔值 | is/has/can 前缀 | `isLoading`, `hasError`, `canEdit` |
-| 类/接口 | PascalCase | `DocumentService`, `User` |
-| 私有成员 | _ 前缀 | `_privateMethod` |
+| 类型     | 规范                | 示例                               |
+| -------- | ------------------- | ---------------------------------- |
+| 变量     | camelCase，描述性   | `documentList`, `isLoading`        |
+| 常量     | UPPER_SNAKE_CASE    | `MAX_RETRY_COUNT`                  |
+| 函数     | camelCase，动词开头 | `fetchDocuments`, `handleClick`    |
+| 布尔值   | is/has/can 前缀     | `isLoading`, `hasError`, `canEdit` |
+| 类/接口  | PascalCase          | `DocumentService`, `User`          |
+| 私有成员 | \_ 前缀             | `_privateMethod`                   |
 
 ### 5.3 注释规范
 
 ```typescript
 // ✅ 好的注释：解释为什么
 // 使用 debounce 避免频繁请求，限制每 300ms 最多一次
-const debouncedSearch = useMemo(
-  () => debounce(handleSearch, 300),
-  [handleSearch]
-);
+const debouncedSearch = useMemo(() => debounce(handleSearch, 300), [handleSearch]);
 
 // ✅ 好的注释：说明复杂逻辑
 // CRDT 合并策略：当冲突发生时，使用 Last-Write-Wins 策略
 // 时间戳由服务器统一分配，确保全局一致性
 function mergeUpdates(local: Update, remote: Update): Update {
-  // ...
+    // ...
 }
 
 // ❌ 不好的注释：重复代码内容

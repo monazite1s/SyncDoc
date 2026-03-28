@@ -26,13 +26,13 @@
 
 传统文档协作工具存在以下痛点：
 
-| 问题 | 影响 |
-|------|------|
-| **实时性差** | 多人编辑时延迟明显，影响协作效率 |
-| **冲突处理弱** | 最后写入覆盖，导致内容丢失 |
-| **离线不可用** | 网络断开即无法编辑 |
-| **版本管理粗糙** | 缺乏细粒度的版本回溯能力 |
-| **数据主权弱** | 数据完全依赖服务端，用户无本地控制权 |
+| 问题             | 影响                                 |
+| ---------------- | ------------------------------------ |
+| **实时性差**     | 多人编辑时延迟明显，影响协作效率     |
+| **冲突处理弱**   | 最后写入覆盖，导致内容丢失           |
+| **离线不可用**   | 网络断开即无法编辑                   |
+| **版本管理粗糙** | 缺乏细粒度的版本回溯能力             |
+| **数据主权弱**   | 数据完全依赖服务端，用户无本地控制权 |
 
 ### 1.2 解决方案
 
@@ -62,12 +62,12 @@
 
 ### 1.3 核心价值主张
 
-| 价值 | 说明 |
-|------|------|
-| **毫秒级同步** | WebSocket + Yjs 二进制协议，延迟 < 50ms |
-| **无冲突合并** | CRDT 自动处理并发编辑，无需用户干预 |
-| **离线可用** | 本地优先架构，断网后继续编辑，重连自动同步 |
-| **版本可控** | 类 Git 版本管理，支持快照、回溯、Diff 对比 |
+| 价值           | 说明                                       |
+| -------------- | ------------------------------------------ |
+| **毫秒级同步** | WebSocket + Yjs 二进制协议，延迟 < 50ms    |
+| **无冲突合并** | CRDT 自动处理并发编辑，无需用户干预        |
+| **离线可用**   | 本地优先架构，断网后继续编辑，重连自动同步 |
+| **版本可控**   | 类 Git 版本管理，支持快照、回溯、Diff 对比 |
 
 ---
 
@@ -126,20 +126,20 @@
 
 ### 2.2 技术栈选型
 
-| 层级 | 技术 | 版本 | 选型理由 |
-|------|------|------|----------|
-| **前端框架** | Next.js | 15+ | App Router 成熟，RSC 支持，Turbopack 快速构建 |
-| **UI 组件** | React | 19+ | 最新特性，性能优化 |
-| **样式方案** | Tailwind CSS | 4.x | 原子化 CSS，AI 生成友好 |
-| **组件库** | ShadcnUI | 1.x | 可复制组件，完全可控 |
-| **编辑器内核** | Tiptap | 3.x | 无头编辑器，Yjs 深度集成 |
-| **协同引擎** | Yjs | 13.x | CRDT YATA 算法，工业级 |
-| **后端框架** | NestJS | 11+ | 模块化，TypeScript 原生 |
-| **协同中继** | Hocuspocus | 3.x | Tiptap 官方，钩子式开发 |
-| **ORM** | Prisma | 6+ | 类型安全，迁移完善 |
-| **主存储** | PostgreSQL | 17 | BYTEA 支持，JSONB 优化 |
-| **缓存/消息** | Redis | 8+ | Pub/Sub，分布式锁 |
-| **运行时** | Node.js | 22 LTS | 性能优化，长期支持 |
+| 层级           | 技术         | 版本   | 选型理由                                      |
+| -------------- | ------------ | ------ | --------------------------------------------- |
+| **前端框架**   | Next.js      | 15+    | App Router 成熟，RSC 支持，Turbopack 快速构建 |
+| **UI 组件**    | React        | 19+    | 最新特性，性能优化                            |
+| **样式方案**   | Tailwind CSS | 4.x    | 原子化 CSS，AI 生成友好                       |
+| **组件库**     | ShadcnUI     | 1.x    | 可复制组件，完全可控                          |
+| **编辑器内核** | Tiptap       | 3.x    | 无头编辑器，Yjs 深度集成                      |
+| **协同引擎**   | Yjs          | 13.x   | CRDT YATA 算法，工业级                        |
+| **后端框架**   | NestJS       | 11+    | 模块化，TypeScript 原生                       |
+| **协同中继**   | Hocuspocus   | 3.x    | Tiptap 官方，钩子式开发                       |
+| **ORM**        | Prisma       | 6+     | 类型安全，迁移完善                            |
+| **主存储**     | PostgreSQL   | 17     | BYTEA 支持，JSONB 优化                        |
+| **缓存/消息**  | Redis        | 8+     | Pub/Sub，分布式锁                             |
+| **运行时**     | Node.js      | 22 LTS | 性能优化，长期支持                            |
 
 ### 2.3 五大架构原则
 
@@ -231,12 +231,12 @@ frontend/
 
 #### 核心模块
 
-| 模块 | 职责 | 关键技术 |
-|------|------|----------|
+| 模块           | 职责                    | 关键技术                   |
+| -------------- | ----------------------- | -------------------------- |
 | **编辑器模块** | Tiptap 初始化、扩展管理 | Tiptap、Collaboration 扩展 |
-| **协同模块** | Yjs Provider、Awareness | y-websocket、IndexedDB |
-| **版本模块** | 版本列表、预览、恢复 | TanStack Query |
-| **认证模块** | 登录、注册、Token 管理 | JWT、Zustand |
+| **协同模块**   | Yjs Provider、Awareness | y-websocket、IndexedDB     |
+| **版本模块**   | 版本列表、预览、恢复    | TanStack Query             |
+| **认证模块**   | 登录、注册、Token 管理  | JWT、Zustand               |
 
 #### 前端数据流
 
@@ -403,23 +403,23 @@ enum CollaboratorRole {
 ```typescript
 // 成功响应
 interface SuccessResponse<T> {
-  success: true;
-  data: T;
-  meta?: {
-    page?: number;
-    limit?: number;
-    total?: number;
-  };
+    success: true;
+    data: T;
+    meta?: {
+        page?: number;
+        limit?: number;
+        total?: number;
+    };
 }
 
 // 错误响应
 interface ErrorResponse {
-  success: false;
-  error: {
-    code: string;      // e.g., 'AUTH_INVALID_TOKEN'
-    message: string;   // 用户友好的错误信息
-    details?: Record<string, unknown>;
-  };
+    success: false;
+    error: {
+        code: string; // e.g., 'AUTH_INVALID_TOKEN'
+        message: string; // 用户友好的错误信息
+        details?: Record<string, unknown>;
+    };
 }
 ```
 
@@ -479,18 +479,18 @@ import * as Y from 'yjs';
 const ydoc = new Y.Doc();
 
 // 共享类型
-const ytext = ydoc.getText('content');    // 文本内容
-const ymap = ydoc.getMap('metadata');     // 元数据
+const ytext = ydoc.getText('content'); // 文本内容
+const ymap = ydoc.getMap('metadata'); // 元数据
 const yarray = ydoc.getArray('versions'); // 版本列表
 
 // 监听变更
-ytext.observe(event => {
-  console.log('Text changed:', event.changes);
+ytext.observe((event) => {
+    console.log('Text changed:', event.changes);
 });
 
 // 本地操作
-ytext.insert(0, 'Hello World');  // 插入文本
-ytext.delete(5, 1);               // 删除字符
+ytext.insert(0, 'Hello World'); // 插入文本
+ytext.delete(5, 1); // 删除字符
 ```
 
 #### State Vector 与增量同步
@@ -498,7 +498,7 @@ ytext.delete(5, 1);               // 删除字符
 ```typescript
 // State Vector 记录每个客户端的已知状态
 interface StateVector {
-  [clientId: number]: number;  // clientId → clock
+    [clientId: number]: number; // clientId → clock
 }
 
 // 增量同步：只传输差异部分
@@ -520,34 +520,34 @@ import { Database } from '@hocuspocus/extension-database';
 import { Redis } from '@hocuspocus/extension-redis';
 
 const server = Server.configure({
-  port: 1234,
+    port: 1234,
 
-  extensions: [
-    new Redis({
-      host: process.env.REDIS_HOST,
-      port: 6379,
-    }),
-    new Database({
-      fetch: async ({ documentName }) => {
-        return await documentService.loadDocument(documentName);
-      },
-      store: async ({ documentName, state }) => {
-        await documentService.saveDocument(documentName, state);
-      },
-    }),
-  ],
+    extensions: [
+        new Redis({
+            host: process.env.REDIS_HOST,
+            port: 6379,
+        }),
+        new Database({
+            fetch: async ({ documentName }) => {
+                return await documentService.loadDocument(documentName);
+            },
+            store: async ({ documentName, state }) => {
+                await documentService.saveDocument(documentName, state);
+            },
+        }),
+    ],
 
-  async onAuthenticate({ token, documentName }) {
-    const user = await authService.verifyToken(token);
-    const hasAccess = await documentService.checkAccess(documentName, user.id);
-    if (!hasAccess) throw new Error('Unauthorized');
-    return { user };
-  },
+    async onAuthenticate({ token, documentName }) {
+        const user = await authService.verifyToken(token);
+        const hasAccess = await documentService.checkAccess(documentName, user.id);
+        if (!hasAccess) throw new Error('Unauthorized');
+        return { user };
+    },
 
-  async onStoreDocument({ documentName, document }) {
-    // 防抖持久化：2 秒无新变更后写入
-    await documentService.debouncedSave(documentName, document);
-  },
+    async onStoreDocument({ documentName, document }) {
+        // 防抖持久化：2 秒无新变更后写入
+        await documentService.debouncedSave(documentName, document);
+    },
 });
 
 server.listen();
@@ -591,22 +591,22 @@ server.listen();
 
 ```typescript
 async function restoreVersion(versionId: string) {
-  // 1. 获取目标版本快照
-  const version = await prisma.documentVersion.findUnique({
-    where: { id: versionId },
-  });
+    // 1. 获取目标版本快照
+    const version = await prisma.documentVersion.findUnique({
+        where: { id: versionId },
+    });
 
-  // 2. 创建当前状态快照（恢复点）
-  await createSnapshot(documentId, 'auto-before-restore');
+    // 2. 创建当前状态快照（恢复点）
+    await createSnapshot(documentId, 'auto-before-restore');
 
-  // 3. 计算差异并生成逆向更新
-  const currentDoc = await loadDocument(documentId);
-  const targetDoc = new Y.Doc();
-  Y.applyUpdate(targetDoc, version.content);
+    // 3. 计算差异并生成逆向更新
+    const currentDoc = await loadDocument(documentId);
+    const targetDoc = new Y.Doc();
+    Y.applyUpdate(targetDoc, version.content);
 
-  // 4. 应用目标状态
-  const restoreUpdate = Y.encodeStateAsUpdate(targetDoc);
-  await broadcastUpdate(documentId, restoreUpdate);
+    // 4. 应用目标状态
+    const restoreUpdate = Y.encodeStateAsUpdate(targetDoc);
+    await broadcastUpdate(documentId, restoreUpdate);
 }
 ```
 
@@ -645,11 +645,11 @@ async updateContent(@Param('id') id: string, @Body() content: UpdateDto) {
 
 ### 5.1 前端优化策略
 
-| 策略 | 实现方式 | 效果 |
-|------|----------|------|
-| **代码分割** | 动态 import、路由级分割 | 首屏加载 < 100KB |
-| **虚拟列表** | @tanstack/virtual | 大文档渲染流畅 |
-| **懒加载** | React.lazy、Suspense | 按需加载组件 |
+| 策略         | 实现方式                   | 效果               |
+| ------------ | -------------------------- | ------------------ |
+| **代码分割** | 动态 import、路由级分割    | 首屏加载 < 100KB   |
+| **虚拟列表** | @tanstack/virtual          | 大文档渲染流畅     |
+| **懒加载**   | React.lazy、Suspense       | 按需加载组件       |
 | **缓存策略** | TanStack Query + IndexedDB | 离线可用、快速响应 |
 
 ```typescript
@@ -664,21 +664,21 @@ const Editor = lazy(() => import('@/components/editor/editor'));
 
 ### 5.2 后端优化策略
 
-| 策略 | 实现方式 | 效果 |
-|------|----------|------|
-| **连接池** | Prisma 连接池管理 | 数据库连接复用 |
+| 策略           | 实现方式           | 效果           |
+| -------------- | ------------------ | -------------- |
+| **连接池**     | Prisma 连接池管理  | 数据库连接复用 |
 | **Redis 缓存** | 会话缓存、热点数据 | 减少数据库查询 |
-| **防抖持久化** | 2 秒无变更后写入 | 减少写入频率 |
-| **压缩传输** | zlib 压缩大更新 | 减少网络传输 |
+| **防抖持久化** | 2 秒无变更后写入   | 减少写入频率   |
+| **压缩传输**   | zlib 压缩大更新    | 减少网络传输   |
 
 ```typescript
 // 防抖持久化
 const debouncedSave = debounce(async (documentId: string, doc: Y.Doc) => {
-  const state = Y.encodeStateAsUpdate(doc);
-  await prisma.document.update({
-    where: { id: documentId },
-    data: { content: state, updatedAt: new Date() },
-  });
+    const state = Y.encodeStateAsUpdate(doc);
+    await prisma.document.update({
+        where: { id: documentId },
+        data: { content: state, updatedAt: new Date() },
+    });
 }, 2000);
 ```
 
@@ -716,9 +716,9 @@ const debouncedSave = debounce(async (documentId: string, doc: Y.Doc) => {
 ```typescript
 // 跨实例消息同步
 redis.subscribe('channel:document:*', (message) => {
-  const { documentId, update } = JSON.parse(message);
-  // 广播给本实例的所有连接客户端
-  broadcastToLocalClients(documentId, update);
+    const { documentId, update } = JSON.parse(message);
+    // 广播给本实例的所有连接客户端
+    broadcastToLocalClients(documentId, update);
 });
 ```
 
@@ -754,13 +754,13 @@ redis.subscribe('channel:document:*', (message) => {
 
 ```json
 {
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
-  }
+    "compilerOptions": {
+        "strict": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true
+    }
 }
 ```
 
@@ -782,14 +782,14 @@ components/
 
 #### 命名约定
 
-| 类型 | 约定 | 示例 |
-|------|------|------|
-| 组件文件 | PascalCase | `DocumentEditor.tsx` |
-| Hook 文件 | camelCase + use 前缀 | `useDocument.ts` |
-| 工具函数 | camelCase | `formatDate.ts` |
-| 类型文件 | camelCase | `document.ts` |
-| 常量 | UPPER_SNAKE_CASE | `MAX_FILE_SIZE` |
-| 接口/类型 | PascalCase | `Document` / `CreateDocumentInput` |
+| 类型      | 约定                 | 示例                               |
+| --------- | -------------------- | ---------------------------------- |
+| 组件文件  | PascalCase           | `DocumentEditor.tsx`               |
+| Hook 文件 | camelCase + use 前缀 | `useDocument.ts`                   |
+| 工具函数  | camelCase            | `formatDate.ts`                    |
+| 类型文件  | camelCase            | `document.ts`                      |
+| 常量      | UPPER_SNAKE_CASE     | `MAX_FILE_SIZE`                    |
+| 接口/类型 | PascalCase           | `Document` / `CreateDocumentInput` |
 
 ### 6.2 Git 工作流
 
@@ -829,10 +829,10 @@ refactor: 优化编辑器性能
 
 #### 覆盖率要求
 
-| 类型 | 覆盖率 | 工具 |
-|------|--------|------|
-| 单元测试 | 80%+ | Vitest |
-| 集成测试 | 关键路径 | Supertest |
+| 类型     | 覆盖率   | 工具       |
+| -------- | -------- | ---------- |
+| 单元测试 | 80%+     | Vitest     |
+| 集成测试 | 关键路径 | Supertest  |
 | E2E 测试 | 核心流程 | Playwright |
 
 #### TDD 工作流
@@ -847,16 +847,16 @@ refactor: 优化编辑器性能
 ```typescript
 // 测试示例
 describe('DocumentService', () => {
-  it('should create document with valid data', async () => {
-    const dto = { title: 'Test Document', content: '' };
-    const result = await service.create(dto, userId);
-    expect(result.title).toBe('Test Document');
-  });
+    it('should create document with valid data', async () => {
+        const dto = { title: 'Test Document', content: '' };
+        const result = await service.create(dto, userId);
+        expect(result.title).toBe('Test Document');
+    });
 
-  it('should throw error when title is empty', async () => {
-    const dto = { title: '', content: '' };
-    await expect(service.create(dto, userId)).rejects.toThrow();
-  });
+    it('should throw error when title is empty', async () => {
+        const dto = { title: '', content: '' };
+        await expect(service.create(dto, userId)).rejects.toThrow();
+    });
 });
 ```
 
@@ -890,15 +890,15 @@ describe('DocumentService', () => {
 
 ### 7.2 平台选型
 
-| 平台 | 用途 | 免费额度 |
-|------|------|----------|
-| **GitHub** | 代码托管、CI/CD | 无限私有仓库 |
-| **Vercel** | Next.js 前端 | 100GB 带宽/月 |
-| **Railway** | NestJS 后端 | $5/月额度 |
-| **Render** | 后端备选 | 750 小时/月 |
-| **Neon** | PostgreSQL | 0.5GB 存储 |
-| **Upstash** | Redis | 10,000 命令/天 |
-| **Cloudflare** | CDN + DNS | 无限 |
+| 平台           | 用途            | 免费额度       |
+| -------------- | --------------- | -------------- |
+| **GitHub**     | 代码托管、CI/CD | 无限私有仓库   |
+| **Vercel**     | Next.js 前端    | 100GB 带宽/月  |
+| **Railway**    | NestJS 后端     | $5/月额度      |
+| **Render**     | 后端备选        | 750 小时/月    |
+| **Neon**       | PostgreSQL      | 0.5GB 存储     |
+| **Upstash**    | Redis           | 10,000 命令/天 |
+| **Cloudflare** | CDN + DNS       | 无限           |
 
 ### 7.3 CI/CD 流程
 
@@ -907,48 +907,48 @@ describe('DocumentService', () => {
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-      - run: pnpm install
-      - run: pnpm test
-      - run: pnpm build
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v2
+            - run: pnpm install
+            - run: pnpm test
+            - run: pnpm build
 
-  deploy-frontend:
-    needs: test
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+    deploy-frontend:
+        needs: test
+        if: github.ref == 'refs/heads/main'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: amondnet/vercel-action@v25
+              with:
+                  vercel-token: ${{ secrets.VERCEL_TOKEN }}
 
-  deploy-backend:
-    needs: test
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: bervProject/railway-deploy@v1.0.0
-        with:
-          railway-token: ${{ secrets.RAILWAY_TOKEN }}
+    deploy-backend:
+        needs: test
+        if: github.ref == 'refs/heads/main'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: bervProject/railway-deploy@v1.0.0
+              with:
+                  railway-token: ${{ secrets.RAILWAY_TOKEN }}
 ```
 
 ### 7.4 监控告警
 
-| 监控类型 | 工具 | 说明 |
-|----------|------|------|
-| **错误监控** | Sentry | 实时错误追踪 |
-| **性能监控** | Vercel Analytics | Web Vitals |
-| **可用性监控** | Uptime Robot | 服务健康检查 |
-| **日志管理** | Axiom / Logflare | 结构化日志 |
+| 监控类型       | 工具             | 说明         |
+| -------------- | ---------------- | ------------ |
+| **错误监控**   | Sentry           | 实时错误追踪 |
+| **性能监控**   | Vercel Analytics | Web Vitals   |
+| **可用性监控** | Uptime Robot     | 服务健康检查 |
+| **日志管理**   | Axiom / Logflare | 结构化日志   |
 
 ---
 
@@ -956,36 +956,36 @@ jobs:
 
 ### 8.1 阶段划分
 
-| 阶段 | 周期 | 核心任务 | 交付物 |
-|------|------|----------|--------|
-| **P0: 文档编写** | 1 周 | 完成全部技术文档 | docs/ 目录完整文档 |
-| **P1: 基础架构** | 1 周 | 项目初始化、数据库设计 | 可运行的空壳项目 |
-| **P2: 协同内核** | 2 周 | Hocuspocus 集成、Tiptap 绑定 | 实时协同编辑可用 |
-| **P3: 版本管理** | 1.5 周 | 版本快照、回溯、Diff | 版本功能完整 |
-| **P4: 交互打磨** | 1 周 | Awareness、UI 优化 | 产品级体验 |
-| **P5: 部署上线** | 0.5 周 | CI/CD、监控配置 | 生产环境可用 |
+| 阶段             | 周期   | 核心任务                     | 交付物             |
+| ---------------- | ------ | ---------------------------- | ------------------ |
+| **P0: 文档编写** | 1 周   | 完成全部技术文档             | docs/ 目录完整文档 |
+| **P1: 基础架构** | 1 周   | 项目初始化、数据库设计       | 可运行的空壳项目   |
+| **P2: 协同内核** | 2 周   | Hocuspocus 集成、Tiptap 绑定 | 实时协同编辑可用   |
+| **P3: 版本管理** | 1.5 周 | 版本快照、回溯、Diff         | 版本功能完整       |
+| **P4: 交互打磨** | 1 周   | Awareness、UI 优化           | 产品级体验         |
+| **P5: 部署上线** | 0.5 周 | CI/CD、监控配置              | 生产环境可用       |
 
 **总周期：约 7 周**
 
 ### 8.2 里程碑
 
-| 里程碑 | 时间 | 标志 |
-|--------|------|------|
+| 里程碑           | 时间        | 标志                 |
+| ---------------- | ----------- | -------------------- |
 | **M1: 文档完成** | 第 1 周结束 | 所有技术文档编写完成 |
-| **M2: 项目骨架** | 第 2 周结束 | 前后端项目可运行 |
+| **M2: 项目骨架** | 第 2 周结束 | 前后端项目可运行     |
 | **M3: 协同可用** | 第 4 周结束 | 实时协同编辑功能可用 |
-| **M4: 版本完整** | 第 6 周结束 | 版本管理功能完整 |
-| **M5: 产品级** | 第 7 周结束 | 交互体验达到产品级 |
-| **M6: 上线** | 第 8 周结束 | 生产环境部署完成 |
+| **M4: 版本完整** | 第 6 周结束 | 版本管理功能完整     |
+| **M5: 产品级**   | 第 7 周结束 | 交互体验达到产品级   |
+| **M6: 上线**     | 第 8 周结束 | 生产环境部署完成     |
 
 ### 8.3 风险与缓解
 
-| 风险 | 可能性 | 影响 | 缓解措施 |
-|------|--------|------|----------|
-| Yjs 学习曲线 | 高 | 中 | 提前学习，参考示例 |
-| WebSocket 稳定性 | 中 | 高 | 完善重连机制 |
-| 性能问题 | 中 | 中 | 早期性能测试 |
-| 部署问题 | 低 | 中 | 使用成熟平台 |
+| 风险             | 可能性 | 影响 | 缓解措施           |
+| ---------------- | ------ | ---- | ------------------ |
+| Yjs 学习曲线     | 高     | 中   | 提前学习，参考示例 |
+| WebSocket 稳定性 | 中     | 高   | 完善重连机制       |
+| 性能问题         | 中     | 中   | 早期性能测试       |
+| 部署问题         | 低     | 中   | 使用成熟平台       |
 
 ---
 
@@ -993,26 +993,26 @@ jobs:
 
 ### 9.1 快速导航
 
-| 文档 | 说明 | 路径 |
-|------|------|------|
-| **系统架构** | 架构设计、技术选型 | [01-architecture/README.md](./01-architecture/README.md) |
-| **安全设计** | 认证授权、数据加密 | [02-security/README.md](./02-security/README.md) |
-| **前端开发** | 组件设计、状态管理 | [03-frontend/README.md](./03-frontend/README.md) |
-| **后端开发** | API 设计、数据库模型 | [04-backend/README.md](./04-backend/README.md) |
-| **协同核心** | CRDT 原理、版本管理 | [05-collaboration/README.md](./05-collaboration/README.md) |
-| **部署运维** | CI/CD、监控告警 | [06-deployment/README.md](./06-deployment/README.md) |
-| **开发排期** | 阶段划分、里程碑 | [07-schedule/development-schedule.md](./07-schedule/development-schedule.md) |
+| 文档         | 说明                 | 路径                                                                         |
+| ------------ | -------------------- | ---------------------------------------------------------------------------- |
+| **系统架构** | 架构设计、技术选型   | [01-architecture/README.md](./01-architecture/README.md)                     |
+| **安全设计** | 认证授权、数据加密   | [02-security/README.md](./02-security/README.md)                             |
+| **前端开发** | 组件设计、状态管理   | [03-frontend/README.md](./03-frontend/README.md)                             |
+| **后端开发** | API 设计、数据库模型 | [04-backend/README.md](./04-backend/README.md)                               |
+| **协同核心** | CRDT 原理、版本管理  | [05-collaboration/README.md](./05-collaboration/README.md)                   |
+| **部署运维** | CI/CD、监控告警      | [06-deployment/README.md](./06-deployment/README.md)                         |
+| **开发排期** | 阶段划分、里程碑     | [07-schedule/development-schedule.md](./07-schedule/development-schedule.md) |
 
 ### 9.2 架构子文档
 
-| 文档 | 说明 |
-|------|------|
-| [技术栈选型](./01-architecture/tech-stack.md) | 2026 视角的技术选型分析 |
-| [整体架构设计](./01-architecture/system-architecture.md) | 系统架构详细设计 |
-| [数据流向设计](./01-architecture/data-flow.md) | 数据流动方式详解 |
-| [编码规范](./01-architecture/coding-standards.md) | 代码风格与最佳实践 |
-| [测试指南](./01-architecture/testing-guide.md) | 测试策略与覆盖率要求 |
-| [Git 工作流](./01-architecture/git-workflow.md) | 分支策略与提交规范 |
+| 文档                                                     | 说明                    |
+| -------------------------------------------------------- | ----------------------- |
+| [技术栈选型](./01-architecture/tech-stack.md)            | 2026 视角的技术选型分析 |
+| [整体架构设计](./01-architecture/system-architecture.md) | 系统架构详细设计        |
+| [数据流向设计](./01-architecture/data-flow.md)           | 数据流动方式详解        |
+| [编码规范](./01-architecture/coding-standards.md)        | 代码风格与最佳实践      |
+| [测试指南](./01-architecture/testing-guide.md)           | 测试策略与覆盖率要求    |
+| [Git 工作流](./01-architecture/git-workflow.md)          | 分支策略与提交规范      |
 
 ### 9.3 代码仓库
 

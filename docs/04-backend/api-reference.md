@@ -6,12 +6,12 @@
 
 ## 基础信息
 
-| 项目 | 说明 |
-|------|------|
-| 基础路径 | `/api/v1` |
+| 项目     | 说明               |
+| -------- | ------------------ |
+| 基础路径 | `/api/v1`          |
 | 认证方式 | Bearer Token (JWT) |
-| 响应格式 | JSON |
-| 编码 | UTF-8 |
+| 响应格式 | JSON               |
+| 编码     | UTF-8              |
 
 ## 响应格式
 
@@ -45,15 +45,15 @@
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid input data",
-    "details": {
-      "email": ["Invalid email format"]
-    }
-  },
-  "timestamp": "2026-01-15T10:30:00.000Z"
+    "success": false,
+    "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Invalid input data",
+        "details": {
+            "email": ["Invalid email format"]
+        }
+    },
+    "timestamp": "2026-01-15T10:30:00.000Z"
 }
 ```
 
@@ -76,16 +76,16 @@ Content-Type: application/json
 
 ```json
 {
-  "success": true,
-  "data": {
-    "accessToken": "eyJ...",
-    "refreshToken": "eyJ...",
-    "user": {
-      "id": "clx123",
-      "email": "user@example.com",
-      "name": "John Doe"
+    "success": true,
+    "data": {
+        "accessToken": "eyJ...",
+        "refreshToken": "eyJ...",
+        "user": {
+            "id": "clx123",
+            "email": "user@example.com",
+            "name": "John Doe"
+        }
     }
-  }
 }
 ```
 
@@ -105,16 +105,16 @@ Content-Type: application/json
 
 ```json
 {
-  "success": true,
-  "data": {
-    "accessToken": "eyJ...",
-    "refreshToken": "eyJ...",
-    "user": {
-      "id": "clx123",
-      "email": "user@example.com",
-      "name": "John Doe"
+    "success": true,
+    "data": {
+        "accessToken": "eyJ...",
+        "refreshToken": "eyJ...",
+        "user": {
+            "id": "clx123",
+            "email": "user@example.com",
+            "name": "John Doe"
+        }
     }
-  }
 }
 ```
 
@@ -133,11 +133,11 @@ Content-Type: application/json
 
 ```json
 {
-  "success": true,
-  "data": {
-    "accessToken": "eyJ...",
-    "refreshToken": "eyJ..."
-  }
+    "success": true,
+    "data": {
+        "accessToken": "eyJ...",
+        "refreshToken": "eyJ..."
+    }
 }
 ```
 
@@ -152,10 +152,10 @@ Authorization: Bearer <accessToken>
 
 ```json
 {
-  "success": true,
-  "data": {
-    "message": "Logged out successfully"
-  }
+    "success": true,
+    "data": {
+        "message": "Logged out successfully"
+    }
 }
 ```
 
@@ -170,33 +170,33 @@ Authorization: Bearer <accessToken>
 
 **查询参数**
 
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| page | int | 1 | 页码 |
-| limit | int | 20 | 每页数量 |
+| 参数  | 类型 | 默认值 | 说明     |
+| ----- | ---- | ------ | -------- |
+| page  | int  | 1      | 页码     |
+| limit | int  | 20     | 每页数量 |
 
 **响应**
 
 ```json
 {
-  "success": true,
-  "data": [
-    {
-      "id": "clx123",
-      "title": "My Document",
-      "createdAt": "2026-01-15T10:00:00.000Z",
-      "updatedAt": "2026-01-15T10:30:00.000Z",
-      "owner": {
-        "id": "user123",
-        "name": "John Doe"
-      }
+    "success": true,
+    "data": [
+        {
+            "id": "clx123",
+            "title": "My Document",
+            "createdAt": "2026-01-15T10:00:00.000Z",
+            "updatedAt": "2026-01-15T10:30:00.000Z",
+            "owner": {
+                "id": "user123",
+                "name": "John Doe"
+            }
+        }
+    ],
+    "meta": {
+        "page": 1,
+        "limit": 20,
+        "total": 1
     }
-  ],
-  "meta": {
-    "page": 1,
-    "limit": 20,
-    "total": 1
-  }
 }
 ```
 
@@ -216,14 +216,14 @@ Content-Type: application/json
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "clx456",
-    "title": "New Document",
-    "ownerId": "user123",
-    "createdAt": "2026-01-15T10:30:00.000Z",
-    "updatedAt": "2026-01-15T10:30:00.000Z"
-  }
+    "success": true,
+    "data": {
+        "id": "clx456",
+        "title": "New Document",
+        "ownerId": "user123",
+        "createdAt": "2026-01-15T10:30:00.000Z",
+        "updatedAt": "2026-01-15T10:30:00.000Z"
+    }
 }
 ```
 
@@ -238,30 +238,30 @@ Authorization: Bearer <accessToken>
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "clx123",
-    "title": "My Document",
-    "content": null,
-    "createdAt": "2026-01-15T10:00:00.000Z",
-    "updatedAt": "2026-01-15T10:30:00.000Z",
-    "owner": {
-      "id": "user123",
-      "name": "John Doe",
-      "email": "john@example.com"
-    },
-    "collaborators": [
-      {
-        "id": "collab1",
-        "userId": "user456",
-        "role": "EDITOR",
-        "user": {
-          "id": "user456",
-          "name": "Jane Doe"
-        }
-      }
-    ]
-  }
+    "success": true,
+    "data": {
+        "id": "clx123",
+        "title": "My Document",
+        "content": null,
+        "createdAt": "2026-01-15T10:00:00.000Z",
+        "updatedAt": "2026-01-15T10:30:00.000Z",
+        "owner": {
+            "id": "user123",
+            "name": "John Doe",
+            "email": "john@example.com"
+        },
+        "collaborators": [
+            {
+                "id": "collab1",
+                "userId": "user456",
+                "role": "EDITOR",
+                "user": {
+                    "id": "user456",
+                    "name": "Jane Doe"
+                }
+            }
+        ]
+    }
 }
 ```
 
@@ -281,12 +281,12 @@ Content-Type: application/json
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "clx123",
-    "title": "Updated Title",
-    "updatedAt": "2026-01-15T11:00:00.000Z"
-  }
+    "success": true,
+    "data": {
+        "id": "clx123",
+        "title": "Updated Title",
+        "updatedAt": "2026-01-15T11:00:00.000Z"
+    }
 }
 ```
 
@@ -301,10 +301,10 @@ Authorization: Bearer <accessToken>
 
 ```json
 {
-  "success": true,
-  "data": {
-    "message": "Document deleted successfully"
-  }
+    "success": true,
+    "data": {
+        "message": "Document deleted successfully"
+    }
 }
 ```
 
@@ -327,18 +327,18 @@ Content-Type: application/json
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "collab1",
-    "documentId": "clx123",
-    "userId": "user456",
-    "role": "EDITOR",
-    "user": {
-      "id": "user456",
-      "name": "Jane Doe",
-      "email": "jane@example.com"
+    "success": true,
+    "data": {
+        "id": "collab1",
+        "documentId": "clx123",
+        "userId": "user456",
+        "role": "EDITOR",
+        "user": {
+            "id": "user456",
+            "name": "Jane Doe",
+            "email": "jane@example.com"
+        }
     }
-  }
 }
 ```
 
@@ -374,23 +374,23 @@ Authorization: Bearer <accessToken>
 
 ```json
 {
-  "success": true,
-  "data": [
-    {
-      "id": "ver123",
-      "message": "Initial version",
-      "createdAt": "2026-01-15T10:00:00.000Z",
-      "creator": {
-        "id": "user123",
-        "name": "John Doe"
-      }
+    "success": true,
+    "data": [
+        {
+            "id": "ver123",
+            "message": "Initial version",
+            "createdAt": "2026-01-15T10:00:00.000Z",
+            "creator": {
+                "id": "user123",
+                "name": "John Doe"
+            }
+        }
+    ],
+    "meta": {
+        "page": 1,
+        "limit": 20,
+        "total": 1
     }
-  ],
-  "meta": {
-    "page": 1,
-    "limit": 20,
-    "total": 1
-  }
 }
 ```
 
@@ -410,17 +410,17 @@ Content-Type: application/json
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "ver456",
-    "documentId": "clx123",
-    "message": "Save before major changes",
-    "createdAt": "2026-01-15T11:00:00.000Z",
-    "creator": {
-      "id": "user123",
-      "name": "John Doe"
+    "success": true,
+    "data": {
+        "id": "ver456",
+        "documentId": "clx123",
+        "message": "Save before major changes",
+        "createdAt": "2026-01-15T11:00:00.000Z",
+        "creator": {
+            "id": "user123",
+            "name": "John Doe"
+        }
     }
-  }
 }
 ```
 
@@ -442,11 +442,11 @@ Authorization: Bearer <accessToken>
 
 ```json
 {
-  "success": true,
-  "data": {
     "success": true,
-    "newVersionId": "ver789"
-  }
+    "data": {
+        "success": true,
+        "newVersionId": "ver789"
+    }
 }
 ```
 
@@ -461,35 +461,35 @@ Authorization: Bearer <accessToken>
 
 ```json
 {
-  "success": true,
-  "data": {
-    "from": {
-      "id": "ver123",
-      "createdAt": "2026-01-15T10:00:00.000Z",
-      "message": "Initial version"
-    },
-    "to": {
-      "id": "ver456",
-      "createdAt": "2026-01-15T11:00:00.000Z",
-      "message": "Updated content"
-    },
-    "changes": [
-      {
-        "type": "add",
-        "value": "New paragraph",
-        "position": 5
-      },
-      {
-        "type": "delete",
-        "value": "Old paragraph",
-        "position": 3
-      }
-    ],
-    "stats": {
-      "additions": 1,
-      "deletions": 1
+    "success": true,
+    "data": {
+        "from": {
+            "id": "ver123",
+            "createdAt": "2026-01-15T10:00:00.000Z",
+            "message": "Initial version"
+        },
+        "to": {
+            "id": "ver456",
+            "createdAt": "2026-01-15T11:00:00.000Z",
+            "message": "Updated content"
+        },
+        "changes": [
+            {
+                "type": "add",
+                "value": "New paragraph",
+                "position": 5
+            },
+            {
+                "type": "delete",
+                "value": "Old paragraph",
+                "position": 3
+            }
+        ],
+        "stats": {
+            "additions": 1,
+            "deletions": 1
+        }
     }
-  }
 }
 ```
 
@@ -514,8 +514,8 @@ wss://collab.example.com/<documentId>?token=<accessToken>
 
 ```json
 {
-  "type": "auth",
-  "token": "eyJ..."
+    "type": "auth",
+    "token": "eyJ..."
 }
 ```
 
@@ -541,42 +541,42 @@ wss://collab.example.com/<documentId>?token=<accessToken>
 
 ```json
 {
-  "type": "awareness",
-  "awareness": {
-    "user": {
-      "id": "user123",
-      "name": "John Doe",
-      "color": "#3b82f6"
-    },
-    "cursor": {
-      "from": 10,
-      "to": 20
+    "type": "awareness",
+    "awareness": {
+        "user": {
+            "id": "user123",
+            "name": "John Doe",
+            "color": "#3b82f6"
+        },
+        "cursor": {
+            "from": 10,
+            "to": 20
+        }
     }
-  }
 }
 ```
 
 ## 错误码
 
-| 错误码 | HTTP 状态 | 说明 |
-|--------|-----------|------|
-| UNAUTHORIZED | 401 | 未认证 |
-| TOKEN_EXPIRED | 401 | Token 过期 |
-| FORBIDDEN | 403 | 无权限 |
-| NOT_FOUND | 404 | 资源不存在 |
-| VALIDATION_ERROR | 400 | 验证失败 |
-| CONFLICT | 409 | 资源冲突 |
-| RATE_LIMIT_EXCEEDED | 429 | 请求过于频繁 |
-| INTERNAL_ERROR | 500 | 服务器错误 |
+| 错误码              | HTTP 状态 | 说明         |
+| ------------------- | --------- | ------------ |
+| UNAUTHORIZED        | 401       | 未认证       |
+| TOKEN_EXPIRED       | 401       | Token 过期   |
+| FORBIDDEN           | 403       | 无权限       |
+| NOT_FOUND           | 404       | 资源不存在   |
+| VALIDATION_ERROR    | 400       | 验证失败     |
+| CONFLICT            | 409       | 资源冲突     |
+| RATE_LIMIT_EXCEEDED | 429       | 请求过于频繁 |
+| INTERNAL_ERROR      | 500       | 服务器错误   |
 
 ## 速率限制
 
-| 端点 | 限制 | 窗口 |
-|------|------|------|
-| /auth/login | 5 | 5 分钟 |
-| /auth/register | 3 | 1 小时 |
-| /api/* | 100 | 1 分钟 |
-| WebSocket | 1000 | 1 分钟 |
+| 端点           | 限制 | 窗口   |
+| -------------- | ---- | ------ |
+| /auth/login    | 5    | 5 分钟 |
+| /auth/register | 3    | 1 小时 |
+| /api/\*        | 100  | 1 分钟 |
+| WebSocket      | 1000 | 1 分钟 |
 
 ## 相关文档
 

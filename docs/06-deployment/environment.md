@@ -6,12 +6,12 @@
 
 ## 环境分类
 
-| 环境 | 用途 | 配置文件 |
-|------|------|----------|
-| 开发 | 本地开发 | `.env.local` |
-| 测试 | CI/CD 测试 | `.env.test` |
-| 预览 | PR 预览 | Vercel 预览环境 |
-| 生产 | 正式环境 | 平台 Secrets |
+| 环境 | 用途       | 配置文件        |
+| ---- | ---------- | --------------- |
+| 开发 | 本地开发   | `.env.local`    |
+| 测试 | CI/CD 测试 | `.env.test`     |
+| 预览 | PR 预览    | Vercel 预览环境 |
+| 生产 | 正式环境   | 平台 Secrets    |
 
 ## 前端环境变量
 
@@ -45,11 +45,11 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 // 类型定义
 // types/env.d.ts
 namespace NodeJS {
-  interface ProcessEnv {
-    NEXT_PUBLIC_API_URL: string;
-    NEXT_PUBLIC_WS_URL: string;
-    NEXT_PUBLIC_APP_URL: string;
-  }
+    interface ProcessEnv {
+        NEXT_PUBLIC_API_URL: string;
+        NEXT_PUBLIC_WS_URL: string;
+        NEXT_PUBLIC_APP_URL: string;
+    }
 }
 ```
 
@@ -60,9 +60,9 @@ namespace NodeJS {
 import { z } from 'zod';
 
 const envSchema = z.object({
-  NEXT_PUBLIC_API_URL: z.string().url(),
-  NEXT_PUBLIC_WS_URL: z.string(),
-  NEXT_PUBLIC_APP_URL: z.string().url(),
+    NEXT_PUBLIC_API_URL: z.string().url(),
+    NEXT_PUBLIC_WS_URL: z.string(),
+    NEXT_PUBLIC_APP_URL: z.string().url(),
 });
 
 export const env = envSchema.parse(process.env);
@@ -114,25 +114,23 @@ GITHUB_CLIENT_SECRET=""
 import * as Joi from 'joi';
 
 export const configValidationSchema = Joi.object({
-  NODE_ENV: Joi.string()
-    .valid('development', 'production', 'test')
-    .default('development'),
+    NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
 
-  PORT: Joi.number().default(3001),
+    PORT: Joi.number().default(3001),
 
-  DATABASE_URL: Joi.string().required(),
-  DIRECT_DATABASE_URL: Joi.string().required(),
+    DATABASE_URL: Joi.string().required(),
+    DIRECT_DATABASE_URL: Joi.string().required(),
 
-  REDIS_URL: Joi.string().required(),
+    REDIS_URL: Joi.string().required(),
 
-  JWT_SECRET: Joi.string().min(32).required(),
-  JWT_EXPIRES_IN: Joi.string().default('15m'),
-  REFRESH_TOKEN_EXPIRES_IN: Joi.string().default('7d'),
+    JWT_SECRET: Joi.string().min(32).required(),
+    JWT_EXPIRES_IN: Joi.string().default('15m'),
+    REFRESH_TOKEN_EXPIRES_IN: Joi.string().default('7d'),
 
-  HOCUSPOCUS_PORT: Joi.number().default(1234),
-  HOCUSPOCUS_SECRET: Joi.string().min(32).required(),
+    HOCUSPOCUS_PORT: Joi.number().default(1234),
+    HOCUSPOCUS_SECRET: Joi.string().min(32).required(),
 
-  CORS_ORIGINS: Joi.string().default('*'),
+    CORS_ORIGINS: Joi.string().default('*'),
 });
 ```
 
@@ -141,36 +139,36 @@ export const configValidationSchema = Joi.object({
 ```typescript
 // src/config/configuration.ts
 export default () => ({
-  node: {
-    env: process.env.NODE_ENV || 'development',
-    port: parseInt(process.env.PORT, 10) || 3001,
-  },
+    node: {
+        env: process.env.NODE_ENV || 'development',
+        port: parseInt(process.env.PORT, 10) || 3001,
+    },
 
-  database: {
-    url: process.env.DATABASE_URL,
-    directUrl: process.env.DIRECT_DATABASE_URL,
-  },
+    database: {
+        url: process.env.DATABASE_URL,
+        directUrl: process.env.DIRECT_DATABASE_URL,
+    },
 
-  redis: {
-    url: process.env.REDIS_URL,
-    upstashUrl: process.env.UPSTASH_REDIS_REST_URL,
-    upstashToken: process.env.UPSTASH_REDIS_REST_TOKEN,
-  },
+    redis: {
+        url: process.env.REDIS_URL,
+        upstashUrl: process.env.UPSTASH_REDIS_REST_URL,
+        upstashToken: process.env.UPSTASH_REDIS_REST_TOKEN,
+    },
 
-  jwt: {
-    secret: process.env.JWT_SECRET,
-    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
-    refreshExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
-  },
+    jwt: {
+        secret: process.env.JWT_SECRET,
+        expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+        refreshExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
+    },
 
-  hocuspocus: {
-    port: parseInt(process.env.HOCUSPOCUS_PORT, 10) || 1234,
-    secret: process.env.HOCUSPOCUS_SECRET,
-  },
+    hocuspocus: {
+        port: parseInt(process.env.HOCUSPOCUS_PORT, 10) || 1234,
+        secret: process.env.HOCUSPOCUS_SECRET,
+    },
 
-  cors: {
-    origins: process.env.CORS_ORIGINS?.split(',') || ['*'],
-  },
+    cors: {
+        origins: process.env.CORS_ORIGINS?.split(',') || ['*'],
+    },
 });
 ```
 
@@ -203,12 +201,12 @@ railway variables set DATABASE_URL=${{Postgres.DATABASE_URL}}
 ```yaml
 # render.yaml
 envVars:
-  - key: DATABASE_URL
-    fromDatabase:
-      name: collab-db
-      property: connectionString
-  - key: JWT_SECRET
-    sync: false
+    - key: DATABASE_URL
+      fromDatabase:
+          name: collab-db
+          property: connectionString
+    - key: JWT_SECRET
+      sync: false
 ```
 
 ## 密钥管理
@@ -240,6 +238,7 @@ secrets/
 ### 密钥轮换
 
 建议定期轮换以下密钥：
+
 - JWT_SECRET（需要用户重新登录）
 - HOCUSPOCUS_SECRET（需要断开所有 WebSocket 连接）
 - 数据库密码（需要更新所有服务）
@@ -276,27 +275,27 @@ pnpm dev              # 前端
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:17
-    environment:
-      POSTGRES_USER: collab
-      POSTGRES_PASSWORD: collab
-      POSTGRES_DB: collab
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    postgres:
+        image: postgres:17
+        environment:
+            POSTGRES_USER: collab
+            POSTGRES_PASSWORD: collab
+            POSTGRES_DB: collab
+        ports:
+            - '5432:5432'
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
 
-  redis:
-    image: redis:8
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+    redis:
+        image: redis:8
+        ports:
+            - '6379:6379'
+        volumes:
+            - redis_data:/data
 
 volumes:
-  postgres_data:
-  redis_data:
+    postgres_data:
+    redis_data:
 ```
 
 ## 相关文档

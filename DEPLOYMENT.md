@@ -16,10 +16,10 @@
 
 ### 宿主机需要安装的软件
 
-| 软件 | 最低版本 | 用途 | 安装方式 |
-|------|----------|------|----------|
-| **Docker** | 24.0+ | 容器运行时 | [官方文档](https://docs.docker.com/get-docker/) |
-| **Docker Compose** | 2.20+ | 容器编排 | Docker Desktop 自带 / `sudo apt install docker-compose-plugin` |
+| 软件               | 最低版本 | 用途       | 安装方式                                                       |
+| ------------------ | -------- | ---------- | -------------------------------------------------------------- |
+| **Docker**         | 24.0+    | 容器运行时 | [官方文档](https://docs.docker.com/get-docker/)                |
+| **Docker Compose** | 2.20+    | 容器编排   | Docker Desktop 自带 / `sudo apt install docker-compose-plugin` |
 
 ### 检查是否安装成功
 
@@ -127,10 +127,10 @@ docker compose ps
 
 **访问服务：**
 
-| 服务 | 地址 |
-|------|------|
-| 前端 | http://localhost:3000 |
-| 后端 API | http://localhost:3001 |
+| 服务       | 地址                                         |
+| ---------- | -------------------------------------------- |
+| 前端       | http://localhost:3000                        |
+| 后端 API   | http://localhost:3001                        |
 | 数据库管理 | http://localhost:8080 (需启用 tools profile) |
 
 ---
@@ -409,13 +409,13 @@ docker compose --profile tools up -d
 
 ## 开发环境 vs 生产环境
 
-| 配置项 | 开发环境 | 生产环境 |
-|--------|----------|----------|
-| `NODE_ENV` | development | production |
-| 数据卷挂载 | 源代码热重载 | 不挂载 |
-| 构建产物 | 不优化 | 完全优化 |
-| 日志级别 | debug | warn/error |
-| 源码映射 | 启用 | 禁用 |
+| 配置项     | 开发环境     | 生产环境   |
+| ---------- | ------------ | ---------- |
+| `NODE_ENV` | development  | production |
+| 数据卷挂载 | 源代码热重载 | 不挂载     |
+| 构建产物   | 不优化       | 完全优化   |
+| 日志级别   | debug        | warn/error |
+| 源码映射   | 启用         | 禁用       |
 
 **开发环境启动：**
 

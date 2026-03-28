@@ -41,17 +41,17 @@ graph TB
 
 ### 权限矩阵
 
-| 操作 | OWNER | EDITOR | VIEWER |
-|------|:-----:|:------:|:------:|
-| 查看文档 | ✅ | ✅ | ✅ |
-| 编辑内容 | ✅ | ✅ | ❌ |
-| 创建版本 | ✅ | ✅ | ❌ |
-| 恢复版本 | ✅ | ✅ | ❌ |
-| 邀请协作者 | ✅ | ❌ | ❌ |
-| 移除协作者 | ✅ | ❌ | ❌ |
-| 修改角色 | ✅ | ❌ | ❌ |
-| 删除文档 | ✅ | ❌ | ❌ |
-| 转移所有权 | ✅ | ❌ | ❌ |
+| 操作       | OWNER | EDITOR | VIEWER |
+| ---------- | :---: | :----: | :----: |
+| 查看文档   |  ✅   |   ✅   |   ✅   |
+| 编辑内容   |  ✅   |   ✅   |   ❌   |
+| 创建版本   |  ✅   |   ✅   |   ❌   |
+| 恢复版本   |  ✅   |   ✅   |   ❌   |
+| 邀请协作者 |  ✅   |   ❌   |   ❌   |
+| 移除协作者 |  ✅   |   ❌   |   ❌   |
+| 修改角色   |  ✅   |   ❌   |   ❌   |
+| 删除文档   |  ✅   |   ❌   |   ❌   |
+| 转移所有权 |  ✅   |   ❌   |   ❌   |
 
 ## 数据模型
 
@@ -102,43 +102,43 @@ import { RolesService } from './roles.service';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(
-    private reflector: Reflector,
-    private rolesService: RolesService,
-  ) {}
+    constructor(
+        private reflector: Reflector,
+        private rolesService: RolesService
+    ) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredRole = this.reflector.getAllAndOverride<string>(
-      'requiredRole',
-      [context.getHandler(), context.getClass()],
-    );
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const requiredRole = this.reflector.getAllAndOverride<string>('requiredRole', [
+            context.getHandler(),
+            context.getClass(),
+        ]);
 
-    if (!requiredRole) {
-      return true; // 无角色要求，允许访问
+        if (!requiredRole) {
+            return true; // 无角色要求，允许访问
+        }
+
+        const request = context.switchToHttp().getRequest();
+        const user = request.user;
+        const documentId = request.params.documentId || request.body.documentId;
+
+        if (!user || !documentId) {
+            return false;
+        }
+
+        const userRole = await this.rolesService.getUserRole(documentId, user.id);
+
+        return this.isRoleSufficient(userRole, requiredRole);
     }
 
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
-    const documentId = request.params.documentId || request.body.documentId;
+    private isRoleSufficient(userRole: string, requiredRole: string): boolean {
+        const roleHierarchy = {
+            OWNER: 3,
+            EDITOR: 2,
+            VIEWER: 1,
+        };
 
-    if (!user || !documentId) {
-      return false;
+        return (roleHierarchy[userRole] || 0) >= (roleHierarchy[requiredRole] || 0);
     }
-
-    const userRole = await this.rolesService.getUserRole(documentId, user.id);
-
-    return this.isRoleSufficient(userRole, requiredRole);
-  }
-
-  private isRoleSufficient(userRole: string, requiredRole: string): boolean {
-    const roleHierarchy = {
-      OWNER: 3,
-      EDITOR: 2,
-      VIEWER: 1,
-    };
-
-    return (roleHierarchy[userRole] || 0) >= (roleHierarchy[requiredRole] || 0);
-  }
 }
 ```
 
@@ -160,163 +160,155 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class RolesService {
-  constructor(private prisma: PrismaService) {}
+    constructor(private prisma: PrismaService) {}
 
-  async getUserRole(documentId: string, userId: string): Promise<string | null> {
-    // 检查是否是文档所有者
-    const document = await this.prisma.document.findUnique({
-      where: { id: documentId },
-      select: { ownerId: true },
-    });
+    async getUserRole(documentId: string, userId: string): Promise<string | null> {
+        // 检查是否是文档所有者
+        const document = await this.prisma.document.findUnique({
+            where: { id: documentId },
+            select: { ownerId: true },
+        });
 
-    if (document?.ownerId === userId) {
-      return 'OWNER';
+        if (document?.ownerId === userId) {
+            return 'OWNER';
+        }
+
+        // 检查协作者角色
+        const collaborator = await this.prisma.collaborator.findUnique({
+            where: {
+                documentId_userId: { documentId, userId },
+            },
+            select: { role: true },
+        });
+
+        return collaborator?.role || null;
     }
 
-    // 检查协作者角色
-    const collaborator = await this.prisma.collaborator.findUnique({
-      where: {
-        documentId_userId: { documentId, userId },
-      },
-      select: { role: true },
-    });
+    async requireRole(
+        documentId: string,
+        userId: string,
+        requiredRole: 'OWNER' | 'EDITOR' | 'VIEWER'
+    ): Promise<void> {
+        const userRole = await this.getUserRole(documentId, userId);
 
-    return collaborator?.role || null;
-  }
+        if (!userRole) {
+            throw new ForbiddenException('Access denied');
+        }
 
-  async requireRole(
-    documentId: string,
-    userId: string,
-    requiredRole: 'OWNER' | 'EDITOR' | 'VIEWER',
-  ): Promise<void> {
-    const userRole = await this.getUserRole(documentId, userId);
+        const roleHierarchy = { OWNER: 3, EDITOR: 2, VIEWER: 1 };
 
-    if (!userRole) {
-      throw new ForbiddenException('Access denied');
+        if (roleHierarchy[userRole] < roleHierarchy[requiredRole]) {
+            throw new ForbiddenException('Insufficient permissions');
+        }
     }
 
-    const roleHierarchy = { OWNER: 3, EDITOR: 2, VIEWER: 1 };
+    async addCollaborator(
+        documentId: string,
+        userId: string,
+        role: 'EDITOR' | 'VIEWER',
+        requesterId: string
+    ) {
+        // 只有 OWNER 可以添加协作者
+        await this.requireRole(documentId, requesterId, 'OWNER');
 
-    if (roleHierarchy[userRole] < roleHierarchy[requiredRole]) {
-      throw new ForbiddenException('Insufficient permissions');
-    }
-  }
-
-  async addCollaborator(
-    documentId: string,
-    userId: string,
-    role: 'EDITOR' | 'VIEWER',
-    requesterId: string,
-  ) {
-    // 只有 OWNER 可以添加协作者
-    await this.requireRole(documentId, requesterId, 'OWNER');
-
-    return this.prisma.collaborator.create({
-      data: {
-        documentId,
-        userId,
-        role,
-      },
-    });
-  }
-
-  async updateRole(
-    documentId: string,
-    userId: string,
-    newRole: 'OWNER' | 'EDITOR' | 'VIEWER',
-    requesterId: string,
-  ) {
-    const requesterRole = await this.getUserRole(documentId, requesterId);
-
-    // 只有 OWNER 可以修改角色
-    if (requesterRole !== 'OWNER') {
-      throw new ForbiddenException('Only owner can change roles');
+        return this.prisma.collaborator.create({
+            data: {
+                documentId,
+                userId,
+                role,
+            },
+        });
     }
 
-    // 不能修改所有者的角色
-    const document = await this.prisma.document.findUnique({
-      where: { id: documentId },
-      select: { ownerId: true },
-    });
+    async updateRole(
+        documentId: string,
+        userId: string,
+        newRole: 'OWNER' | 'EDITOR' | 'VIEWER',
+        requesterId: string
+    ) {
+        const requesterRole = await this.getUserRole(documentId, requesterId);
 
-    if (document?.ownerId === userId) {
-      throw new ForbiddenException('Cannot change owner role');
+        // 只有 OWNER 可以修改角色
+        if (requesterRole !== 'OWNER') {
+            throw new ForbiddenException('Only owner can change roles');
+        }
+
+        // 不能修改所有者的角色
+        const document = await this.prisma.document.findUnique({
+            where: { id: documentId },
+            select: { ownerId: true },
+        });
+
+        if (document?.ownerId === userId) {
+            throw new ForbiddenException('Cannot change owner role');
+        }
+
+        return this.prisma.collaborator.update({
+            where: {
+                documentId_userId: { documentId, userId },
+            },
+            data: { role: newRole },
+        });
     }
 
-    return this.prisma.collaborator.update({
-      where: {
-        documentId_userId: { documentId, userId },
-      },
-      data: { role: newRole },
-    });
-  }
+    async removeCollaborator(documentId: string, userId: string, requesterId: string) {
+        await this.requireRole(documentId, requesterId, 'OWNER');
 
-  async removeCollaborator(
-    documentId: string,
-    userId: string,
-    requesterId: string,
-  ) {
-    await this.requireRole(documentId, requesterId, 'OWNER');
-
-    return this.prisma.collaborator.delete({
-      where: {
-        documentId_userId: { documentId, userId },
-      },
-    });
-  }
-
-  async transferOwnership(
-    documentId: string,
-    newOwnerId: string,
-    currentOwnerId: string,
-  ) {
-    // 验证当前用户是所有者
-    const document = await this.prisma.document.findUnique({
-      where: { id: documentId },
-      select: { ownerId: true },
-    });
-
-    if (document?.ownerId !== currentOwnerId) {
-      throw new ForbiddenException('Only owner can transfer ownership');
+        return this.prisma.collaborator.delete({
+            where: {
+                documentId_userId: { documentId, userId },
+            },
+        });
     }
 
-    // 使用事务更新所有权
-    return this.prisma.$transaction([
-      // 更新文档所有者
-      this.prisma.document.update({
-        where: { id: documentId },
-        data: { ownerId: newOwnerId },
-      }),
-      // 将原所有者添加为协作者（如果还不是）
-      this.prisma.collaborator.upsert({
-        where: {
-          documentId_userId: { documentId, userId: currentOwnerId },
-        },
-        create: {
-          documentId,
-          userId: currentOwnerId,
-          role: 'OWNER',
-        },
-        update: {
-          role: 'OWNER',
-        },
-      }),
-      // 更新新所有者的角色
-      this.prisma.collaborator.upsert({
-        where: {
-          documentId_userId: { documentId, userId: newOwnerId },
-        },
-        create: {
-          documentId,
-          userId: newOwnerId,
-          role: 'OWNER',
-        },
-        update: {
-          role: 'OWNER',
-        },
-      }),
-    ]);
-  }
+    async transferOwnership(documentId: string, newOwnerId: string, currentOwnerId: string) {
+        // 验证当前用户是所有者
+        const document = await this.prisma.document.findUnique({
+            where: { id: documentId },
+            select: { ownerId: true },
+        });
+
+        if (document?.ownerId !== currentOwnerId) {
+            throw new ForbiddenException('Only owner can transfer ownership');
+        }
+
+        // 使用事务更新所有权
+        return this.prisma.$transaction([
+            // 更新文档所有者
+            this.prisma.document.update({
+                where: { id: documentId },
+                data: { ownerId: newOwnerId },
+            }),
+            // 将原所有者添加为协作者（如果还不是）
+            this.prisma.collaborator.upsert({
+                where: {
+                    documentId_userId: { documentId, userId: currentOwnerId },
+                },
+                create: {
+                    documentId,
+                    userId: currentOwnerId,
+                    role: 'OWNER',
+                },
+                update: {
+                    role: 'OWNER',
+                },
+            }),
+            // 更新新所有者的角色
+            this.prisma.collaborator.upsert({
+                where: {
+                    documentId_userId: { documentId, userId: newOwnerId },
+                },
+                create: {
+                    documentId,
+                    userId: newOwnerId,
+                    role: 'OWNER',
+                },
+                update: {
+                    role: 'OWNER',
+                },
+            }),
+        ]);
+    }
 }
 ```
 
@@ -333,56 +325,56 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 @Controller('documents')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class DocumentsController {
-  constructor(
-    private documentsService: DocumentsService,
-    private rolesService: RolesService,
-  ) {}
+    constructor(
+        private documentsService: DocumentsService,
+        private rolesService: RolesService
+    ) {}
 
-  @Get(':documentId')
-  @RequiredRole('VIEWER') // 任何有访问权限的人都可以查看
-  async getDocument(@Param('documentId') documentId: string) {
-    return this.documentsService.findById(documentId);
-  }
+    @Get(':documentId')
+    @RequiredRole('VIEWER') // 任何有访问权限的人都可以查看
+    async getDocument(@Param('documentId') documentId: string) {
+        return this.documentsService.findById(documentId);
+    }
 
-  @Post(':documentId/save')
-  @RequiredRole('EDITOR') // 需要 EDITOR 或更高权限
-  async saveDocument(
-    @Param('documentId') documentId: string,
-    @Body() updateDto: { content: Buffer },
-  ) {
-    return this.documentsService.updateContent(documentId, updateDto.content);
-  }
+    @Post(':documentId/save')
+    @RequiredRole('EDITOR') // 需要 EDITOR 或更高权限
+    async saveDocument(
+        @Param('documentId') documentId: string,
+        @Body() updateDto: { content: Buffer }
+    ) {
+        return this.documentsService.updateContent(documentId, updateDto.content);
+    }
 
-  @Post(':documentId/versions')
-  @RequiredRole('EDITOR')
-  async createVersion(
-    @Param('documentId') documentId: string,
-    @Body() versionDto: { message?: string },
-    @CurrentUser() user: any,
-  ) {
-    return this.documentsService.createVersion(documentId, versionDto.message, user.id);
-  }
+    @Post(':documentId/versions')
+    @RequiredRole('EDITOR')
+    async createVersion(
+        @Param('documentId') documentId: string,
+        @Body() versionDto: { message?: string },
+        @CurrentUser() user: any
+    ) {
+        return this.documentsService.createVersion(documentId, versionDto.message, user.id);
+    }
 
-  @Post(':documentId/collaborators')
-  @RequiredRole('OWNER') // 只有 OWNER 可以管理协作者
-  async addCollaborator(
-    @Param('documentId') documentId: string,
-    @Body() collaboratorDto: { userId: string; role: 'EDITOR' | 'VIEWER' },
-    @CurrentUser() user: any,
-  ) {
-    return this.rolesService.addCollaborator(
-      documentId,
-      collaboratorDto.userId,
-      collaboratorDto.role,
-      user.id,
-    );
-  }
+    @Post(':documentId/collaborators')
+    @RequiredRole('OWNER') // 只有 OWNER 可以管理协作者
+    async addCollaborator(
+        @Param('documentId') documentId: string,
+        @Body() collaboratorDto: { userId: string; role: 'EDITOR' | 'VIEWER' },
+        @CurrentUser() user: any
+    ) {
+        return this.rolesService.addCollaborator(
+            documentId,
+            collaboratorDto.userId,
+            collaboratorDto.role,
+            user.id
+        );
+    }
 
-  @Delete(':documentId')
-  @RequiredRole('OWNER')
-  async deleteDocument(@Param('documentId') documentId: string) {
-    return this.documentsService.delete(documentId);
-  }
+    @Delete(':documentId')
+    @RequiredRole('OWNER')
+    async deleteDocument(@Param('documentId') documentId: string) {
+        return this.documentsService.delete(documentId);
+    }
 }
 ```
 
@@ -394,28 +386,28 @@ import { Server } from '@hocuspocus/server';
 import { RolesService } from './roles/roles.service';
 
 const server = Server.configure({
-  async onAuthenticate({ token, documentName }) {
-    const user = await verifyToken(token);
+    async onAuthenticate({ token, documentName }) {
+        const user = await verifyToken(token);
 
-    // 检查用户是否有任何访问权限
-    const role = await rolesService.getUserRole(documentName, user.id);
+        // 检查用户是否有任何访问权限
+        const role = await rolesService.getUserRole(documentName, user.id);
 
-    if (!role) {
-      throw new Error('Access denied');
-    }
+        if (!role) {
+            throw new Error('Access denied');
+        }
 
-    return {
-      user,
-      role, // 将角色信息传递给其他钩子
-    };
-  },
+        return {
+            user,
+            role, // 将角色信息传递给其他钩子
+        };
+    },
 
-  async onChange({ documentName, context, update }) {
-    // 检查是否有写权限
-    if (context.role === 'VIEWER') {
-      throw new Error('Read-only access');
-    }
-  },
+    async onChange({ documentName, context, update }) {
+        // 检查是否有写权限
+        if (context.role === 'VIEWER') {
+            throw new Error('Read-only access');
+        }
+    },
 });
 ```
 
@@ -426,28 +418,28 @@ const server = Server.configure({
 import { useQuery } from '@tanstack/react-query';
 
 interface PermissionResult {
-  role: 'OWNER' | 'EDITOR' | 'VIEWER' | null;
-  canRead: boolean;
-  canWrite: boolean;
-  canManage: boolean;
-  canDelete: boolean;
+    role: 'OWNER' | 'EDITOR' | 'VIEWER' | null;
+    canRead: boolean;
+    canWrite: boolean;
+    canManage: boolean;
+    canDelete: boolean;
 }
 
 export function usePermissions(documentId: string): PermissionResult {
-  const { data } = useQuery({
-    queryKey: ['permissions', documentId],
-    queryFn: () => api.get(`/documents/${documentId}/permissions`),
-  });
+    const { data } = useQuery({
+        queryKey: ['permissions', documentId],
+        queryFn: () => api.get(`/documents/${documentId}/permissions`),
+    });
 
-  const role = data?.role;
+    const role = data?.role;
 
-  return {
-    role,
-    canRead: !!role,
-    canWrite: role === 'OWNER' || role === 'EDITOR',
-    canManage: role === 'OWNER',
-    canDelete: role === 'OWNER',
-  };
+    return {
+        role,
+        canRead: !!role,
+        canWrite: role === 'OWNER' || role === 'EDITOR',
+        canManage: role === 'OWNER',
+        canDelete: role === 'OWNER',
+    };
 }
 ```
 
@@ -458,16 +450,16 @@ export function usePermissions(documentId: string): PermissionResult {
 import { usePermissions } from '@/hooks/use-permissions';
 
 export function DocumentToolbar({ documentId }: { documentId: string }) {
-  const { canWrite, canManage } = usePermissions(documentId);
+    const { canWrite, canManage } = usePermissions(documentId);
 
-  return (
-    <div className="flex items-center gap-2">
-      {canWrite && <SaveButton />}
-      {canWrite && <CreateVersionButton />}
-      {canManage && <ShareButton />}
-      {canManage && <SettingsButton />}
-    </div>
-  );
+    return (
+        <div className="flex items-center gap-2">
+            {canWrite && <SaveButton />}
+            {canWrite && <CreateVersionButton />}
+            {canManage && <ShareButton />}
+            {canManage && <SettingsButton />}
+        </div>
+    );
 }
 ```
 
@@ -476,35 +468,35 @@ export function DocumentToolbar({ documentId }: { documentId: string }) {
 ```typescript
 // 审计日志记录
 interface AuditLog {
-  id: string;
-  action: string;
-  documentId: string;
-  userId: string;
-  details: Record<string, any>;
-  createdAt: Date;
+    id: string;
+    action: string;
+    documentId: string;
+    userId: string;
+    details: Record<string, any>;
+    createdAt: Date;
 }
 
 // 记录关键操作
 async function logAction(
-  action: string,
-  documentId: string,
-  userId: string,
-  details: Record<string, any> = {},
+    action: string,
+    documentId: string,
+    userId: string,
+    details: Record<string, any> = {}
 ) {
-  await prisma.auditLog.create({
-    data: {
-      action,
-      documentId,
-      userId,
-      details,
-    },
-  });
+    await prisma.auditLog.create({
+        data: {
+            action,
+            documentId,
+            userId,
+            details,
+        },
+    });
 }
 
 // 使用示例
 await logAction('collaborator.added', documentId, requesterId, {
-  addedUserId: newCollaboratorId,
-  role: 'EDITOR',
+    addedUserId: newCollaboratorId,
+    role: 'EDITOR',
 });
 ```
 

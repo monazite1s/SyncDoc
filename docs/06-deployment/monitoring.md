@@ -84,9 +84,9 @@ pnpm add @sentry/nextjs @sentry/nestjs
 import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  tracesSampleRate: 0.1,
-  environment: process.env.NODE_ENV,
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    tracesSampleRate: 0.1,
+    environment: process.env.NODE_ENV,
 });
 ```
 
@@ -95,8 +95,8 @@ Sentry.init({
 import * as Sentry from '@sentry/nestjs';
 
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  tracesSampleRate: 0.1,
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 0.1,
 });
 ```
 
@@ -105,20 +105,20 @@ Sentry.init({
 ```typescript
 // lib/monitoring/performance.ts
 export function measurePerformance(name: string) {
-  const start = performance.now();
+    const start = performance.now();
 
-  return {
-    end: () => {
-      const duration = performance.now() - start;
+    return {
+        end: () => {
+            const duration = performance.now() - start;
 
-      if (duration > 1000) {
-        // 上报慢操作
-        reportSlowOperation(name, duration);
-      }
+            if (duration > 1000) {
+                // 上报慢操作
+                reportSlowOperation(name, duration);
+            }
 
-      return duration;
-    },
-  };
+            return duration;
+        },
+    };
 }
 
 // 使用
@@ -132,34 +132,39 @@ const duration = measure.end();
 ```typescript
 // src/health/health.controller.ts
 import { Controller, Get } from '@nestjs/common';
-import { HealthCheck, HealthCheckService, TypeOrmHealthIndicator, MemoryHealthIndicator } from '@nestjs/terminus';
+import {
+    HealthCheck,
+    HealthCheckService,
+    TypeOrmHealthIndicator,
+    MemoryHealthIndicator,
+} from '@nestjs/terminus';
 
 @Controller('health')
 export class HealthController {
-  constructor(
-    private health: HealthCheckService,
-    private db: TypeOrmHealthIndicator,
-    private memory: MemoryHealthIndicator,
-  ) {}
+    constructor(
+        private health: HealthCheckService,
+        private db: TypeOrmHealthIndicator,
+        private memory: MemoryHealthIndicator
+    ) {}
 
-  @Get()
-  @HealthCheck()
-  check() {
-    return this.health.check([
-      () => this.db.pingCheck('database'),
-      () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
-    ]);
-  }
+    @Get()
+    @HealthCheck()
+    check() {
+        return this.health.check([
+            () => this.db.pingCheck('database'),
+            () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
+        ]);
+    }
 
-  @Get('ready')
-  ready() {
-    return { status: 'ok' };
-  }
+    @Get('ready')
+    ready() {
+        return { status: 'ok' };
+    }
 
-  @Get('live')
-  live() {
-    return { status: 'ok' };
-  }
+    @Get('live')
+    live() {
+        return { status: 'ok' };
+    }
 }
 ```
 
@@ -172,59 +177,67 @@ export class HealthController {
 import { Injectable, LoggerService } from '@nestjs/common';
 
 interface LogEntry {
-  level: string;
-  message: string;
-  timestamp: string;
-  context?: string;
-  trace?: string;
-  meta?: Record<string, unknown>;
+    level: string;
+    message: string;
+    timestamp: string;
+    context?: string;
+    trace?: string;
+    meta?: Record<string, unknown>;
 }
 
 @Injectable()
 export class StructuredLogger implements LoggerService {
-  private formatMessage(entry: LogEntry): string {
-    return JSON.stringify(entry);
-  }
-
-  log(message: string, context?: string, meta?: Record<string, unknown>) {
-    console.log(this.formatMessage({
-      level: 'info',
-      message,
-      timestamp: new Date().toISOString(),
-      context,
-      meta,
-    }));
-  }
-
-  error(message: string, trace?: string, context?: string) {
-    console.error(this.formatMessage({
-      level: 'error',
-      message,
-      timestamp: new Date().toISOString(),
-      context,
-      trace,
-    }));
-  }
-
-  warn(message: string, context?: string) {
-    console.warn(this.formatMessage({
-      level: 'warn',
-      message,
-      timestamp: new Date().toISOString(),
-      context,
-    }));
-  }
-
-  debug(message: string, context?: string) {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(this.formatMessage({
-        level: 'debug',
-        message,
-        timestamp: new Date().toISOString(),
-        context,
-      }));
+    private formatMessage(entry: LogEntry): string {
+        return JSON.stringify(entry);
     }
-  }
+
+    log(message: string, context?: string, meta?: Record<string, unknown>) {
+        console.log(
+            this.formatMessage({
+                level: 'info',
+                message,
+                timestamp: new Date().toISOString(),
+                context,
+                meta,
+            })
+        );
+    }
+
+    error(message: string, trace?: string, context?: string) {
+        console.error(
+            this.formatMessage({
+                level: 'error',
+                message,
+                timestamp: new Date().toISOString(),
+                context,
+                trace,
+            })
+        );
+    }
+
+    warn(message: string, context?: string) {
+        console.warn(
+            this.formatMessage({
+                level: 'warn',
+                message,
+                timestamp: new Date().toISOString(),
+                context,
+            })
+        );
+    }
+
+    debug(message: string, context?: string) {
+        if (process.env.NODE_ENV === 'development') {
+            console.debug(
+                this.formatMessage({
+                    level: 'debug',
+                    message,
+                    timestamp: new Date().toISOString(),
+                    context,
+                })
+            );
+        }
+    }
 }
 ```
 
@@ -238,34 +251,36 @@ import { tap } from 'rxjs/operators';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
-    const { method, url, ip } = request;
-    const userAgent = request.headers['user-agent'];
-    const now = Date.now();
+    intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+        const request = context.switchToHttp().getRequest();
+        const { method, url, ip } = request;
+        const userAgent = request.headers['user-agent'];
+        const now = Date.now();
 
-    return next.handle().pipe(
-      tap(() => {
-        const response = context.switchToHttp().getResponse();
-        const { statusCode } = response;
-        const duration = Date.now() - now;
+        return next.handle().pipe(
+            tap(() => {
+                const response = context.switchToHttp().getResponse();
+                const { statusCode } = response;
+                const duration = Date.now() - now;
 
-        console.log(JSON.stringify({
-          level: 'info',
-          message: 'HTTP Request',
-          timestamp: new Date().toISOString(),
-          meta: {
-            method,
-            url,
-            statusCode,
-            duration,
-            ip,
-            userAgent,
-          },
-        }));
-      }),
-    );
-  }
+                console.log(
+                    JSON.stringify({
+                        level: 'info',
+                        message: 'HTTP Request',
+                        timestamp: new Date().toISOString(),
+                        meta: {
+                            method,
+                            url,
+                            statusCode,
+                            duration,
+                            ip,
+                            userAgent,
+                        },
+                    })
+                );
+            })
+        );
+    }
 }
 ```
 
@@ -278,62 +293,62 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class AuditService {
-  constructor(private prisma: PrismaService) {}
+    constructor(private prisma: PrismaService) {}
 
-  async log(params: {
-    action: string;
-    userId?: string;
-    documentId?: string;
-    ipAddress?: string;
-    userAgent?: string;
-    details?: Record<string, unknown>;
-  }) {
-    return this.prisma.auditLog.create({
-      data: {
-        action: params.action,
-        userId: params.userId,
-        documentId: params.documentId,
-        ipAddress: params.ipAddress,
-        userAgent: params.userAgent,
-        details: params.details || {},
-      },
-    });
-  }
-
-  async query(params: {
-    userId?: string;
-    documentId?: string;
-    action?: string;
-    startDate?: Date;
-    endDate?: Date;
-    page?: number;
-    limit?: number;
-  }) {
-    const { page = 1, limit = 50 } = params;
-    const skip = (page - 1) * limit;
-
-    const where: any = {};
-    if (params.userId) where.userId = params.userId;
-    if (params.documentId) where.documentId = params.documentId;
-    if (params.action) where.action = params.action;
-    if (params.startDate || params.endDate) {
-      where.createdAt = {};
-      if (params.startDate) where.createdAt.gte = params.startDate;
-      if (params.endDate) where.createdAt.lte = params.endDate;
+    async log(params: {
+        action: string;
+        userId?: string;
+        documentId?: string;
+        ipAddress?: string;
+        userAgent?: string;
+        details?: Record<string, unknown>;
+    }) {
+        return this.prisma.auditLog.create({
+            data: {
+                action: params.action,
+                userId: params.userId,
+                documentId: params.documentId,
+                ipAddress: params.ipAddress,
+                userAgent: params.userAgent,
+                details: params.details || {},
+            },
+        });
     }
 
-    const [logs, total] = await Promise.all([
-      this.prisma.auditLog.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.auditLog.count({ where }),
-    ]);
+    async query(params: {
+        userId?: string;
+        documentId?: string;
+        action?: string;
+        startDate?: Date;
+        endDate?: Date;
+        page?: number;
+        limit?: number;
+    }) {
+        const { page = 1, limit = 50 } = params;
+        const skip = (page - 1) * limit;
 
-    return { logs, meta: { page, limit, total } };
-  }
+        const where: any = {};
+        if (params.userId) where.userId = params.userId;
+        if (params.documentId) where.documentId = params.documentId;
+        if (params.action) where.action = params.action;
+        if (params.startDate || params.endDate) {
+            where.createdAt = {};
+            if (params.startDate) where.createdAt.gte = params.startDate;
+            if (params.endDate) where.createdAt.lte = params.endDate;
+        }
+
+        const [logs, total] = await Promise.all([
+            this.prisma.auditLog.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.auditLog.count({ where }),
+        ]);
+
+        return { logs, meta: { page, limit, total } };
+    }
 }
 ```
 
@@ -341,14 +356,14 @@ export class AuditService {
 
 ### 告警规则
 
-| 指标 | 阈值 | 严重级别 |
-|------|------|----------|
-| 错误率 | > 1% | 高 |
-| 响应时间 | > 2s | 中 |
-| CPU 使用 | > 80% | 中 |
-| 内存使用 | > 85% | 中 |
-| 磁盘使用 | > 90% | 高 |
-| 数据库连接 | > 80% | 中 |
+| 指标       | 阈值  | 严重级别 |
+| ---------- | ----- | -------- |
+| 错误率     | > 1%  | 高       |
+| 响应时间   | > 2s  | 中       |
+| CPU 使用   | > 80% | 中       |
+| 内存使用   | > 85% | 中       |
+| 磁盘使用   | > 90% | 高       |
+| 数据库连接 | > 80% | 中       |
 
 ### Slack 通知
 
@@ -359,31 +374,33 @@ import { WebClient } from '@slack/web-api';
 const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 
 export async function sendAlert(params: {
-  level: 'info' | 'warning' | 'critical';
-  title: string;
-  message: string;
-  meta?: Record<string, unknown>;
+    level: 'info' | 'warning' | 'critical';
+    title: string;
+    message: string;
+    meta?: Record<string, unknown>;
 }) {
-  const color = {
-    info: '#36a64f',
-    warning: '#ff9900',
-    critical: '#ff0000',
-  }[params.level];
+    const color = {
+        info: '#36a64f',
+        warning: '#ff9900',
+        critical: '#ff0000',
+    }[params.level];
 
-  await slack.chat.postMessage({
-    channel: process.env.SLACK_ALERT_CHANNEL!,
-    attachments: [{
-      color,
-      title: params.title,
-      text: params.message,
-      fields: Object.entries(params.meta || {}).map(([key, value]) => ({
-        title: key,
-        value: String(value),
-        short: true,
-      })),
-      ts: String(Math.floor(Date.now() / 1000)),
-    }],
-  });
+    await slack.chat.postMessage({
+        channel: process.env.SLACK_ALERT_CHANNEL!,
+        attachments: [
+            {
+                color,
+                title: params.title,
+                text: params.message,
+                fields: Object.entries(params.meta || {}).map(([key, value]) => ({
+                    title: key,
+                    value: String(value),
+                    short: true,
+                })),
+                ts: String(Math.floor(Date.now() / 1000)),
+            },
+        ],
+    });
 }
 ```
 
@@ -396,24 +413,24 @@ export async function sendAlert(params: {
 version: '3.8'
 
 services:
-  prometheus:
-    image: prom/prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    prometheus:
+        image: prom/prometheus
+        ports:
+            - '9090:9090'
+        volumes:
+            - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
-  grafana:
-    image: grafana/grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana_data:/var/lib/grafana
+    grafana:
+        image: grafana/grafana
+        ports:
+            - '3000:3000'
+        environment:
+            - GF_SECURITY_ADMIN_PASSWORD=admin
+        volumes:
+            - grafana_data:/var/lib/grafana
 
 volumes:
-  grafana_data:
+    grafana_data:
 ```
 
 ### 关键指标

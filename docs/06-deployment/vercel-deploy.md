@@ -11,12 +11,12 @@
 ```json
 // package.json
 {
-  "scripts": {
-    "dev": "next dev --turbo",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint ."
-  }
+    "scripts": {
+        "dev": "next dev --turbo",
+        "build": "next build",
+        "start": "next start",
+        "lint": "eslint ."
+    }
 }
 ```
 
@@ -27,47 +27,47 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // 输出配置
-  output: 'standalone',
+    // 输出配置
+    output: 'standalone',
 
-  // 环境变量
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
-  },
+    // 环境变量
+    env: {
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+        NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
+    },
 
-  // 图片优化
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**.amazonaws.com',
-      },
-    ],
-  },
-
-  // 安全头
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
+    // 图片优化
+    images: {
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: '**.amazonaws.com',
+            },
         ],
-      },
-    ];
-  },
+    },
+
+    // 安全头
+    async headers() {
+        return [
+            {
+                source: '/:path*',
+                headers: [
+                    {
+                        key: 'X-DNS-Prefetch-Control',
+                        value: 'on',
+                    },
+                    {
+                        key: 'X-Frame-Options',
+                        value: 'SAMEORIGIN',
+                    },
+                    {
+                        key: 'X-Content-Type-Options',
+                        value: 'nosniff',
+                    },
+                ],
+            },
+        ];
+    },
 };
 
 export default nextConfig;
@@ -104,26 +104,26 @@ vercel --prod
 ```json
 // vercel.json
 {
-  "buildCommand": "pnpm build",
-  "devCommand": "pnpm dev",
-  "installCommand": "pnpm install",
-  "framework": "nextjs",
-  "regions": ["sfo1", "iad1"],
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@api-url",
-    "NEXT_PUBLIC_WS_URL": "@ws-url"
-  },
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
+    "buildCommand": "pnpm build",
+    "devCommand": "pnpm dev",
+    "installCommand": "pnpm install",
+    "framework": "nextjs",
+    "regions": ["sfo1", "iad1"],
+    "env": {
+        "NEXT_PUBLIC_API_URL": "@api-url",
+        "NEXT_PUBLIC_WS_URL": "@ws-url"
+    },
+    "headers": [
         {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }
 ```
 
@@ -132,27 +132,28 @@ vercel --prod
 ### 配置方式
 
 1. **Vercel Dashboard**
-   - 进入项目设置
-   - 点击 "Environment Variables"
-   - 添加变量
+    - 进入项目设置
+    - 点击 "Environment Variables"
+    - 添加变量
 
 2. **Vercel CLI**
-   ```bash
-   # 添加环境变量
-   vercel env add NEXT_PUBLIC_API_URL
 
-   # 拉取环境变量
-   vercel env pull .env.local
-   ```
+    ```bash
+    # 添加环境变量
+    vercel env add NEXT_PUBLIC_API_URL
+
+    # 拉取环境变量
+    vercel env pull .env.local
+    ```
 
 3. **vercel.json**
-   ```json
-   {
-     "env": {
-       "NEXT_PUBLIC_API_URL": "@api-url"
-     }
-   }
-   ```
+    ```json
+    {
+        "env": {
+            "NEXT_PUBLIC_API_URL": "@api-url"
+        }
+    }
+    ```
 
 ### 环境变量列表
 
@@ -207,13 +208,13 @@ https://<commit-sha>-<project>.vercel.app
 ```json
 // vercel.json
 {
-  "git": {
-    "deploymentEnabled": {
-      "main": true,
-      "develop": true,
-      "*": false
+    "git": {
+        "deploymentEnabled": {
+            "main": true,
+            "develop": true,
+            "*": false
+        }
     }
-  }
 }
 ```
 
@@ -224,10 +225,10 @@ https://<commit-sha>-<project>.vercel.app
 ```typescript
 // next.config.ts
 const nextConfig = {
-  images: {
-    formats: ['image/avif', 'image/webp'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
-  },
+    images: {
+        formats: ['image/avif', 'image/webp'],
+        deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    },
 };
 ```
 
@@ -238,7 +239,7 @@ const nextConfig = {
 export const runtime = 'edge';
 
 export async function GET() {
-  return Response.json({ message: 'Hello from Edge' });
+    return Response.json({ message: 'Hello from Edge' });
 }
 ```
 
@@ -315,12 +316,14 @@ vercel logs <deployment-url>
 ```typescript
 // lib/logger.ts
 export function log(level: string, message: string, data?: any) {
-  console.log(JSON.stringify({
-    level,
-    message,
-    timestamp: new Date().toISOString(),
-    ...data,
-  }));
+    console.log(
+        JSON.stringify({
+            level,
+            message,
+            timestamp: new Date().toISOString(),
+            ...data,
+        })
+    );
 }
 ```
 
@@ -329,21 +332,22 @@ export function log(level: string, message: string, data?: any) {
 ### 常见问题
 
 1. **构建失败**
-   ```bash
-   # 本地测试构建
-   pnpm build
 
-   # 检查 Node 版本
-   node --version
-   ```
+    ```bash
+    # 本地测试构建
+    pnpm build
+
+    # 检查 Node 版本
+    node --version
+    ```
 
 2. **环境变量未生效**
-   - 确认变量名以 `NEXT_PUBLIC_` 开头
-   - 重新部署项目
+    - 确认变量名以 `NEXT_PUBLIC_` 开头
+    - 重新部署项目
 
 3. **WebSocket 连接失败**
-   - Vercel Serverless 不支持 WebSocket
-   - 使用外部 WebSocket 服务（如 Railway）
+    - Vercel Serverless 不支持 WebSocket
+    - 使用外部 WebSocket 服务（如 Railway）
 
 ### 调试模式
 

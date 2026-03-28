@@ -14,20 +14,17 @@ import dynamic from 'next/dynamic';
 import { DocumentSkeleton } from '@/components/common/skeleton';
 
 // 动态导入编辑器（按需加载）
-const DocumentEditor = dynamic(
-  () => import('@/components/editor/editor'),
-  {
+const DocumentEditor = dynamic(() => import('@/components/editor/editor'), {
     loading: () => <DocumentSkeleton />,
     ssr: false, // 编辑器不支持 SSR
-  }
-);
+});
 
 export default function DocumentPage({ params }: { params: { id: string } }) {
-  return (
-    <main className="h-screen">
-      <DocumentEditor documentId={params.id} />
-    </main>
-  );
+    return (
+        <main className="h-screen">
+            <DocumentEditor documentId={params.id} />
+        </main>
+    );
 }
 ```
 
@@ -38,36 +35,34 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
 import { useState, useEffect, ComponentType } from 'react';
 
 export function useLazyComponent<T>(
-  loader: () => Promise<{ default: ComponentType<T> }>,
-  condition: boolean = true
+    loader: () => Promise<{ default: ComponentType<T> }>,
+    condition: boolean = true
 ): ComponentType<T> | null {
-  const [Component, setComponent] = useState<ComponentType<T> | null>(null);
+    const [Component, setComponent] = useState<ComponentType<T> | null>(null);
 
-  useEffect(() => {
-    if (condition && !Component) {
-      loader().then((mod) => setComponent(() => mod.default));
-    }
-  }, [condition, Component, loader]);
+    useEffect(() => {
+        if (condition && !Component) {
+            loader().then((mod) => setComponent(() => mod.default));
+        }
+    }, [condition, Component, loader]);
 
-  return Component;
+    return Component;
 }
 
 // 使用示例
 function DocumentPage() {
-  const [showVersionHistory, setShowVersionHistory] = useState(false);
-  const VersionHistory = useLazyComponent(
-    () => import('@/components/version/version-list'),
-    showVersionHistory
-  );
+    const [showVersionHistory, setShowVersionHistory] = useState(false);
+    const VersionHistory = useLazyComponent(
+        () => import('@/components/version/version-list'),
+        showVersionHistory
+    );
 
-  return (
-    <div>
-      <Button onClick={() => setShowVersionHistory(true)}>
-        View History
-      </Button>
-      {showVersionHistory && VersionHistory && <VersionHistory />}
-    </div>
-  );
+    return (
+        <div>
+            <Button onClick={() => setShowVersionHistory(true)}>View History</Button>
+            {showVersionHistory && VersionHistory && <VersionHistory />}
+        </div>
+    );
 }
 ```
 
@@ -76,11 +71,11 @@ function DocumentPage() {
 ```typescript
 // next.config.ts
 const nextConfig = {
-  experimental: {
-    turbo: {
-      resolveExtensions: ['.tsx', '.ts', '.jsx', '.js'],
+    experimental: {
+        turbo: {
+            resolveExtensions: ['.tsx', '.ts', '.jsx', '.js'],
+        },
     },
-  },
 };
 
 export default nextConfig;
@@ -96,49 +91,46 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { useRef } from 'react';
 
 interface VirtualizedContentProps {
-  paragraphs: Paragraph[];
-  editor: Editor;
+    paragraphs: Paragraph[];
+    editor: Editor;
 }
 
 export function VirtualizedContent({ paragraphs, editor }: VirtualizedContentProps) {
-  const parentRef = useRef<HTMLDivElement>(null);
+    const parentRef = useRef<HTMLDivElement>(null);
 
-  const virtualizer = useVirtualizer({
-    count: paragraphs.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 100, // 估计每段高度
-    overscan: 5, // 预渲染数量
-  });
+    const virtualizer = useVirtualizer({
+        count: paragraphs.length,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 100, // 估计每段高度
+        overscan: 5, // 预渲染数量
+    });
 
-  return (
-    <div ref={parentRef} className="h-full overflow-auto">
-      <div
-        style={{
-          height: `${virtualizer.getTotalSize()}px`,
-          position: 'relative',
-        }}
-      >
-        {virtualizer.getVirtualItems().map((virtualItem) => (
-          <div
-            key={virtualItem.key}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: `${virtualItem.size}px`,
-              transform: `translateY(${virtualItem.start}px)`,
-            }}
-          >
-            <ParagraphBlock
-              paragraph={paragraphs[virtualItem.index]}
-              editor={editor}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+    return (
+        <div ref={parentRef} className="h-full overflow-auto">
+            <div
+                style={{
+                    height: `${virtualizer.getTotalSize()}px`,
+                    position: 'relative',
+                }}
+            >
+                {virtualizer.getVirtualItems().map((virtualItem) => (
+                    <div
+                        key={virtualItem.key}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: `${virtualItem.size}px`,
+                            transform: `translateY(${virtualItem.start}px)`,
+                        }}
+                    >
+                        <ParagraphBlock paragraph={paragraphs[virtualItem.index]} editor={editor} />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 }
 ```
 
@@ -150,51 +142,51 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { useRef } from 'react';
 
 interface Version {
-  id: string;
-  message: string;
-  createdAt: Date;
-  creator: User;
+    id: string;
+    message: string;
+    createdAt: Date;
+    creator: User;
 }
 
 interface VersionListProps {
-  versions: Version[];
-  onSelect: (id: string) => void;
+    versions: Version[];
+    onSelect: (id: string) => void;
 }
 
 export function VersionListVirtualized({ versions, onSelect }: VersionListProps) {
-  const parentRef = useRef<HTMLDivElement>(null);
+    const parentRef = useRef<HTMLDivElement>(null);
 
-  const virtualizer = useVirtualizer({
-    count: versions.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 80,
-    overscan: 10,
-  });
+    const virtualizer = useVirtualizer({
+        count: versions.length,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 80,
+        overscan: 10,
+    });
 
-  return (
-    <div ref={parentRef} className="h-[600px] overflow-auto">
-      <div style={{ height: `${virtualizer.getTotalSize()}px` }}>
-        {virtualizer.getVirtualItems().map((virtualRow) => {
-          const version = versions[virtualRow.index];
-          return (
-            <div
-              key={virtualRow.key}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: `${virtualRow.size}px`,
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
-            >
-              <VersionItem version={version} onClick={() => onSelect(version.id)} />
+    return (
+        <div ref={parentRef} className="h-[600px] overflow-auto">
+            <div style={{ height: `${virtualizer.getTotalSize()}px` }}>
+                {virtualizer.getVirtualItems().map((virtualRow) => {
+                    const version = versions[virtualRow.index];
+                    return (
+                        <div
+                            key={virtualRow.key}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: `${virtualRow.size}px`,
+                                transform: `translateY(${virtualRow.start}px)`,
+                            }}
+                        >
+                            <VersionItem version={version} onClick={() => onSelect(version.id)} />
+                        </div>
+                    );
+                })}
             </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+        </div>
+    );
 }
 ```
 
@@ -210,23 +202,21 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 60 * 1000, // 1 分钟
-            gcTime: 5 * 60 * 1000, // 5 分钟
-            retry: 1,
-            refetchOnWindowFocus: false,
-          },
-        },
-      })
-  );
+    const [queryClient] = useState(
+        () =>
+            new QueryClient({
+                defaultOptions: {
+                    queries: {
+                        staleTime: 60 * 1000, // 1 分钟
+                        gcTime: 5 * 60 * 1000, // 5 分钟
+                        retry: 1,
+                        refetchOnWindowFocus: false,
+                    },
+                },
+            })
+    );
 
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 ```
 
@@ -238,29 +228,29 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api/client';
 
 export function useDocument(documentId: string) {
-  return useQuery({
-    queryKey: ['document', documentId],
-    queryFn: () => api.get(`/documents/${documentId}`).then((r) => r.data),
-    staleTime: 30 * 1000, // 30 秒
-    gcTime: 10 * 60 * 1000, // 10 分钟
-  });
+    return useQuery({
+        queryKey: ['document', documentId],
+        queryFn: () => api.get(`/documents/${documentId}`).then((r) => r.data),
+        staleTime: 30 * 1000, // 30 秒
+        gcTime: 10 * 60 * 1000, // 10 分钟
+    });
 }
 
 export function useDocumentMutations() {
-  const queryClient = useQueryClient();
+    const queryClient = useQueryClient();
 
-  const updateDocument = useMutation({
-    mutationFn: (data: { id: string; title?: string }) =>
-      api.patch(`/documents/${data.id}`, data),
-    onSuccess: (_, variables) => {
-      // 更新缓存
-      queryClient.invalidateQueries({
-        queryKey: ['document', variables.id],
-      });
-    },
-  });
+    const updateDocument = useMutation({
+        mutationFn: (data: { id: string; title?: string }) =>
+            api.patch(`/documents/${data.id}`, data),
+        onSuccess: (_, variables) => {
+            // 更新缓存
+            queryClient.invalidateQueries({
+                queryKey: ['document', variables.id],
+            });
+        },
+    });
 
-  return { updateDocument };
+    return { updateDocument };
 }
 ```
 
@@ -319,15 +309,15 @@ import { debounce } from 'lodash-es';
 
 // 自动保存防抖
 export const debouncedSave = debounce(
-  async (documentId: string, content: string) => {
-    await saveDocument(documentId, content);
-  },
-  2000 // 2 秒延迟
+    async (documentId: string, content: string) => {
+        await saveDocument(documentId, content);
+    },
+    2000 // 2 秒延迟
 );
 
 // 编辑器中使用
 editor.on('update', () => {
-  debouncedSave(documentId, editor.getHTML());
+    debouncedSave(documentId, editor.getHTML());
 });
 ```
 
@@ -339,11 +329,11 @@ import * as Y from 'yjs';
 
 // 批量应用更新
 export function batchApplyUpdates(ydoc: Y.Doc, updates: Uint8Array[]): void {
-  Y.transact(ydoc, () => {
-    updates.forEach((update) => {
-      Y.applyUpdate(ydoc, update);
+    Y.transact(ydoc, () => {
+        updates.forEach((update) => {
+            Y.applyUpdate(ydoc, update);
+        });
     });
-  });
 }
 ```
 
@@ -354,38 +344,35 @@ export function batchApplyUpdates(ydoc: Y.Doc, updates: Uint8Array[]): void {
 import { useEffect, useRef, useState } from 'react';
 
 interface IncrementalRenderProps {
-  content: string;
-  chunkSize?: number;
+    content: string;
+    chunkSize?: number;
 }
 
-export function IncrementalRender({
-  content,
-  chunkSize = 10000,
-}: IncrementalRenderProps) {
-  const [rendered, setRendered] = useState('');
-  const indexRef = useRef(0);
+export function IncrementalRender({ content, chunkSize = 10000 }: IncrementalRenderProps) {
+    const [rendered, setRendered] = useState('');
+    const indexRef = useRef(0);
 
-  useEffect(() => {
-    if (content.length <= chunkSize) {
-      setRendered(content);
-      return;
-    }
+    useEffect(() => {
+        if (content.length <= chunkSize) {
+            setRendered(content);
+            return;
+        }
 
-    const renderChunk = () => {
-      const nextIndex = Math.min(indexRef.current + chunkSize, content.length);
-      setRendered(content.slice(0, nextIndex));
-      indexRef.current = nextIndex;
+        const renderChunk = () => {
+            const nextIndex = Math.min(indexRef.current + chunkSize, content.length);
+            setRendered(content.slice(0, nextIndex));
+            indexRef.current = nextIndex;
 
-      if (nextIndex < content.length) {
-        requestIdleCallback(renderChunk);
-      }
-    };
+            if (nextIndex < content.length) {
+                requestIdleCallback(renderChunk);
+            }
+        };
 
-    indexRef.current = 0;
-    renderChunk();
-  }, [content, chunkSize]);
+        indexRef.current = 0;
+        renderChunk();
+    }, [content, chunkSize]);
 
-  return <div dangerouslySetInnerHTML={{ __html: rendered }} />;
+    return <div dangerouslySetInnerHTML={{ __html: rendered }} />;
 }
 ```
 
@@ -398,25 +385,25 @@ export function IncrementalRender({
 import Image from 'next/image';
 
 interface OptimizedImageProps {
-  src: string;
-  alt: string;
-  width: number;
-  height: number;
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
 }
 
 export function OptimizedImage({ src, alt, width, height }: OptimizedImageProps) {
-  return (
-    <Image
-      src={src}
-      alt={alt}
-      width={width}
-      height={height}
-      loading="lazy"
-      placeholder="blur"
-      blurDataURL="data:image/png;base64,..."
-      sizes="(max-width: 768px) 100vw, 50vw"
-    />
-  );
+    return (
+        <Image
+            src={src}
+            alt={alt}
+            width={width}
+            height={height}
+            loading="lazy"
+            placeholder="blur"
+            blurDataURL="data:image/png;base64,..."
+            sizes="(max-width: 768px) 100vw, 50vw"
+        />
+    );
 }
 ```
 
@@ -427,49 +414,49 @@ export function OptimizedImage({ src, alt, width, height }: OptimizedImageProps)
 import { useState, useRef, useEffect } from 'react';
 
 interface LazyImageProps {
-  src: string;
-  alt: string;
+    src: string;
+    alt: string;
 }
 
 export function LazyImage({ src, alt }: LazyImageProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(false);
-  const imgRef = useRef<HTMLDivElement>(null);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [isInView, setIsInView] = useState(false);
+    const imgRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-          observer.disconnect();
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsInView(true);
+                    observer.disconnect();
+                }
+            },
+            { rootMargin: '100px' }
+        );
+
+        if (imgRef.current) {
+            observer.observe(imgRef.current);
         }
-      },
-      { rootMargin: '100px' }
+
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <div ref={imgRef} className="relative aspect-video bg-gray-100">
+            {isInView && (
+                <img
+                    src={src}
+                    alt={alt}
+                    onLoad={() => setIsLoaded(true)}
+                    className={cn(
+                        'transition-opacity duration-300',
+                        isLoaded ? 'opacity-100' : 'opacity-0'
+                    )}
+                />
+            )}
+            {!isLoaded && <Skeleton />}
+        </div>
     );
-
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div ref={imgRef} className="relative aspect-video bg-gray-100">
-      {isInView && (
-        <img
-          src={src}
-          alt={alt}
-          onLoad={() => setIsLoaded(true)}
-          className={cn(
-            'transition-opacity duration-300',
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          )}
-        />
-      )}
-      {!isLoaded && <Skeleton />}
-    </div>
-  );
 }
 ```
 
@@ -500,9 +487,9 @@ debounce();
 ```typescript
 // next.config.ts
 const nextConfig = {
-  experimental: {
-    optimizePackageImports: ['lucide-react', '@tiptap/core'],
-  },
+    experimental: {
+        optimizePackageImports: ['lucide-react', '@tiptap/core'],
+    },
 };
 
 export default nextConfig;
@@ -518,15 +505,15 @@ import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html>
-      <body>
-        {children}
-        <Analytics />
-        <SpeedInsights />
-      </body>
-    </html>
-  );
+    return (
+        <html>
+            <body>
+                {children}
+                <Analytics />
+                <SpeedInsights />
+            </body>
+        </html>
+    );
 }
 ```
 
@@ -535,19 +522,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 ```typescript
 // lib/monitoring/performance.ts
 export function measurePerformance(name: string) {
-  const start = performance.now();
+    const start = performance.now();
 
-  return {
-    end: () => {
-      const duration = performance.now() - start;
-      console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
+    return {
+        end: () => {
+            const duration = performance.now() - start;
+            console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
 
-      // 上报
-      if (duration > 1000) {
-        reportSlowOperation(name, duration);
-      }
-    },
-  };
+            // 上报
+            if (duration > 1000) {
+                reportSlowOperation(name, duration);
+            }
+        },
+    };
 }
 
 // 使用

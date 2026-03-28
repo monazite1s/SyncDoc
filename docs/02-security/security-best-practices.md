@@ -35,14 +35,14 @@ jobs:
 ```json
 // tsconfig.json
 {
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
-  }
+    "compilerOptions": {
+        "strict": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true
+    }
 }
 ```
 
@@ -59,7 +59,7 @@ const data = JSON.parse(jsonString);
 
 // 使用正则表达式验证格式
 if (/^[a-zA-Z0-9]+$/.test(userInput)) {
-  // 处理
+    // 处理
 }
 ```
 
@@ -75,22 +75,15 @@ const documentIdSchema = z.string().cuid();
 
 // 用户输入验证
 const createDocumentSchema = z.object({
-  title: z
-    .string()
-    .min(1, 'Title is required')
-    .max(200, 'Title too long')
-    .trim(),
-  content: z.string().max(1000000).optional(), // 限制大小
+    title: z.string().min(1, 'Title is required').max(200, 'Title too long').trim(),
+    content: z.string().max(1000000).optional(), // 限制大小
 });
 
 // 版本消息验证
 const versionMessageSchema = z
-  .string()
-  .max(500)
-  .refine(
-    (val) => !/<script|javascript:|on\w+=/i.test(val),
-    'Invalid characters in message'
-  );
+    .string()
+    .max(500)
+    .refine((val) => !/<script|javascript:|on\w+=/i.test(val), 'Invalid characters in message');
 ```
 
 #### SQL 注入防护
@@ -98,9 +91,9 @@ const versionMessageSchema = z
 ```typescript
 // ✅ Prisma 自动参数化
 const user = await prisma.user.findFirst({
-  where: {
-    email: userInput, // 自动转义
-  },
+    where: {
+        email: userInput, // 自动转义
+    },
 });
 
 // ✅ 原始查询使用参数化
@@ -141,20 +134,20 @@ import DOMPurify from 'dompurify';
 ```typescript
 // helmet CSP 配置
 app.use(
-  helmet.contentSecurityPolicy({
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:'],
-      connectSrc: ["'self'", 'wss://your-domain.com'],
-      fontSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      frameAncestors: ["'none'"],
-      formAction: ["'self'"],
-      baseUri: ["'self'"],
-    },
-  })
+    helmet.contentSecurityPolicy({
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", 'data:'],
+            connectSrc: ["'self'", 'wss://your-domain.com'],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            frameAncestors: ["'none'"],
+            formAction: ["'self'"],
+            baseUri: ["'self'"],
+        },
+    })
 );
 ```
 
@@ -193,15 +186,12 @@ getCsrfToken(@Req() req: Request) {
 @Controller('documents')
 @UseGuards(JwtAuthGuard)
 export class DocumentsController {
-  // 权限检查
-  @Get(':id')
-  async getDocument(
-    @Param('id') id: string,
-    @CurrentUser() user: User,
-  ) {
-    await this.accessControl.checkAccess(id, user.id, 'read');
-    return this.documentsService.findById(id);
-  }
+    // 权限检查
+    @Get(':id')
+    async getDocument(@Param('id') id: string, @CurrentUser() user: User) {
+        await this.accessControl.checkAccess(id, user.id, 'read');
+        return this.documentsService.findById(id);
+    }
 }
 ```
 
@@ -210,22 +200,18 @@ export class DocumentsController {
 ```typescript
 // 不同端点不同限制
 const rateLimits = {
-  login: { limit: 5, window: 300 },      // 5次/5分钟
-  api: { limit: 100, window: 60 },        // 100次/分钟
-  websocket: { limit: 1000, window: 60 }, // 1000次/分钟
+    login: { limit: 5, window: 300 }, // 5次/5分钟
+    api: { limit: 100, window: 60 }, // 100次/分钟
+    websocket: { limit: 1000, window: 60 }, // 1000次/分钟
 };
 
 // Redis 实现
-async function checkRateLimit(
-  key: string,
-  limit: number,
-  window: number,
-): Promise<boolean> {
-  const current = await redis.incr(key);
-  if (current === 1) {
-    await redis.expire(key, window);
-  }
-  return current <= limit;
+async function checkRateLimit(key: string, limit: number, window: number): Promise<boolean> {
+    const current = await redis.incr(key);
+    if (current === 1) {
+        await redis.expire(key, window);
+    }
+    return current <= limit;
 }
 ```
 
@@ -262,34 +248,34 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // 不要暴露敏感错误信息
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse();
+    catch(exception: unknown, host: ArgumentsHost) {
+        const ctx = host.switchToHttp();
+        const response = ctx.getResponse();
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal server error';
+        let status = HttpStatus.INTERNAL_SERVER_ERROR;
+        let message = 'Internal server error';
 
-    if (exception instanceof HttpException) {
-      status = exception.getStatus();
-      const exceptionResponse = exception.getResponse();
+        if (exception instanceof HttpException) {
+            status = exception.getStatus();
+            const exceptionResponse = exception.getResponse();
 
-      // 在生产环境中隐藏详细错误
-      if (process.env.NODE_ENV === 'production') {
-        message = exception.message;
-      } else {
-        message = exceptionResponse;
-      }
+            // 在生产环境中隐藏详细错误
+            if (process.env.NODE_ENV === 'production') {
+                message = exception.message;
+            } else {
+                message = exceptionResponse;
+            }
+        }
+
+        // 记录错误但不暴露给用户
+        console.error(exception);
+
+        response.status(status).json({
+            statusCode: status,
+            message,
+            timestamp: new Date().toISOString(),
+        });
     }
-
-    // 记录错误但不暴露给用户
-    console.error(exception);
-
-    response.status(status).json({
-      statusCode: status,
-      message,
-      timestamp: new Date().toISOString(),
-    });
-  }
 }
 ```
 
@@ -300,21 +286,21 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 ```typescript
 // Hocuspocus 认证钩子
 const server = Server.configure({
-  async onAuthenticate({ token, documentName, request }) {
-    // 验证 token
-    const user = await verifyToken(token);
-    if (!user) {
-      throw new Error('Unauthorized');
-    }
+    async onAuthenticate({ token, documentName, request }) {
+        // 验证 token
+        const user = await verifyToken(token);
+        if (!user) {
+            throw new Error('Unauthorized');
+        }
 
-    // 检查权限
-    const hasAccess = await checkDocumentAccess(documentName, user.id);
-    if (!hasAccess) {
-      throw new Error('Access denied');
-    }
+        // 检查权限
+        const hasAccess = await checkDocumentAccess(documentName, user.id);
+        if (!hasAccess) {
+            throw new Error('Access denied');
+        }
 
-    return { user };
-  },
+        return { user };
+    },
 });
 ```
 
@@ -392,16 +378,16 @@ async getDocuments(@CurrentUser() user: User) {
 ```typescript
 // 日志中不记录敏感信息
 function sanitizeForLogging(data: any): any {
-  const sanitized = { ...data };
-  const sensitiveFields = ['password', 'token', 'secret', 'creditCard'];
+    const sanitized = { ...data };
+    const sensitiveFields = ['password', 'token', 'secret', 'creditCard'];
 
-  for (const field of sensitiveFields) {
-    if (sanitized[field]) {
-      sanitized[field] = '[REDACTED]';
+    for (const field of sensitiveFields) {
+        if (sanitized[field]) {
+            sanitized[field] = '[REDACTED]';
+        }
     }
-  }
 
-  return sanitized;
+    return sanitized;
 }
 
 // 使用
@@ -473,18 +459,18 @@ CMD ["node", "dist/main.js"]
 # GitHub Actions Secrets
 # 不要在代码中存储密钥
 env:
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
-  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
 # Kubernetes Secrets
 apiVersion: v1
 kind: Secret
 metadata:
-  name: app-secrets
+    name: app-secrets
 type: Opaque
 stringData:
-  DATABASE_URL: "postgresql://..."
-  JWT_SECRET: "..."
+    DATABASE_URL: 'postgresql://...'
+    JWT_SECRET: '...'
 ```
 
 ## 监控与审计
@@ -494,29 +480,25 @@ stringData:
 ```typescript
 // 记录安全相关事件
 const securityEvents = [
-  'login.success',
-  'login.failure',
-  'logout',
-  'password.change',
-  'role.change',
-  'document.access.denied',
-  'rate.limit.exceeded',
+    'login.success',
+    'login.failure',
+    'logout',
+    'password.change',
+    'role.change',
+    'document.access.denied',
+    'rate.limit.exceeded',
 ];
 
-async function logSecurityEvent(
-  event: string,
-  userId: string,
-  metadata: Record<string, any>,
-) {
-  await prisma.securityLog.create({
-    data: {
-      event,
-      userId,
-      ipAddress: metadata.ipAddress,
-      userAgent: metadata.userAgent,
-      details: metadata,
-    },
-  });
+async function logSecurityEvent(event: string, userId: string, metadata: Record<string, any>) {
+    await prisma.securityLog.create({
+        data: {
+            event,
+            userId,
+            ipAddress: metadata.ipAddress,
+            userAgent: metadata.userAgent,
+            details: metadata,
+        },
+    });
 }
 ```
 
@@ -525,16 +507,16 @@ async function logSecurityEvent(
 ```typescript
 // 检测异常行为
 async function detectAnomalousActivity(userId: string): Promise<boolean> {
-  const recentFailures = await redis.get(`login-failures:${userId}`);
+    const recentFailures = await redis.get(`login-failures:${userId}`);
 
-  // 5 分钟内超过 10 次失败
-  if (parseInt(recentFailures || '0') > 10) {
-    // 触发安全警报
-    await alertSecurityTeam(userId);
-    return true;
-  }
+    // 5 分钟内超过 10 次失败
+    if (parseInt(recentFailures || '0') > 10) {
+        // 触发安全警报
+        await alertSecurityTeam(userId);
+        return true;
+    }
 
-  return false;
+    return false;
 }
 ```
 

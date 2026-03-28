@@ -12,38 +12,38 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import configuration from './config/configuration';
 
 @Module({
-  imports: [
-    // Configuration
-    ConfigModule.forRoot({
-      isGlobal: true,
-      load: [configuration],
-    }),
+    imports: [
+        // Configuration
+        ConfigModule.forRoot({
+            isGlobal: true,
+            load: [configuration],
+        }),
 
-    // Database
-    PrismaModule,
+        // Database
+        PrismaModule,
 
-    // Feature modules
-    AuthModule,
-    DocumentsModule,
-    VersionsModule,
-    CollaborationModule,
-  ],
-  providers: [
-    // Global exception filter
-    {
-      provide: APP_FILTER,
-      useClass: GlobalExceptionFilter,
-    },
-    // Global response transformer
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: TransformInterceptor,
-    },
-    // 全局 JWT 认证守卫
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
-  ],
+        // Feature modules
+        AuthModule,
+        DocumentsModule,
+        VersionsModule,
+        CollaborationModule,
+    ],
+    providers: [
+        // Global exception filter
+        {
+            provide: APP_FILTER,
+            useClass: GlobalExceptionFilter,
+        },
+        // Global response transformer
+        {
+            provide: APP_INTERCEPTOR,
+            useClass: TransformInterceptor,
+        },
+        // 全局 JWT 认证守卫
+        {
+            provide: APP_GUARD,
+            useClass: JwtAuthGuard,
+        },
+    ],
 })
 export class AppModule {}

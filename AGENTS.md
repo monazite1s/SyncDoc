@@ -8,20 +8,20 @@
 
 ### 1.1 技术栈
 
-| 层级 | 技术 |
-|------|------|
+| 层级     | 技术                    |
+| -------- | ----------------------- |
 | 前端框架 | Next.js 15 (App Router) |
-| UI 框架 | React 19 |
-| 样式方案 | Tailwind CSS |
-| 编辑器 | Tiptap Editor |
-| 实时协作 | Yjs |
-| 状态管理 | Zustand |
-| 后端框架 | NestJS 11 |
-| ORM | Prisma |
-| 数据库 | PostgreSQL |
-| 缓存 | Redis |
-| 实时通信 | WebSocket (Socket.io) |
-| 认证 | JWT |
+| UI 框架  | React 19                |
+| 样式方案 | Tailwind CSS            |
+| 编辑器   | Tiptap Editor           |
+| 实时协作 | Yjs                     |
+| 状态管理 | Zustand                 |
+| 后端框架 | NestJS 11               |
+| ORM      | Prisma                  |
+| 数据库   | PostgreSQL              |
+| 缓存     | Redis                   |
+| 实时通信 | WebSocket (Socket.io)   |
+| 认证     | JWT                     |
 
 ### 1.2 Monorepo 结构
 
@@ -140,10 +140,10 @@ return { ...obj, field: value };
 ```typescript
 // ✅ 正确示例
 try {
-  await service.execute();
+    await service.execute();
 } catch (error) {
-  logger.error('操作失败', { context, error });
-  throw new UserFriendlyError('操作失败，请稍后重试');
+    logger.error('操作失败', { context, error });
+    throw new UserFriendlyError('操作失败，请稍后重试');
 }
 ```
 
@@ -174,11 +174,11 @@ try {
 
 ### 4.2 测试类型
 
-| 类型 | 说明 | 范围 |
-|------|------|------|
-| 单元测试 | 独立函数/组件 | utils, hooks, components |
-| 集成测试 | API 端点/数据库操作 | services, controllers |
-| E2E 测试 | 关键用户流程 | 完整业务场景 |
+| 类型     | 说明                | 范围                     |
+| -------- | ------------------- | ------------------------ |
+| 单元测试 | 独立函数/组件       | utils, hooks, components |
+| 集成测试 | API 端点/数据库操作 | services, controllers    |
+| E2E 测试 | 关键用户流程        | 完整业务场景             |
 
 ### 4.3 TDD 工作流
 
@@ -195,15 +195,15 @@ try {
 
 ### 5.1 可用 Agent 列表
 
-| Agent | 用途 | 使用时机 |
-|-------|------|----------|
-| `planner` | 实现计划 | 复杂功能、重构 |
-| `architect` | 系统设计 | 架构决策 |
-| `tdd-guide` | 测试驱动开发 | 新功能、Bug 修复 |
-| `code-reviewer` | 代码审查 | 编写代码后 |
-| `security-reviewer` | 安全分析 | 提交前 |
-| `build-error-resolver` | 构建错误修复 | 构建失败时 |
-| `e2e-runner` | E2E 测试 | 关键用户流程 |
+| Agent                  | 用途         | 使用时机         |
+| ---------------------- | ------------ | ---------------- |
+| `planner`              | 实现计划     | 复杂功能、重构   |
+| `architect`            | 系统设计     | 架构决策         |
+| `tdd-guide`            | 测试驱动开发 | 新功能、Bug 修复 |
+| `code-reviewer`        | 代码审查     | 编写代码后       |
+| `security-reviewer`    | 安全分析     | 提交前           |
+| `build-error-resolver` | 构建错误修复 | 构建失败时       |
+| `e2e-runner`           | E2E 测试     | 关键用户流程     |
 
 ### 5.2 Agent 使用场景
 
@@ -220,11 +220,13 @@ try {
 
 ```markdown
 # 正确：并行执行
+
 1. Agent 1: 认证模块安全分析
 2. Agent 2: 缓存系统性能审查
 3. Agent 3: 工具函数类型检查
 
 # 错误：不必要的串行
+
 先 Agent 1，再 Agent 2，再 Agent 3
 ```
 
@@ -273,11 +275,11 @@ docs/<文档内容>       # 文档更新
 
 ## 7. 语言规范
 
-| 场景 | 语言 |
-|------|------|
-| 思考过程 | 英文 |
-| 最终回答 | **中文** |
-| 代码注释 | **中文** |
+| 场景     | 语言               |
+| -------- | ------------------ |
+| 思考过程 | 英文               |
+| 最终回答 | **中文**           |
+| 代码注释 | **中文**           |
 | 提交信息 | 中文或遵循项目约定 |
 
 ### 代码注释示例
@@ -285,10 +287,10 @@ docs/<文档内容>       # 文档更新
 ```typescript
 // 计算用户积分总和
 function calculateTotalPoints(userId: string): number {
-  // 从数据库获取用户的所有积分记录
-  const records = await getPointRecords(userId);
-  // 累加并返回
-  return records.reduce((sum, r) => sum + r.points, 0);
+    // 从数据库获取用户的所有积分记录
+    const records = await getPointRecords(userId);
+    // 累加并返回
+    return records.reduce((sum, r) => sum + r.points, 0);
 }
 ```
 

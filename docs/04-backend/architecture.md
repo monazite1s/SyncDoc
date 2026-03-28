@@ -79,13 +79,13 @@
 
 ### 1.2 设计原则
 
-| 原则 | 说明 | 实现 |
-|------|------|------|
-| **模块化** | 高内聚低耦合，模块边界清晰 | NestJS Module 系统 |
-| **关注点分离** | 控制器、服务、数据访问分离 | MVC + Repository |
-| **依赖注入** | 控制反转，便于测试和扩展 | NestJS DI 容器 |
-| **事件驱动** | 异步处理，解耦业务逻辑 | EventEmitter + Redis Pub/Sub |
-| **安全默认** | 所有 API 默认需认证 | 全局 JWT 守卫 |
+| 原则           | 说明                       | 实现                         |
+| -------------- | -------------------------- | ---------------------------- |
+| **模块化**     | 高内聚低耦合，模块边界清晰 | NestJS Module 系统           |
+| **关注点分离** | 控制器、服务、数据访问分离 | MVC + Repository             |
+| **依赖注入**   | 控制反转，便于测试和扩展   | NestJS DI 容器               |
+| **事件驱动**   | 异步处理，解耦业务逻辑     | EventEmitter + Redis Pub/Sub |
+| **安全默认**   | 所有 API 默认需认证        | 全局 JWT 守卫                |
 
 ### 1.3 请求处理流程
 
@@ -120,27 +120,27 @@ HTTP Response
 
 ### 2.1 核心技术
 
-| 技术 | 版本 | 用途 | 选型理由 |
-|------|------|------|----------|
-| **NestJS** | 11+ | 后端框架 | 模块化，TypeScript 原生，依赖注入 |
-| **Hocuspocus** | 3.x | 协同网关 | Tiptap 官方，钩子式架构 |
-| **Prisma** | 6+ | ORM | 类型安全，迁移系统，查询优化 |
-| **TypeScript** | 5.5+ | 类型系统 | 类型安全，开发体验 |
+| 技术           | 版本 | 用途     | 选型理由                          |
+| -------------- | ---- | -------- | --------------------------------- |
+| **NestJS**     | 11+  | 后端框架 | 模块化，TypeScript 原生，依赖注入 |
+| **Hocuspocus** | 3.x  | 协同网关 | Tiptap 官方，钩子式架构           |
+| **Prisma**     | 6+   | ORM      | 类型安全，迁移系统，查询优化      |
+| **TypeScript** | 5.5+ | 类型系统 | 类型安全，开发体验                |
 
 ### 2.2 数据存储
 
-| 技术 | 版本 | 用途 | 选型理由 |
-|------|------|------|----------|
-| **PostgreSQL** | 17 | 主数据库 | BYTEA 支持，JSONB 优化，ACID |
-| **Redis** | 8+ | 缓存/PubSub | 高性能，Pub/Sub，分布式锁 |
+| 技术           | 版本 | 用途        | 选型理由                     |
+| -------------- | ---- | ----------- | ---------------------------- |
+| **PostgreSQL** | 17   | 主数据库    | BYTEA 支持，JSONB 优化，ACID |
+| **Redis**      | 8+   | 缓存/PubSub | 高性能，Pub/Sub，分布式锁    |
 
 ### 2.3 认证授权
 
-| 技术 | 用途 |
-|------|------|
-| **JWT** | 无状态认证 |
+| 技术         | 用途       |
+| ------------ | ---------- |
+| **JWT**      | 无状态认证 |
 | **Passport** | 认证中间件 |
-| **bcrypt** | 密码哈希 |
+| **bcrypt**   | 密码哈希   |
 
 ---
 
@@ -245,17 +245,17 @@ backend/
 ```typescript
 // ✅ 正确：职责单一
 export class DocumentsService {
-  // 只处理文档相关操作
-  async create() {}
-  async update() {}
-  async delete() {}
+    // 只处理文档相关操作
+    async create() {}
+    async update() {}
+    async delete() {}
 }
 
 // ❌ 错误：职责混乱
 export class DocumentsService {
-  async createDocument() {}
-  async createUser() {} // 应该在 UserService
-  async sendEmail() {}  // 应该在 EmailService
+    async createDocument() {}
+    async createUser() {} // 应该在 UserService
+    async sendEmail() {} // 应该在 EmailService
 }
 ```
 
@@ -266,11 +266,11 @@ export class DocumentsService {
 ```typescript
 @Injectable()
 export class DocumentsService {
-  constructor(
-    private prisma: PrismaService,
-    private redis: RedisService,
-    private config: ConfigService,
-  ) {}
+    constructor(
+        private prisma: PrismaService,
+        private redis: RedisService,
+        private config: ConfigService
+    ) {}
 }
 ```
 
@@ -281,11 +281,11 @@ export class DocumentsService {
 ```typescript
 // ✅ 正确：明确的业务异常
 if (!document) {
-  throw new NotFoundException('文档不存在');
+    throw new NotFoundException('文档不存在');
 }
 
 if (!hasPermission) {
-  throw new ForbiddenException('无权访问此文档');
+    throw new ForbiddenException('无权访问此文档');
 }
 ```
 
@@ -298,12 +298,12 @@ import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class DocumentsService {
-  private readonly logger = new Logger(DocumentsService.name);
+    private readonly logger = new Logger(DocumentsService.name);
 
-  async create(data: CreateDocumentDto) {
-    this.logger.log(`Creating document: ${data.title}`);
-    // ...
-  }
+    async create(data: CreateDocumentDto) {
+        this.logger.log(`Creating document: ${data.title}`);
+        // ...
+    }
 }
 ```
 
@@ -311,20 +311,20 @@ export class DocumentsService {
 
 ## 3.2 文件大小限制
 
-| 文件类型 | 推荐行数 | 最大行数 | 说明 |
-|----------|----------|----------|------|
-| Controller | 100-200 | 300 | `*.controller.ts` |
-| Service | 200-400 | 600 | `*.service.ts` |
-| DTO | 50-150 | 150 | `dto/*.ts` |
-| Module | 30-100 | 150 | `*.module.ts` |
+| 文件类型   | 推荐行数 | 最大行数 | 说明              |
+| ---------- | -------- | -------- | ----------------- |
+| Controller | 100-200  | 300      | `*.controller.ts` |
+| Service    | 200-400  | 600      | `*.service.ts`    |
+| DTO        | 50-150   | 150      | `dto/*.ts`        |
+| Module     | 30-100   | 150      | `*.module.ts`     |
 
 ### 通用限制
 
-| 限制项 | 值 | 说明 |
-|--------|-----|------|
+| 限制项         | 值    | 说明         |
+| -------------- | ----- | ------------ |
 | 单函数最大行数 | 50 行 | 超过需要拆分 |
-| 嵌套层级 | 4 层 | 超过需要重构 |
-| 参数数量 | 4 个 | 超过使用 DTO |
+| 嵌套层级       | 4 层  | 超过需要重构 |
+| 参数数量       | 4 个  | 超过使用 DTO |
 
 > 详细规范请参阅 [AI Agent 开发指南](../01-architecture/ai-agent-guidelines.md)。
 
@@ -389,20 +389,20 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    PrismaModule,
-    RedisModule,
-    HocuspocusModule,
-    AuthModule,
-    DocumentsModule,
-    VersionsModule,
-  ],
-  providers: [
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_FILTER, useClass: GlobalExceptionFilter },
-    { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
-  ],
+    imports: [
+        ConfigModule.forRoot({ isGlobal: true }),
+        PrismaModule,
+        RedisModule,
+        HocuspocusModule,
+        AuthModule,
+        DocumentsModule,
+        VersionsModule,
+    ],
+    providers: [
+        { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_FILTER, useClass: GlobalExceptionFilter },
+        { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
+    ],
 })
 export class AppModule {}
 ```
@@ -423,22 +423,22 @@ import { PrismaModule } from '../../prisma/prisma.module';
 import { RedisModule } from '../../redis/redis.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    RedisModule,
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_SECRET'),
-        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', '15m') },
-      }),
-      inject: [ConfigService],
-    }),
-  ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, JwtModule],
+    imports: [
+        PrismaModule,
+        RedisModule,
+        PassportModule.register({ defaultStrategy: 'jwt' }),
+        JwtModule.registerAsync({
+            imports: [ConfigModule],
+            useFactory: (config: ConfigService) => ({
+                secret: config.get('JWT_SECRET'),
+                signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', '15m') },
+            }),
+            inject: [ConfigService],
+        }),
+    ],
+    controllers: [AuthController],
+    providers: [AuthService, JwtStrategy],
+    exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
 ```
@@ -449,34 +449,34 @@ export class AuthModule {}
 
 ### 5.1 RESTful API 规范
 
-| 操作 | HTTP 方法 | 端点 | 说明 |
-|------|----------|------|------|
-| 列表 | GET | `/api/v1/documents` | 分页获取文档列表 |
-| 创建 | POST | `/api/v1/documents` | 创建新文档 |
-| 详情 | GET | `/api/v1/documents/:id` | 获取文档详情 |
-| 更新 | PATCH | `/api/v1/documents/:id` | 更新文档信息 |
-| 删除 | DELETE | `/api/v1/documents/:id` | 删除文档 |
+| 操作 | HTTP 方法 | 端点                    | 说明             |
+| ---- | --------- | ----------------------- | ---------------- |
+| 列表 | GET       | `/api/v1/documents`     | 分页获取文档列表 |
+| 创建 | POST      | `/api/v1/documents`     | 创建新文档       |
+| 详情 | GET       | `/api/v1/documents/:id` | 获取文档详情     |
+| 更新 | PATCH     | `/api/v1/documents/:id` | 更新文档信息     |
+| 删除 | DELETE    | `/api/v1/documents/:id` | 删除文档         |
 
 ### 5.2 统一响应格式
 
 ```typescript
 // 成功响应
 interface SuccessResponse<T> {
-  success: true;
-  data: T;
-  meta?: { page?: number; limit?: number; total?: number };
-  timestamp: string;
+    success: true;
+    data: T;
+    meta?: { page?: number; limit?: number; total?: number };
+    timestamp: string;
 }
 
 // 错误响应
 interface ErrorResponse {
-  success: false;
-  error: {
-    code: string;        // 'AUTH_INVALID_TOKEN'
-    message: string;     // 用户友好的错误信息
-    details?: Record<string, unknown>;
-  };
-  timestamp: string;
+    success: false;
+    error: {
+        code: string; // 'AUTH_INVALID_TOKEN'
+        message: string; // 用户友好的错误信息
+        details?: Record<string, unknown>;
+    };
+    timestamp: string;
 }
 ```
 
@@ -486,15 +486,15 @@ interface ErrorResponse {
 // src/common/interceptors/transform.interceptor.ts
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<T, SuccessResponse<T>> {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<SuccessResponse<T>> {
-    return next.handle().pipe(
-      map((data) => ({
-        success: true,
-        data,
-        timestamp: new Date().toISOString(),
-      })),
-    );
-  }
+    intercept(context: ExecutionContext, next: CallHandler): Observable<SuccessResponse<T>> {
+        return next.handle().pipe(
+            map((data) => ({
+                success: true,
+                data,
+                timestamp: new Date().toISOString(),
+            }))
+        );
+    }
 }
 ```
 
@@ -684,57 +684,57 @@ import * as Y from 'yjs';
 
 @Injectable()
 export class HocuspocusService implements OnModuleInit, OnModuleDestroy {
-  private server: Server;
+    private server: Server;
 
-  constructor(
-    private config: ConfigService,
-    private jwt: JwtService,
-    private prisma: PrismaService,
-    private redis: RedisService,
-    private documents: DocumentsService,
-  ) {}
+    constructor(
+        private config: ConfigService,
+        private jwt: JwtService,
+        private prisma: PrismaService,
+        private redis: RedisService,
+        private documents: DocumentsService
+    ) {}
 
-  onModuleInit() {
-    this.server = Server.configure({
-      port: this.config.get('HOCUSPOCUS_PORT', 1234),
+    onModuleInit() {
+        this.server = Server.configure({
+            port: this.config.get('HOCUSPOCUS_PORT', 1234),
 
-      extensions: [
-        new Logger(),
-        new Redis({ host: this.config.get('REDIS_HOST'), port: 6379 }),
-        new Database({
-          fetch: async ({ documentName }) => {
-            const content = await this.documents.loadContent(documentName);
-            return content ? new Uint8Array(content) : null;
-          },
-          store: async ({ documentName, state }) => {
-            await this.documents.saveContent(documentName, Buffer.from(state));
-          },
-        }),
-      ],
+            extensions: [
+                new Logger(),
+                new Redis({ host: this.config.get('REDIS_HOST'), port: 6379 }),
+                new Database({
+                    fetch: async ({ documentName }) => {
+                        const content = await this.documents.loadContent(documentName);
+                        return content ? new Uint8Array(content) : null;
+                    },
+                    store: async ({ documentName, state }) => {
+                        await this.documents.saveContent(documentName, Buffer.from(state));
+                    },
+                }),
+            ],
 
-      async onAuthenticate({ token, documentName }) {
-        if (!token) throw new Error('Authentication required');
-        const payload = this.jwt.verify(token);
-        const hasAccess = await this.checkAccess(documentName, payload.sub);
-        if (!hasAccess) throw new Error('Access denied');
-        return { user: { id: payload.sub, email: payload.email } };
-      },
+            async onAuthenticate({ token, documentName }) {
+                if (!token) throw new Error('Authentication required');
+                const payload = this.jwt.verify(token);
+                const hasAccess = await this.checkAccess(documentName, payload.sub);
+                if (!hasAccess) throw new Error('Access denied');
+                return { user: { id: payload.sub, email: payload.email } };
+            },
 
-      async onConnect({ documentName, context }) {
-        await this.redis.sadd(`connections:${documentName}`, context.user.id);
-      },
+            async onConnect({ documentName, context }) {
+                await this.redis.sadd(`connections:${documentName}`, context.user.id);
+            },
 
-      async onDisconnect({ documentName, context }) {
-        await this.redis.srem(`connections:${documentName}`, context.user.id);
-      },
-    });
+            async onDisconnect({ documentName, context }) {
+                await this.redis.srem(`connections:${documentName}`, context.user.id);
+            },
+        });
 
-    this.server.listen();
-  }
+        this.server.listen();
+    }
 
-  onModuleDestroy() {
-    this.server?.destroy();
-  }
+    onModuleDestroy() {
+        this.server?.destroy();
+    }
 }
 ```
 
@@ -767,24 +767,24 @@ export class HocuspocusService implements OnModuleInit, OnModuleDestroy {
 ```typescript
 // 权限矩阵
 const PERMISSIONS = {
-  OWNER:  ['read', 'write', 'delete', 'share', 'version'],
-  EDITOR: ['read', 'write', 'version'],
-  VIEWER: ['read'],
+    OWNER: ['read', 'write', 'delete', 'share', 'version'],
+    EDITOR: ['read', 'write', 'version'],
+    VIEWER: ['read'],
 };
 
 // 权限守卫
 @Injectable()
 export class PermissionGuard implements CanActivate {
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPermission = this.reflector.get(PERMISSION_KEY, context.getHandler());
-    if (!requiredPermission) return true;
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const requiredPermission = this.reflector.get(PERMISSION_KEY, context.getHandler());
+        if (!requiredPermission) return true;
 
-    const { user } = context.switchToHttp().getRequest();
-    const documentId = context.switchToHttp().getRequest().params.id;
+        const { user } = context.switchToHttp().getRequest();
+        const documentId = context.switchToHttp().getRequest().params.id;
 
-    const role = await this.getUserRole(documentId, user.id);
-    return PERMISSIONS[role]?.includes(requiredPermission);
-  }
+        const role = await this.getUserRole(documentId, user.id);
+        return PERMISSIONS[role]?.includes(requiredPermission);
+    }
 }
 ```
 
@@ -850,24 +850,24 @@ async restoreVersion(versionId: string, documentId: string): Promise<void> {
 
 ### 10.1 Redis 缓存结构
 
-| 键模式 | 说明 | TTL |
-|--------|------|-----|
-| `session:{userId}` | 用户会话 | 7 days |
-| `refresh:{userId}` | 刷新令牌 | 7 days |
-| `blacklist:{token}` | Token 黑名单 | Token 剩余时间 |
-| `document:{id}` | 文档缓存 | 5 min |
-| `lock:document:{id}` | 分布式锁 | 5 sec |
-| `connections:{id}` | 在线用户集合 | 无 |
-| `ratelimit:{ip}:login` | 登录限流 | 15 min |
+| 键模式                 | 说明         | TTL            |
+| ---------------------- | ------------ | -------------- |
+| `session:{userId}`     | 用户会话     | 7 days         |
+| `refresh:{userId}`     | 刷新令牌     | 7 days         |
+| `blacklist:{token}`    | Token 黑名单 | Token 剩余时间 |
+| `document:{id}`        | 文档缓存     | 5 min          |
+| `lock:document:{id}`   | 分布式锁     | 5 sec          |
+| `connections:{id}`     | 在线用户集合 | 无             |
+| `ratelimit:{ip}:login` | 登录限流     | 15 min         |
 
 ### 10.2 缓存策略
 
-| 场景 | 策略 | 说明 |
-|------|------|------|
-| 用户会话 | Cache-Aside | 登录时写入，登出时删除 |
-| 文档元数据 | Cache-Aside | 读取时缓存，更新时失效 |
-| 文档内容 | Write-Through | 实时写入，短期缓存 |
-| 在线用户 | Write-Behind | 连接时写入，断开时删除 |
+| 场景       | 策略          | 说明                   |
+| ---------- | ------------- | ---------------------- |
+| 用户会话   | Cache-Aside   | 登录时写入，登出时删除 |
+| 文档元数据 | Cache-Aside   | 读取时缓存，更新时失效 |
+| 文档内容   | Write-Through | 实时写入，短期缓存     |
+| 在线用户   | Write-Behind  | 连接时写入，断开时删除 |
 
 ---
 
@@ -943,11 +943,11 @@ import * as bcrypt from 'bcrypt';
 const SALT_ROUNDS = 12;
 
 async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, SALT_ROUNDS);
+    return bcrypt.hash(password, SALT_ROUNDS);
 }
 
 async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
+    return bcrypt.compare(password, hash);
 }
 ```
 
@@ -961,30 +961,30 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 // src/common/filters/global-exception.filter.ts
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
+    catch(exception: unknown, host: ArgumentsHost) {
+        const ctx = host.switchToHttp();
+        const response = ctx.getResponse<Response>();
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let code = 'INTERNAL_ERROR';
-    let message = 'Internal server error';
+        let status = HttpStatus.INTERNAL_SERVER_ERROR;
+        let code = 'INTERNAL_ERROR';
+        let message = 'Internal server error';
 
-    if (exception instanceof HttpException) {
-      status = exception.getStatus();
-      message = exception.message;
+        if (exception instanceof HttpException) {
+            status = exception.getStatus();
+            message = exception.message;
+        }
+
+        if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+            status = HttpStatus.BAD_REQUEST;
+            code = `PRISMA_${exception.code}`;
+        }
+
+        response.status(status).json({
+            success: false,
+            error: { code, message },
+            timestamp: new Date().toISOString(),
+        });
     }
-
-    if (exception instanceof Prisma.PrismaClientKnownRequestError) {
-      status = HttpStatus.BAD_REQUEST;
-      code = `PRISMA_${exception.code}`;
-    }
-
-    response.status(status).json({
-      success: false,
-      error: { code, message },
-      timestamp: new Date().toISOString(),
-    });
-  }
 }
 ```
 
@@ -992,15 +992,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
 ```typescript
 export class BusinessException extends HttpException {
-  constructor(code: string, message: string) {
-    super({ code, message }, HttpStatus.BAD_REQUEST);
-  }
+    constructor(code: string, message: string) {
+        super({ code, message }, HttpStatus.BAD_REQUEST);
+    }
 }
 
 export class DocumentNotFoundException extends BusinessException {
-  constructor(documentId: string) {
-    super('DOCUMENT_NOT_FOUND', `Document ${documentId} not found`);
-  }
+    constructor(documentId: string) {
+        super('DOCUMENT_NOT_FOUND', `Document ${documentId} not found`);
+    }
 }
 ```
 

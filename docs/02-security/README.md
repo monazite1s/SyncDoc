@@ -6,13 +6,13 @@
 
 ## 安全目标
 
-| 目标 | 说明 |
-|------|------|
+| 目标         | 说明                 |
+| ------------ | -------------------- |
 | **身份认证** | 确保用户身份真实可靠 |
 | **访问控制** | 基于角色的细粒度权限 |
-| **数据安全** | 传输加密、存储加密 |
-| **审计追踪** | 操作可追溯 |
-| **防护能力** | 抵御常见攻击 |
+| **数据安全** | 传输加密、存储加密   |
+| **审计追踪** | 操作可追溯           |
+| **防护能力** | 抵御常见攻击         |
 
 ## 安全架构
 
@@ -55,26 +55,26 @@
 
 ## 文档目录
 
-| 文档 | 说明 |
-|------|------|
-| [authentication.md](./authentication.md) | JWT 认证机制 |
-| [authorization.md](./authorization.md) | 权限控制（RBAC） |
-| [data-encryption.md](./data-encryption.md) | 数据加密策略 |
-| [security-best-practices.md](./security-best-practices.md) | 安全最佳实践 |
+| 文档                                                       | 说明             |
+| ---------------------------------------------------------- | ---------------- |
+| [authentication.md](./authentication.md)                   | JWT 认证机制     |
+| [authorization.md](./authorization.md)                     | 权限控制（RBAC） |
+| [data-encryption.md](./data-encryption.md)                 | 数据加密策略     |
+| [security-best-practices.md](./security-best-practices.md) | 安全最佳实践     |
 
 ## 威胁模型
 
 ### 主要威胁
 
-| 威胁 | 风险等级 | 防护措施 |
-|------|----------|----------|
-| **未授权访问** | 高 | JWT 认证 + RBAC |
-| **中间人攻击** | 高 | TLS 1.3 强制加密 |
-| **XSS 攻击** | 中 | CSP + 输入转义 |
-| **CSRF 攻击** | 中 | SameSite Cookie |
-| **暴力破解** | 中 | Rate Limiting |
-| **SQL 注入** | 高 | Prisma 参数化查询 |
-| **数据泄露** | 高 | 最小权限原则 |
+| 威胁           | 风险等级 | 防护措施          |
+| -------------- | -------- | ----------------- |
+| **未授权访问** | 高       | JWT 认证 + RBAC   |
+| **中间人攻击** | 高       | TLS 1.3 强制加密  |
+| **XSS 攻击**   | 中       | CSP + 输入转义    |
+| **CSRF 攻击**  | 中       | SameSite Cookie   |
+| **暴力破解**   | 中       | Rate Limiting     |
+| **SQL 注入**   | 高       | Prisma 参数化查询 |
+| **数据泄露**   | 高       | 最小权限原则      |
 
 ### 信任边界
 

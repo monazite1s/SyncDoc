@@ -43,12 +43,12 @@ stateDiagram-v2
 
 ### 触发条件
 
-| 触发方式 | 条件 | 说明 |
-|----------|------|------|
-| **自动快照** | 操作次数 >= 100 | Hocuspocus 钩子触发 |
-| **自动快照** | 距上次快照 >= 5 分钟 | 定时检查 |
-| **手动快照** | 用户点击保存 | API 调用 |
-| **恢复前快照** | 版本恢复前 | 自动创建 |
+| 触发方式       | 条件                 | 说明                |
+| -------------- | -------------------- | ------------------- |
+| **自动快照**   | 操作次数 >= 100      | Hocuspocus 钩子触发 |
+| **自动快照**   | 距上次快照 >= 5 分钟 | 定时检查            |
+| **手动快照**   | 用户点击保存         | API 调用            |
+| **恢复前快照** | 版本恢复前           | 自动创建            |
 
 ### 快照流程
 
@@ -171,48 +171,48 @@ import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Props {
-  documentId: string;
-  onSelect: (versionId: string) => void;
+    documentId: string;
+    onSelect: (versionId: string) => void;
 }
 
 export function VersionList({ documentId, onSelect }: Props) {
-  const { data, isLoading } = useQuery({
-    queryKey: ['versions', documentId],
-    queryFn: () => api.get(`/documents/${documentId}/versions`),
-  });
+    const { data, isLoading } = useQuery({
+        queryKey: ['versions', documentId],
+        queryFn: () => api.get(`/documents/${documentId}/versions`),
+    });
 
-  if (isLoading) {
-    return <VersionListSkeleton />;
-  }
+    if (isLoading) {
+        return <VersionListSkeleton />;
+    }
 
-  return (
-    <div className="space-y-2">
-      {data?.versions.map((version) => (
-        <button
-          key={version.id}
-          onClick={() => onSelect(version.id)}
-          className="w-full p-4 text-left border rounded-lg hover:bg-gray-50 transition"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">{version.message || 'Auto-saved'}</p>
-              <p className="text-sm text-gray-500">
-                {formatDistanceToNow(new Date(version.createdAt))} ago
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <img
-                src={version.creator.avatar}
-                className="w-6 h-6 rounded-full"
-                alt={version.creator.name}
-              />
-              <span className="text-sm">{version.creator.name}</span>
-            </div>
-          </div>
-        </button>
-      ))}
-    </div>
-  );
+    return (
+        <div className="space-y-2">
+            {data?.versions.map((version) => (
+                <button
+                    key={version.id}
+                    onClick={() => onSelect(version.id)}
+                    className="w-full p-4 text-left border rounded-lg hover:bg-gray-50 transition"
+                >
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="font-medium">{version.message || 'Auto-saved'}</p>
+                            <p className="text-sm text-gray-500">
+                                {formatDistanceToNow(new Date(version.createdAt))} ago
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <img
+                                src={version.creator.avatar}
+                                className="w-6 h-6 rounded-full"
+                                alt={version.creator.name}
+                            />
+                            <span className="text-sm">{version.creator.name}</span>
+                        </div>
+                    </div>
+                </button>
+            ))}
+        </div>
+    );
 }
 ```
 
@@ -228,77 +228,72 @@ import { useQuery } from '@tanstack/react-query';
 import { Editor } from '@tiptap/react';
 
 interface Props {
-  documentId: string;
-  versionId: string;
-  onClose: () => void;
-  onRestore: () => void;
+    documentId: string;
+    versionId: string;
+    onClose: () => void;
+    onRestore: () => void;
 }
 
-export function VersionPreview({
-  documentId,
-  versionId,
-  onClose,
-  onRestore,
-}: Props) {
-  const { data: version, isLoading } = useQuery({
-    queryKey: ['version', versionId],
-    queryFn: () => api.get(`/documents/${documentId}/versions/${versionId}`),
-  });
-
-  const [previewEditor, setPreviewEditor] = useState<Editor | null>(null);
-
-  useEffect(() => {
-    if (!version?.snapshot) return;
-
-    // 创建只读编辑器
-    const editor = new Editor({
-      editable: false,
-      content: '', // 从 snapshot 加载
+export function VersionPreview({ documentId, versionId, onClose, onRestore }: Props) {
+    const { data: version, isLoading } = useQuery({
+        queryKey: ['version', versionId],
+        queryFn: () => api.get(`/documents/${documentId}/versions/${versionId}`),
     });
 
-    // 应用快照内容
-    const ydoc = new Y.Doc();
-    Y.applyUpdate(ydoc, new Uint8Array(version.snapshot));
-    const content = ydoc.getText('content').toString();
-    editor.commands.setContent(content);
+    const [previewEditor, setPreviewEditor] = useState<Editor | null>(null);
 
-    setPreviewEditor(editor);
+    useEffect(() => {
+        if (!version?.snapshot) return;
 
-    return () => editor.destroy();
-  }, [version]);
+        // 创建只读编辑器
+        const editor = new Editor({
+            editable: false,
+            content: '', // 从 snapshot 加载
+        });
 
-  if (isLoading) {
-    return <PreviewSkeleton />;
-  }
+        // 应用快照内容
+        const ydoc = new Y.Doc();
+        Y.applyUpdate(ydoc, new Uint8Array(version.snapshot));
+        const content = ydoc.getText('content').toString();
+        editor.commands.setContent(content);
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* 预览头 */}
-      <div className="flex items-center justify-between p-4 border-b bg-yellow-50">
-        <div className="flex items-center gap-2">
-          <Eye className="w-4 h-4" />
-          <span className="font-medium">Previewing version</span>
-          <span className="text-sm text-gray-500">
-            {format(new Date(version.createdAt), 'PPpp')}
-          </span>
+        setPreviewEditor(editor);
+
+        return () => editor.destroy();
+    }, [version]);
+
+    if (isLoading) {
+        return <PreviewSkeleton />;
+    }
+
+    return (
+        <div className="flex flex-col h-full">
+            {/* 预览头 */}
+            <div className="flex items-center justify-between p-4 border-b bg-yellow-50">
+                <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    <span className="font-medium">Previewing version</span>
+                    <span className="text-sm text-gray-500">
+                        {format(new Date(version.createdAt), 'PPpp')}
+                    </span>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={onClose}>
+                        Close
+                    </Button>
+                    <Button onClick={onRestore}>
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Restore
+                    </Button>
+                </div>
+            </div>
+
+            {/* 预览内容 */}
+            <div className="flex-1 overflow-auto">
+                <EditorContent editor={previewEditor} />
+            </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-          <Button onClick={onRestore}>
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Restore
-          </Button>
-        </div>
-      </div>
-
-      {/* 预览内容 */}
-      <div className="flex-1 overflow-auto">
-        <EditorContent editor={previewEditor} />
-      </div>
-    </div>
-  );
+    );
 }
 ```
 
@@ -378,8 +373,8 @@ async restore(versionId: string, userId: string) {
 
 // 前端处理
 provider.on('sync', () => {
-  // 文档内容已更新到恢复的版本
-  // Tiptap 自动反映变化
+    // 文档内容已更新到恢复的版本
+    // Tiptap 自动反映变化
 });
 ```
 
@@ -429,36 +424,36 @@ async diff(fromVersionId: string, toVersionId: string) {
 ```tsx
 // components/version/version-diff.tsx
 interface DiffViewProps {
-  changes: Array<{
-    type: 'add' | 'delete' | 'equal';
-    value: string;
-    position: number;
-  }>;
+    changes: Array<{
+        type: 'add' | 'delete' | 'equal';
+        value: string;
+        position: number;
+    }>;
 }
 
 export function VersionDiff({ changes }: DiffViewProps) {
-  return (
-    <div className="font-mono text-sm">
-      {changes.map((change, index) => (
-        <div
-          key={index}
-          className={cn(
-            'px-2 py-1',
-            change.type === 'add' && 'bg-green-100 text-green-800',
-            change.type === 'delete' && 'bg-red-100 text-red-800 line-through',
-            change.type === 'equal' && 'text-gray-600'
-          )}
-        >
-          <span className="mr-2 text-gray-400">
-            {change.type === 'add' && '+'}
-            {change.type === 'delete' && '-'}
-            {change.type === 'equal' && ' '}
-          </span>
-          {change.value}
+    return (
+        <div className="font-mono text-sm">
+            {changes.map((change, index) => (
+                <div
+                    key={index}
+                    className={cn(
+                        'px-2 py-1',
+                        change.type === 'add' && 'bg-green-100 text-green-800',
+                        change.type === 'delete' && 'bg-red-100 text-red-800 line-through',
+                        change.type === 'equal' && 'text-gray-600'
+                    )}
+                >
+                    <span className="mr-2 text-gray-400">
+                        {change.type === 'add' && '+'}
+                        {change.type === 'delete' && '-'}
+                        {change.type === 'equal' && ' '}
+                    </span>
+                    {change.value}
+                </div>
+            ))}
         </div>
-      ))}
-    </div>
-  );
+    );
 }
 ```
 

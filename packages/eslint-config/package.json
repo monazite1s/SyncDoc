@@ -1,12 +1,19 @@
 {
-  "name": "@collab/eslint-config",
-  "version": "0.0.1",
-  "main": "index.js",
-  "license": "MIT",
-  "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-prettier": "^5.0.0"
-  }
+    "name": "@collab/eslint-config",
+    "version": "0.0.1",
+    "type": "module",
+    "main": "index.mjs",
+    "exports": {
+        ".": "./index.mjs"
+    },
+    "license": "MIT",
+    "peerDependencies": {
+        "eslint": "^9.0.0",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "@typescript-eslint/eslint-plugin": "^8.57.2",
+        "@typescript-eslint/parser": "^8.57.2",
+        "eslint-config-prettier": "^10.1.8"
+    }
 }

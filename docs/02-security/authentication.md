@@ -39,19 +39,19 @@ sequenceDiagram
 
 ```json
 {
-  "header": {
-    "alg": "HS256",
-    "typ": "JWT"
-  },
-  "payload": {
-    "sub": "user_123",
-    "email": "user@example.com",
-    "name": "John Doe",
-    "role": "user",
-    "iat": 1709827200,
-    "exp": 1709828100
-  },
-  "signature": "..."
+    "header": {
+        "alg": "HS256",
+        "typ": "JWT"
+    },
+    "payload": {
+        "sub": "user_123",
+        "email": "user@example.com",
+        "name": "John Doe",
+        "role": "user",
+        "iat": 1709827200,
+        "exp": 1709828100
+    },
+    "signature": "..."
 }
 ```
 
@@ -59,12 +59,12 @@ sequenceDiagram
 
 ```json
 {
-  "payload": {
-    "sub": "user_123",
-    "type": "refresh",
-    "iat": 1709827200,
-    "exp": 1710432000
-  }
+    "payload": {
+        "sub": "user_123",
+        "type": "refresh",
+        "iat": 1709827200,
+        "exp": 1710432000
+    }
 }
 ```
 
@@ -105,17 +105,17 @@ sequenceDiagram
 ```typescript
 // 客户端
 const wsProvider = new WebsocketProvider('wss://collab.example.com', documentId, ydoc, {
-  params: {
-    token: accessToken, // 通过 URL 参数传递
-  },
+    params: {
+        token: accessToken, // 通过 URL 参数传递
+    },
 });
 
 // 或通过首次消息传递
 wsProvider.on('open', () => {
-  wsProvider.send({
-    type: 'auth',
-    token: accessToken,
-  });
+    wsProvider.send({
+        type: 'auth',
+        token: accessToken,
+    });
 });
 ```
 
@@ -124,38 +124,38 @@ wsProvider.on('open', () => {
 ```typescript
 // Hocuspocus 配置
 const server = Server.configure({
-  async onAuthenticate({ token, documentName }) {
-    if (!token) {
-      throw new Error('Token required');
-    }
+    async onAuthenticate({ token, documentName }) {
+        if (!token) {
+            throw new Error('Token required');
+        }
 
-    try {
-      const payload = await jwtService.verifyAsync(token);
+        try {
+            const payload = await jwtService.verifyAsync(token);
 
-      // 检查 token 是否在黑名单
-      const isBlacklisted = await redis.get(`blacklist:${token}`);
-      if (isBlacklisted) {
-        throw new Error('Token revoked');
-      }
+            // 检查 token 是否在黑名单
+            const isBlacklisted = await redis.get(`blacklist:${token}`);
+            if (isBlacklisted) {
+                throw new Error('Token revoked');
+            }
 
-      // 检查文档访问权限
-      const hasAccess = await documentService.checkAccess(documentName, payload.sub);
+            // 检查文档访问权限
+            const hasAccess = await documentService.checkAccess(documentName, payload.sub);
 
-      if (!hasAccess) {
-        throw new Error('Access denied');
-      }
+            if (!hasAccess) {
+                throw new Error('Access denied');
+            }
 
-      return {
-        user: {
-          id: payload.sub,
-          email: payload.email,
-          name: payload.name,
-        },
-      };
-    } catch (error) {
-      throw new Error('Invalid token');
-    }
-  },
+            return {
+                user: {
+                    id: payload.sub,
+                    email: payload.email,
+                    name: payload.name,
+                },
+            };
+        } catch (error) {
+            throw new Error('Invalid token');
+        }
+    },
 });
 ```
 
@@ -175,22 +175,22 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { RedisModule } from '../redis/redis.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    RedisModule,
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.registerAsync({
-      useFactory: () => ({
-        secret: process.env.JWT_SECRET,
-        signOptions: {
-          expiresIn: process.env.JWT_EXPIRES_IN || '15m',
-        },
-      }),
-    }),
-  ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, JwtModule],
+    imports: [
+        PrismaModule,
+        RedisModule,
+        PassportModule.register({ defaultStrategy: 'jwt' }),
+        JwtModule.registerAsync({
+            useFactory: () => ({
+                secret: process.env.JWT_SECRET,
+                signOptions: {
+                    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+                },
+            }),
+        }),
+    ],
+    controllers: [AuthController],
+    providers: [AuthService, JwtStrategy],
+    exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
 ```
@@ -207,99 +207,99 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
-    private redis: RedisService
-  ) {}
+    constructor(
+        private prisma: PrismaService,
+        private jwtService: JwtService,
+        private redis: RedisService
+    ) {}
 
-  async login(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    async login(email: string, password: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+        });
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+        if (!user) {
+            throw new UnauthorizedException('Invalid credentials');
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            throw new UnauthorizedException('Invalid credentials');
+        }
+
+        const tokens = await this.generateTokens(user.id, user.email, user.name);
+
+        // 存储 refresh token
+        await this.redis.set(
+            `refresh:${user.id}`,
+            tokens.refreshToken,
+            'EX',
+            7 * 24 * 60 * 60 // 7 天
+        );
+
+        return tokens;
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+    async refresh(refreshToken: string) {
+        try {
+            const payload = await this.jwtService.verifyAsync(refreshToken);
+
+            if (payload.type !== 'refresh') {
+                throw new UnauthorizedException('Invalid token type');
+            }
+
+            // 验证 token 是否与存储一致
+            const storedToken = await this.redis.get(`refresh:${payload.sub}`);
+            if (storedToken !== refreshToken) {
+                throw new UnauthorizedException('Token mismatch');
+            }
+
+            const user = await this.prisma.user.findUnique({
+                where: { id: payload.sub },
+            });
+
+            if (!user) {
+                throw new UnauthorizedException('User not found');
+            }
+
+            return this.generateTokens(user.id, user.email, user.name);
+        } catch (error) {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
     }
 
-    const tokens = await this.generateTokens(user.id, user.email, user.name);
+    async logout(userId: string, token: string) {
+        // 将当前 access token 加入黑名单
+        const payload = this.jwtService.decode(token) as any;
+        const ttl = payload.exp - Math.floor(Date.now() / 1000);
 
-    // 存储 refresh token
-    await this.redis.set(
-      `refresh:${user.id}`,
-      tokens.refreshToken,
-      'EX',
-      7 * 24 * 60 * 60 // 7 天
-    );
+        if (ttl > 0) {
+            await this.redis.set(`blacklist:${token}`, '1', 'EX', ttl);
+        }
 
-    return tokens;
-  }
-
-  async refresh(refreshToken: string) {
-    try {
-      const payload = await this.jwtService.verifyAsync(refreshToken);
-
-      if (payload.type !== 'refresh') {
-        throw new UnauthorizedException('Invalid token type');
-      }
-
-      // 验证 token 是否与存储一致
-      const storedToken = await this.redis.get(`refresh:${payload.sub}`);
-      if (storedToken !== refreshToken) {
-        throw new UnauthorizedException('Token mismatch');
-      }
-
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
-      });
-
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
-
-      return this.generateTokens(user.id, user.email, user.name);
-    } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-  }
-
-  async logout(userId: string, token: string) {
-    // 将当前 access token 加入黑名单
-    const payload = this.jwtService.decode(token) as any;
-    const ttl = payload.exp - Math.floor(Date.now() / 1000);
-
-    if (ttl > 0) {
-      await this.redis.set(`blacklist:${token}`, '1', 'EX', ttl);
+        // 删除 refresh token
+        await this.redis.del(`refresh:${userId}`);
     }
 
-    // 删除 refresh token
-    await this.redis.del(`refresh:${userId}`);
-  }
+    private async generateTokens(userId: string, email: string, name: string) {
+        const accessToken = this.jwtService.sign({
+            sub: userId,
+            email,
+            name,
+        });
 
-  private async generateTokens(userId: string, email: string, name: string) {
-    const accessToken = this.jwtService.sign({
-      sub: userId,
-      email,
-      name,
-    });
+        const refreshToken = this.jwtService.sign(
+            {
+                sub: userId,
+                type: 'refresh',
+            },
+            {
+                expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
+            }
+        );
 
-    const refreshToken = this.jwtService.sign(
-      {
-        sub: userId,
-        type: 'refresh',
-      },
-      {
-        expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
-      }
-    );
-
-    return { accessToken, refreshToken };
-  }
+        return { accessToken, refreshToken };
+    }
 }
 ```
 
@@ -314,52 +314,52 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+    constructor(private authService: AuthService) {}
 
-  @Post('login')
-  async login(
-    @Body() loginDto: { email: string; password: string },
-    @Res({ passthrough: true }) response: Response
-  ) {
-    const result = await this.authService.login(loginDto.email, loginDto.password);
+    @Post('login')
+    async login(
+        @Body() loginDto: { email: string; password: string },
+        @Res({ passthrough: true }) response: Response
+    ) {
+        const result = await this.authService.login(loginDto.email, loginDto.password);
 
-    // 设置 HttpOnly cookie
-    response.cookie('access_token', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60 * 1000, // 15 minutes
-    });
+        // 设置 HttpOnly cookie
+        response.cookie('access_token', result.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 15 * 60 * 1000, // 15 minutes
+        });
 
-    response.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+        response.cookie('refresh_token', result.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
 
-    // 返回用户信息（不包含 token）
-    const { accessToken, refreshToken, ...userInfo } = result;
-    return userInfo;
-  }
+        // 返回用户信息（不包含 token）
+        const { accessToken, refreshToken, ...userInfo } = result;
+        return userInfo;
+    }
 
-  @Post('refresh')
-  async refresh(@Body('refreshToken') refreshToken: string) {
-    return this.authService.refresh(refreshToken);
-  }
+    @Post('refresh')
+    async refresh(@Body('refreshToken') refreshToken: string) {
+        return this.authService.refresh(refreshToken);
+    }
 
-  @UseGuards(JwtAuthGuard)
-  @Post('logout')
-  async logout(@Req() req: any, @Res({ passthrough: true }) response: Response) {
-    const token = req.cookies?.access_token;
-    await this.authService.logout(req.user.sub, token);
+    @UseGuards(JwtAuthGuard)
+    @Post('logout')
+    async logout(@Req() req: any, @Res({ passthrough: true }) response: Response) {
+        const token = req.cookies?.access_token;
+        await this.authService.logout(req.user.sub, token);
 
-    // 清除 cookie
-    response.clearCookie('access_token');
-    response.clearCookie('refresh_token');
+        // 清除 cookie
+        response.clearCookie('access_token');
+        response.clearCookie('refresh_token');
 
-    return { message: 'Logged out successfully' };
-  }
+        return { message: 'Logged out successfully' };
+    }
 }
 ```
 
@@ -374,25 +374,25 @@ import { RedisService } from '../../redis/redis.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private redis: RedisService) {
-    super({
-      // 优先从 cookie 提取 token
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        ExtractJwt.fromAuthHeaderAsBearerToken(),
-        ExtractJwt.fromCookie('access_token'),
-      ]),
-      ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET,
-    });
-  }
+    constructor(private redis: RedisService) {
+        super({
+            // 优先从 cookie 提取 token
+            jwtFromRequest: ExtractJwt.fromExtractors([
+                ExtractJwt.fromAuthHeaderAsBearerToken(),
+                ExtractJwt.fromCookie('access_token'),
+            ]),
+            ignoreExpiration: false,
+            secretOrKey: process.env.JWT_SECRET,
+        });
+    }
 
-  async validate(payload: any) {
-    return {
-      id: payload.sub,
-      email: payload.email,
-      name: payload.name,
-    };
-  }
+    async validate(payload: any) {
+        return {
+            id: payload.sub,
+            email: payload.email,
+            name: payload.name,
+        };
+    }
 }
 ```
 
@@ -405,7 +405,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+    baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
 // 响应拦截器：处理 token 刷新
@@ -413,40 +413,40 @@ let isRefreshing = false;
 let failedQueue: any[] = [];
 
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve) => {
-          failedQueue.push({ resolve, config: originalRequest });
-        });
-      }
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (isRefreshing) {
+                return new Promise((resolve) => {
+                    failedQueue.push({ resolve, config: originalRequest });
+                });
+            }
 
-      originalRequest._retry = true;
-      isRefreshing = true;
+            originalRequest._retry = true;
+            isRefreshing = true;
 
-      try {
-        // 使用 cookie 中的 refresh token 自动刷新
-        const response = await axios.post('/api/auth/refresh');
-        const { accessToken } = response.data;
+            try {
+                // 使用 cookie 中的 refresh token 自动刷新
+                const response = await axios.post('/api/auth/refresh');
+                const { accessToken } = response.data;
 
-        // 后端会设置新的 cookie，我们只需要继续请求
-        return api(originalRequest);
-      } catch (refreshError) {
-        // 刷新失败，重定向到登录页
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-        failedQueue.forEach(({ resolve, config }) => resolve(api(config)));
-        failedQueue = [];
-      }
+                // 后端会设置新的 cookie，我们只需要继续请求
+                return api(originalRequest);
+            } catch (refreshError) {
+                // 刷新失败，重定向到登录页
+                window.location.href = '/login';
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+                failedQueue.forEach(({ resolve, config }) => resolve(api(config)));
+                failedQueue = [];
+            }
+        }
+
+        return Promise.reject(error);
     }
-
-    return Promise.reject(error);
-  }
 );
 
 export default api;
@@ -465,19 +465,19 @@ export default api;
 import { create } from 'zustand';
 
 interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  setUser: (user: User | null) => void;
-  logout: () => void;
+    user: User | null;
+    isAuthenticated: boolean;
+    setUser: (user: User | null) => void;
+    logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  isAuthenticated: false,
+    user: null,
+    isAuthenticated: false,
 
-  setUser: (user) => set({ user, isAuthenticated: !!user }),
+    setUser: (user) => set({ user, isAuthenticated: !!user }),
 
-  logout: () => set({ user: null, isAuthenticated: false }),
+    logout: () => set({ user: null, isAuthenticated: false }),
 }));
 ```
 

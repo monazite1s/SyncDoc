@@ -7,26 +7,26 @@ const protectedPaths = ['/documents', '/settings'];
 const authPaths = ['/login', '/register'];
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const token = request.cookies.get('access_token')?.value;
+    const { pathname } = request.nextUrl;
+    const token = request.cookies.get('access_token')?.value;
 
-  // 保护需要认证的路由
-  const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
-  if (isProtected && !token) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('callbackUrl', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
+    // 保护需要认证的路由
+    const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
+    if (isProtected && !token) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('callbackUrl', pathname);
+        return NextResponse.redirect(loginUrl);
+    }
 
-  // 已认证用户访问登录/注册页面时重定向到文档页
-  const isAuthPage = authPaths.some((path) => pathname.startsWith(path));
-  if (isAuthPage && token) {
-    return NextResponse.redirect(new URL('/documents', request.url));
-  }
+    // 已认证用户访问登录/注册页面时重定向到文档页
+    const isAuthPage = authPaths.some((path) => pathname.startsWith(path));
+    if (isAuthPage && token) {
+        return NextResponse.redirect(new URL('/documents', request.url));
+    }
 
-  return NextResponse.next();
+    return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };

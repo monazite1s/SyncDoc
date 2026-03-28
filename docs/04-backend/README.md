@@ -6,24 +6,24 @@
 
 ## 技术栈
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| NestJS | 11+ | 后端框架 |
-| Hocuspocus | 3.x | 协同网关 |
-| Prisma | 6+ | ORM |
-| PostgreSQL | 17 | 主数据库 |
-| Redis | 8+ | 缓存/PubSub |
+| 技术       | 版本 | 用途        |
+| ---------- | ---- | ----------- |
+| NestJS     | 11+  | 后端框架    |
+| Hocuspocus | 3.x  | 协同网关    |
+| Prisma     | 6+   | ORM         |
+| PostgreSQL | 17   | 主数据库    |
+| Redis      | 8+   | 缓存/PubSub |
 
 ## 文档目录
 
-| 文档 | 说明 |
-|------|------|
-| [architecture.md](./architecture.md) | **后端架构详细设计** |
-| [nestjs-modules.md](./nestjs-modules.md) | NestJS 模块设计 |
-| [hocuspocus-gateway.md](./hocuspocus-gateway.md) | Hocuspocus 网关 |
-| [prisma-schema.md](./prisma-schema.md) | 数据模型设计 |
-| [version-management.md](./version-management.md) | 版本管理逻辑 |
-| [api-reference.md](./api-reference.md) | API 接口文档 |
+| 文档                                             | 说明                 |
+| ------------------------------------------------ | -------------------- |
+| [architecture.md](./architecture.md)             | **后端架构详细设计** |
+| [nestjs-modules.md](./nestjs-modules.md)         | NestJS 模块设计      |
+| [hocuspocus-gateway.md](./hocuspocus-gateway.md) | Hocuspocus 网关      |
+| [prisma-schema.md](./prisma-schema.md)           | 数据模型设计         |
+| [version-management.md](./version-management.md) | 版本管理逻辑         |
+| [api-reference.md](./api-reference.md)           | API 接口文档         |
 
 ## 项目结构
 
@@ -99,23 +99,23 @@ graph TB
 ```typescript
 // 成功响应
 interface SuccessResponse<T> {
-  success: true;
-  data: T;
-  meta?: {
-    page?: number;
-    limit?: number;
-    total?: number;
-  };
+    success: true;
+    data: T;
+    meta?: {
+        page?: number;
+        limit?: number;
+        total?: number;
+    };
 }
 
 // 错误响应
 interface ErrorResponse {
-  success: false;
-  error: {
-    code: string;
-    message: string;
-    details?: Record<string, unknown>;
-  };
+    success: false;
+    error: {
+        code: string;
+        message: string;
+        details?: Record<string, unknown>;
+    };
 }
 ```
 

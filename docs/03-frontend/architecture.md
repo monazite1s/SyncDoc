@@ -197,37 +197,37 @@
 ```css
 /* globals.css */
 :root {
-  /* 表面颜色 */
-  --surface: #ffffff;
-  --surface-hover: #f3f4f6;
-  --sidebar-bg: #fafafa;
+    /* 表面颜色 */
+    --surface: #ffffff;
+    --surface-hover: #f3f4f6;
+    --sidebar-bg: #fafafa;
 
-  /* 语义化颜色 */
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+    /* 语义化颜色 */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-  /* Claude 橙色强调 */
-  --primary: 30 100% 50%;
-  --primary-foreground: 210 40% 98%;
+    /* Claude 橙色强调 */
+    --primary: 30 100% 50%;
+    --primary-foreground: 210 40% 98%;
 
-  /* 其他变量 */
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 84% 4.9%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 30 100% 50%;
+    /* 其他变量 */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 30 100% 50%;
 }
 
 .dark {
-  --surface: #1a1a1a;
-  --surface-hover: #2a2a2a;
-  --sidebar-bg: #1f1f1f;
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
+    --surface: #1a1a1a;
+    --surface-hover: #2a2a2a;
+    --sidebar-bg: #1f1f1f;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 }
 ```
 
@@ -517,42 +517,42 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface DocumentState {
-  // 状态
-  activeDocumentId: string | null;
-  recentDocuments: string[];
-  isSidebarOpen: boolean;
+    // 状态
+    activeDocumentId: string | null;
+    recentDocuments: string[];
+    isSidebarOpen: boolean;
 
-  // 操作
-  setActiveDocument: (id: string | null) => void;
-  addToRecent: (id: string) => void;
-  toggleSidebar: () => void;
+    // 操作
+    setActiveDocument: (id: string | null) => void;
+    addToRecent: (id: string) => void;
+    toggleSidebar: () => void;
 }
 
 export const useDocumentStore = create<DocumentState>()(
-  persist(
-    (set, get) => ({
-      activeDocumentId: null,
-      recentDocuments: [],
-      isSidebarOpen: true,
+    persist(
+        (set, get) => ({
+            activeDocumentId: null,
+            recentDocuments: [],
+            isSidebarOpen: true,
 
-      setActiveDocument: (id) => set({ activeDocumentId: id }),
+            setActiveDocument: (id) => set({ activeDocumentId: id }),
 
-      addToRecent: (id) => {
-        const recent = get().recentDocuments.filter((d) => d !== id);
-        set({ recentDocuments: [id, ...recent].slice(0, 10) });
-      },
+            addToRecent: (id) => {
+                const recent = get().recentDocuments.filter((d) => d !== id);
+                set({ recentDocuments: [id, ...recent].slice(0, 10) });
+            },
 
-      toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
-    }),
-    {
-      name: 'document-store',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        recentDocuments: state.recentDocuments,
-        isSidebarOpen: state.isSidebarOpen,
-      }),
-    }
-  )
+            toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+        }),
+        {
+            name: 'document-store',
+            storage: createJSONStorage(() => localStorage),
+            partialize: (state) => ({
+                recentDocuments: state.recentDocuments,
+                isSidebarOpen: state.isSidebarOpen,
+            }),
+        }
+    )
 );
 ```
 
@@ -565,42 +565,42 @@ import api from '@/lib/api/client';
 
 // 查询键工厂
 export const documentKeys = {
-  all: ['documents'] as const,
-  lists: () => [...documentKeys.all, 'list'] as const,
-  list: (filters: Record<string, unknown>) => [...documentKeys.lists(), { filters }] as const,
-  details: () => [...documentKeys.all, 'detail'] as const,
-  detail: (id: string) => [...documentKeys.details(), id] as const,
+    all: ['documents'] as const,
+    lists: () => [...documentKeys.all, 'list'] as const,
+    list: (filters: Record<string, unknown>) => [...documentKeys.lists(), { filters }] as const,
+    details: () => [...documentKeys.all, 'detail'] as const,
+    detail: (id: string) => [...documentKeys.details(), id] as const,
 };
 
 // 文档列表查询
 export function useDocuments(page = 1, limit = 20) {
-  return useQuery({
-    queryKey: documentKeys.list({ page, limit }),
-    queryFn: () => api.get('/documents', { params: { page, limit } }),
-    staleTime: 30 * 1000, // 30 秒
-  });
+    return useQuery({
+        queryKey: documentKeys.list({ page, limit }),
+        queryFn: () => api.get('/documents', { params: { page, limit } }),
+        staleTime: 30 * 1000, // 30 秒
+    });
 }
 
 // 文档详情查询
 export function useDocument(id: string) {
-  return useQuery({
-    queryKey: documentKeys.detail(id),
-    queryFn: () => api.get(`/documents/${id}`),
-    enabled: !!id,
-    staleTime: 60 * 1000, // 1 分钟
-  });
+    return useQuery({
+        queryKey: documentKeys.detail(id),
+        queryFn: () => api.get(`/documents/${id}`),
+        enabled: !!id,
+        staleTime: 60 * 1000, // 1 分钟
+    });
 }
 
 // 文档创建
 export function useCreateDocument() {
-  const queryClient = useQueryClient();
+    const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (data: { title: string }) => api.post('/documents', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: documentKeys.lists() });
-    },
-  });
+    return useMutation({
+        mutationFn: (data: { title: string }) => api.post('/documents', data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: documentKeys.lists() });
+        },
+    });
 }
 ```
 
@@ -903,55 +903,55 @@ import { CustomHighlight } from './custom-highlight';
 import { CustomPlaceholder } from './custom-placeholder';
 
 interface EditorExtensionsConfig {
-  ydoc: Y.Doc;
-  provider: WebsocketProvider;
-  user: { id: string; name: string; color: string };
+    ydoc: Y.Doc;
+    provider: WebsocketProvider;
+    user: { id: string; name: string; color: string };
 }
 
 export function createEditorExtensions(config: EditorExtensionsConfig) {
-  const { ydoc, provider, user } = config;
+    const { ydoc, provider, user } = config;
 
-  return [
-    // 基础扩展
-    StarterKit.configure({
-      history: false, // 禁用本地历史，使用 Yjs
-      heading: { levels: [1, 2, 3] },
-    }),
+    return [
+        // 基础扩展
+        StarterKit.configure({
+            history: false, // 禁用本地历史，使用 Yjs
+            heading: { levels: [1, 2, 3] },
+        }),
 
-    // 协同扩展
-    Collaboration.configure({
-      document: ydoc,
-      field: 'content',
-    }),
+        // 协同扩展
+        Collaboration.configure({
+            document: ydoc,
+            field: 'content',
+        }),
 
-    CollaborationCursor.configure({
-      provider,
-      user,
-      render: (user) => {
-        const cursor = document.createElement('span');
-        cursor.classList.add('collaboration-cursor__caret');
-        cursor.style.borderColor = user.color;
+        CollaborationCursor.configure({
+            provider,
+            user,
+            render: (user) => {
+                const cursor = document.createElement('span');
+                cursor.classList.add('collaboration-cursor__caret');
+                cursor.style.borderColor = user.color;
 
-        const label = document.createElement('span');
-        label.classList.add('collaboration-cursor__label');
-        label.style.backgroundColor = user.color;
-        label.textContent = user.name;
-        cursor.appendChild(label);
+                const label = document.createElement('span');
+                label.classList.add('collaboration-cursor__label');
+                label.style.backgroundColor = user.color;
+                label.textContent = user.name;
+                cursor.appendChild(label);
 
-        return cursor;
-      },
-    }),
+                return cursor;
+            },
+        }),
 
-    // 功能扩展
-    Underline,
-    Highlight.configure({ multicolor: true }),
-    TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    Typography,
+        // 功能扩展
+        Underline,
+        Highlight.configure({ multicolor: true }),
+        TextAlign.configure({ types: ['heading', 'paragraph'] }),
+        Typography,
 
-    // 自定义扩展
-    CustomPlaceholder.configure({ placeholder: '开始输入...' }),
-    CustomHighlight,
-  ];
+        // 自定义扩展
+        CustomPlaceholder.configure({ placeholder: '开始输入...' }),
+        CustomHighlight,
+    ];
 }
 ```
 
@@ -964,64 +964,64 @@ import { useMemo, useCallback } from 'react';
 import { createEditorExtensions } from '@/lib/editor/extensions';
 
 interface UseDocumentEditorOptions {
-  documentId: string;
-  ydoc: Y.Doc;
-  provider: WebsocketProvider;
-  user: UserInfo;
-  onUpdate?: (editor: Editor) => void;
+    documentId: string;
+    ydoc: Y.Doc;
+    provider: WebsocketProvider;
+    user: UserInfo;
+    onUpdate?: (editor: Editor) => void;
 }
 
 export function useDocumentEditor(options: UseDocumentEditorOptions) {
-  const { ydoc, provider, user, onUpdate } = options;
+    const { ydoc, provider, user, onUpdate } = options;
 
-  // 创建扩展配置
-  const extensions = useMemo(
-    () => createEditorExtensions({ ydoc, provider, user }),
-    [ydoc, provider, user]
-  );
+    // 创建扩展配置
+    const extensions = useMemo(
+        () => createEditorExtensions({ ydoc, provider, user }),
+        [ydoc, provider, user]
+    );
 
-  // 创建编辑器实例
-  const editor = useEditor({
-    extensions,
-    immediatelyRender: false,
-    onUpdate: ({ editor }) => {
-      onUpdate?.(editor);
-    },
-    editorProps: {
-      attributes: {
-        class: 'prose prose-lg focus:outline-none max-w-full min-h-[500px] p-4',
-      },
-      handleKeyDown: (view, event) => {
-        // 自定义快捷键处理
-        if ((event.metaKey || event.ctrlKey) && event.key === 's') {
-          event.preventDefault();
-          // 触发保存版本
-          return true;
-        }
-        return false;
-      },
-    },
-  });
+    // 创建编辑器实例
+    const editor = useEditor({
+        extensions,
+        immediatelyRender: false,
+        onUpdate: ({ editor }) => {
+            onUpdate?.(editor);
+        },
+        editorProps: {
+            attributes: {
+                class: 'prose prose-lg focus:outline-none max-w-full min-h-[500px] p-4',
+            },
+            handleKeyDown: (view, event) => {
+                // 自定义快捷键处理
+                if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+                    event.preventDefault();
+                    // 触发保存版本
+                    return true;
+                }
+                return false;
+            },
+        },
+    });
 
-  // 焦点管理
-  const focus = useCallback(() => {
-    editor?.commands.focus();
-  }, [editor]);
+    // 焦点管理
+    const focus = useCallback(() => {
+        editor?.commands.focus();
+    }, [editor]);
 
-  // 获取内容
-  const getContent = useCallback(() => {
+    // 获取内容
+    const getContent = useCallback(() => {
+        return {
+            html: editor?.getHTML() || '',
+            json: editor?.getJSON() || null,
+            text: editor?.getText() || '',
+        };
+    }, [editor]);
+
     return {
-      html: editor?.getHTML() || '',
-      json: editor?.getJSON() || null,
-      text: editor?.getText() || '',
+        editor,
+        focus,
+        getContent,
     };
-  }, [editor]);
-
-  return {
-    editor,
-    focus,
-    getContent,
-  };
 }
 ```
 
@@ -1038,73 +1038,73 @@ import { WebsocketProvider } from 'y-websocket';
 import { IndexeddbPersistence } from 'y-indexeddb';
 
 interface ProviderManagerConfig {
-  documentId: string;
-  token: string;
-  wsUrl: string;
+    documentId: string;
+    token: string;
+    wsUrl: string;
 }
 
 interface ProviderManager {
-  ydoc: Y.Doc;
-  provider: WebsocketProvider;
-  persistence: IndexeddbPersistence;
-  destroy: () => void;
+    ydoc: Y.Doc;
+    provider: WebsocketProvider;
+    persistence: IndexeddbPersistence;
+    destroy: () => void;
 }
 
 export function createProviderManager(config: ProviderManagerConfig): ProviderManager {
-  const { documentId, token, wsUrl } = config;
+    const { documentId, token, wsUrl } = config;
 
-  // 1. 创建 Yjs 文档
-  const ydoc = new Y.Doc();
+    // 1. 创建 Yjs 文档
+    const ydoc = new Y.Doc();
 
-  // 2. 创建 WebSocket Provider
-  const provider = new WebsocketProvider(wsUrl, documentId, ydoc, {
-    connect: false, // 延迟连接
-    params: { token },
-  });
+    // 2. 创建 WebSocket Provider
+    const provider = new WebsocketProvider(wsUrl, documentId, ydoc, {
+        connect: false, // 延迟连接
+        params: { token },
+    });
 
-  // 3. 创建 IndexedDB 持久化
-  const persistence = new IndexeddbPersistence(documentId, ydoc);
+    // 3. 创建 IndexedDB 持久化
+    const persistence = new IndexeddbPersistence(documentId, ydoc);
 
-  // 4. 设置重连策略
-  setupReconnectStrategy(provider);
+    // 4. 设置重连策略
+    setupReconnectStrategy(provider);
 
-  // 5. 连接
-  provider.connect();
+    // 5. 连接
+    provider.connect();
 
-  // 返回管理器
-  return {
-    ydoc,
-    provider,
-    persistence,
-    destroy: () => {
-      provider.disconnect();
-      provider.destroy();
-      persistence.destroy();
-      ydoc.destroy();
-    },
-  };
+    // 返回管理器
+    return {
+        ydoc,
+        provider,
+        persistence,
+        destroy: () => {
+            provider.disconnect();
+            provider.destroy();
+            persistence.destroy();
+            ydoc.destroy();
+        },
+    };
 }
 
 // 重连策略
 function setupReconnectStrategy(provider: WebsocketProvider) {
-  let retryCount = 0;
-  const maxRetries = 10;
-  const baseDelay = 1000;
-  const maxDelay = 30000;
+    let retryCount = 0;
+    const maxRetries = 10;
+    const baseDelay = 1000;
+    const maxDelay = 30000;
 
-  const reconnect = () => {
-    if (retryCount >= maxRetries) return;
+    const reconnect = () => {
+        if (retryCount >= maxRetries) return;
 
-    const delay = Math.min(baseDelay * Math.pow(1.5, retryCount), maxDelay);
+        const delay = Math.min(baseDelay * Math.pow(1.5, retryCount), maxDelay);
 
-    retryCount++;
-    setTimeout(() => provider.connect(), delay);
-  };
+        retryCount++;
+        setTimeout(() => provider.connect(), delay);
+    };
 
-  provider.on('connection-close', reconnect);
-  provider.on('status', ({ status }) => {
-    if (status === 'connected') retryCount = 0;
-  });
+    provider.on('connection-close', reconnect);
+    provider.on('status', ({ status }) => {
+        if (status === 'connected') retryCount = 0;
+    });
 }
 ```
 
@@ -1116,79 +1116,79 @@ import { useEffect, useState, useCallback } from 'react';
 import { Awareness } from 'y-protocols/awareness';
 
 interface UserAwareness {
-  clientId: number;
-  userId: string;
-  name: string;
-  color: string;
-  cursor?: { from: number; to: number };
-  selection?: { from: number; to: number };
-  isEditing: boolean;
+    clientId: number;
+    userId: string;
+    name: string;
+    color: string;
+    cursor?: { from: number; to: number };
+    selection?: { from: number; to: number };
+    isEditing: boolean;
 }
 
 export function useAwareness(awareness: Awareness | null) {
-  const [users, setUsers] = useState<UserAwareness[]>([]);
-  const [localState, setLocalState] = useState<Partial<UserAwareness>>({});
+    const [users, setUsers] = useState<UserAwareness[]>([]);
+    const [localState, setLocalState] = useState<Partial<UserAwareness>>({});
 
-  // 监听远程状态变化
-  useEffect(() => {
-    if (!awareness) return;
+    // 监听远程状态变化
+    useEffect(() => {
+        if (!awareness) return;
 
-    const updateUsers = () => {
-      const states = Array.from(awareness.getStates().entries());
-      const userStates = states
-        .filter(([clientId]) => clientId !== awareness.clientID)
-        .map(([clientId, state]) => ({
-          clientId,
-          ...state,
-        })) as UserAwareness[];
+        const updateUsers = () => {
+            const states = Array.from(awareness.getStates().entries());
+            const userStates = states
+                .filter(([clientId]) => clientId !== awareness.clientID)
+                .map(([clientId, state]) => ({
+                    clientId,
+                    ...state,
+                })) as UserAwareness[];
 
-      setUsers(userStates);
+            setUsers(userStates);
+        };
+
+        updateUsers();
+        awareness.on('change', updateUsers);
+
+        return () => awareness.off('change', updateUsers);
+    }, [awareness]);
+
+    // 更新本地状态
+    const updateLocalState = useCallback(
+        (state: Partial<UserAwareness>) => {
+            if (!awareness) return;
+
+            awareness.setLocalStateField('user', {
+                ...localState,
+                ...state,
+            });
+
+            setLocalState((prev) => ({ ...prev, ...state }));
+        },
+        [awareness, localState]
+    );
+
+    // 更新光标位置
+    const updateCursor = useCallback(
+        (cursor: { from: number; to: number } | null) => {
+            updateLocalState({ cursor });
+        },
+        [updateLocalState]
+    );
+
+    // 更新编辑状态
+    const setEditing = useCallback(
+        (isEditing: boolean) => {
+            updateLocalState({ isEditing });
+        },
+        [updateLocalState]
+    );
+
+    return {
+        users,
+        localState,
+        updateCursor,
+        setEditing,
+        updateLocalState,
     };
-
-    updateUsers();
-    awareness.on('change', updateUsers);
-
-    return () => awareness.off('change', updateUsers);
-  }, [awareness]);
-
-  // 更新本地状态
-  const updateLocalState = useCallback(
-    (state: Partial<UserAwareness>) => {
-      if (!awareness) return;
-
-      awareness.setLocalStateField('user', {
-        ...localState,
-        ...state,
-      });
-
-      setLocalState((prev) => ({ ...prev, ...state }));
-    },
-    [awareness, localState]
-  );
-
-  // 更新光标位置
-  const updateCursor = useCallback(
-    (cursor: { from: number; to: number } | null) => {
-      updateLocalState({ cursor });
-    },
-    [updateLocalState]
-  );
-
-  // 更新编辑状态
-  const setEditing = useCallback(
-    (isEditing: boolean) => {
-      updateLocalState({ isEditing });
-    },
-    [updateLocalState]
-  );
-
-  return {
-    users,
-    localState,
-    updateCursor,
-    setEditing,
-    updateLocalState,
-  };
 }
 ```
 
@@ -1224,28 +1224,28 @@ const VersionPanel = dynamic(
 ```typescript
 // TanStack Query 缓存配置
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000, // 1 分钟
-      gcTime: 5 * 60 * 1000, // 5 分钟
-      retry: 1,
-      refetchOnWindowFocus: false,
+    defaultOptions: {
+        queries: {
+            staleTime: 60 * 1000, // 1 分钟
+            gcTime: 5 * 60 * 1000, // 5 分钟
+            retry: 1,
+            refetchOnWindowFocus: false,
+        },
     },
-  },
 });
 
 // 预加载策略
 function usePrefetch() {
-  const queryClient = useQueryClient();
+    const queryClient = useQueryClient();
 
-  const prefetchDocument = (id: string) => {
-    queryClient.prefetchQuery({
-      queryKey: documentKeys.detail(id),
-      queryFn: () => api.get(`/documents/${id}`),
-    });
-  };
+    const prefetchDocument = (id: string) => {
+        queryClient.prefetchQuery({
+            queryKey: documentKeys.detail(id),
+            queryFn: () => api.get(`/documents/${id}`),
+        });
+    };
 
-  return { prefetchDocument };
+    return { prefetchDocument };
 }
 ```
 
@@ -1331,34 +1331,34 @@ export class ErrorBoundary extends Component<Props, State> {
 import { AxiosError } from 'axios';
 
 export class ApiError extends Error {
-  code: string;
-  status: number;
-  details?: Record<string, unknown>;
+    code: string;
+    status: number;
+    details?: Record<string, unknown>;
 
-  constructor(code: string, message: string, status: number, details?: Record<string, unknown>) {
-    super(message);
-    this.code = code;
-    this.status = status;
-    this.details = details;
-  }
+    constructor(code: string, message: string, status: number, details?: Record<string, unknown>) {
+        super(message);
+        this.code = code;
+        this.status = status;
+        this.details = details;
+    }
 }
 
 export function handleApiError(error: unknown): ApiError {
-  if (error instanceof AxiosError) {
-    const response = error.response?.data;
-    return new ApiError(
-      response?.error?.code || 'UNKNOWN_ERROR',
-      response?.error?.message || error.message,
-      error.response?.status || 500,
-      response?.error?.details
-    );
-  }
+    if (error instanceof AxiosError) {
+        const response = error.response?.data;
+        return new ApiError(
+            response?.error?.code || 'UNKNOWN_ERROR',
+            response?.error?.message || error.message,
+            error.response?.status || 500,
+            response?.error?.details
+        );
+    }
 
-  if (error instanceof Error) {
-    return new ApiError('UNKNOWN_ERROR', error.message, 500);
-  }
+    if (error instanceof Error) {
+        return new ApiError('UNKNOWN_ERROR', error.message, 500);
+    }
 
-  return new ApiError('UNKNOWN_ERROR', 'Unknown error', 500);
+    return new ApiError('UNKNOWN_ERROR', 'Unknown error', 500);
 }
 ```
 
@@ -1374,27 +1374,27 @@ const TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 
 export const tokenManager = {
-  getAccessToken: () => localStorage.getItem(TOKEN_KEY),
-  getRefreshToken: () => localStorage.getItem(REFRESH_TOKEN_KEY),
+    getAccessToken: () => localStorage.getItem(TOKEN_KEY),
+    getRefreshToken: () => localStorage.getItem(REFRESH_TOKEN_KEY),
 
-  setTokens: (accessToken: string, refreshToken: string) => {
-    localStorage.setItem(TOKEN_KEY, accessToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  },
+    setTokens: (accessToken: string, refreshToken: string) => {
+        localStorage.setItem(TOKEN_KEY, accessToken);
+        localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    },
 
-  clearTokens: () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-  },
+    clearTokens: () => {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+    },
 
-  isTokenExpired: (token: string) => {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp * 1000 < Date.now();
-    } catch {
-      return true;
-    }
-  },
+    isTokenExpired: (token: string) => {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.exp * 1000 < Date.now();
+        } catch {
+            return true;
+        }
+    },
 };
 ```
 
@@ -1405,26 +1405,26 @@ export const tokenManager = {
 import DOMPurify from 'dompurify';
 
 function sanitizeHtml(html: string): string {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [
-      'p',
-      'br',
-      'strong',
-      'em',
-      'u',
-      's',
-      'code',
-      'pre',
-      'ul',
-      'ol',
-      'li',
-      'blockquote',
-      'h1',
-      'h2',
-      'h3',
-    ],
-    ALLOWED_ATTR: ['class', 'data-color'],
-  });
+    return DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: [
+            'p',
+            'br',
+            'strong',
+            'em',
+            'u',
+            's',
+            'code',
+            'pre',
+            'ul',
+            'ol',
+            'li',
+            'blockquote',
+            'h1',
+            'h2',
+            'h3',
+        ],
+        ALLOWED_ATTR: ['class', 'data-color'],
+    });
 }
 ```
 

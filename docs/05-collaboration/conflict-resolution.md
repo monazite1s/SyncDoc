@@ -33,15 +33,15 @@ Yjs 基于 YATA 算法，为每个字符分配结构化 ID：
 
 ```typescript
 interface ItemID {
-  client: string;  // 客户端唯一标识
-  clock: number;   // 逻辑时钟
+    client: string; // 客户端唯一标识
+    clock: number; // 逻辑时钟
 }
 
 interface Item {
-  id: ItemID;
-  origin: ItemID | null;  // 前一个字符的 ID
-  content: string;
-  deleted: boolean;
+    id: ItemID;
+    origin: ItemID | null; // 前一个字符的 ID
+    content: string;
+    deleted: boolean;
 }
 ```
 
@@ -55,17 +55,17 @@ interface Item {
 
 ```typescript
 function compare(a: Item, b: Item): number {
-  // 1. 比较原点
-  if (a.origin === b.origin) {
-    // 2. 比较时钟
-    if (a.id.clock < b.id.clock) return -1;
-    if (a.id.clock > b.id.clock) return 1;
+    // 1. 比较原点
+    if (a.origin === b.origin) {
+        // 2. 比较时钟
+        if (a.id.clock < b.id.clock) return -1;
+        if (a.id.clock > b.id.clock) return 1;
 
-    // 3. 比较客户端 ID
-    return a.id.client < b.id.client ? -1 : 1;
-  }
+        // 3. 比较客户端 ID
+        return a.id.client < b.id.client ? -1 : 1;
+    }
 
-  // 复杂的 origin 链比较...
+    // 复杂的 origin 链比较...
 }
 ```
 
@@ -101,9 +101,9 @@ function compare(a: Item, b: Item): number {
 1. 删除操作标记字符为 `deleted: true`
 2. 插入操作在指定位置添加新字符
 3. 合并后：
-   - "Hello" 保留
-   - "Beautiful " 插入
-   - "World" 被标记删除
+    - "Hello" 保留
+    - "Beautiful " 插入
+    - "World" 被标记删除
 4. 结果：用户看到 "Hello Beautiful "
 
 ## 冲突解决流程
@@ -161,11 +161,11 @@ console.log(text2.toString()); // "Hello"
 
 // 并发编辑
 doc1.transact(() => {
-  text1.insert(5, '!'); // "Hello!"
+    text1.insert(5, '!'); // "Hello!"
 });
 
 doc2.transact(() => {
-  text2.insert(5, '?'); // "Hello?"
+    text2.insert(5, '?'); // "Hello?"
 });
 
 // 同步
@@ -186,17 +186,17 @@ console.log(text2.toString()); // 相同
 const ytext = ydoc.getText('content');
 
 ytext.observe((event) => {
-  event.changes.delta.forEach((change) => {
-    if ('insert' in change) {
-      console.log(`Inserted: "${change.insert}" at position ${change.retain || 0}`);
-    }
-    if ('delete' in change) {
-      console.log(`Deleted: ${change.delete} characters`);
-    }
-    if ('retain' in change) {
-      console.log(`Retained: ${change.retain} characters`);
-    }
-  });
+    event.changes.delta.forEach((change) => {
+        if ('insert' in change) {
+            console.log(`Inserted: "${change.insert}" at position ${change.retain || 0}`);
+        }
+        if ('delete' in change) {
+            console.log(`Deleted: ${change.delete} characters`);
+        }
+        if ('retain' in change) {
+            console.log(`Retained: ${change.retain} characters`);
+        }
+    });
 });
 ```
 
@@ -235,15 +235,15 @@ ymap.set('key', 'value2');
 ```typescript
 // 处理大量并发更新
 ydoc.on('update', (update, origin) => {
-  // 批量处理
-  pendingUpdates.push(update);
+    // 批量处理
+    pendingUpdates.push(update);
 
-  // 防抖合并
-  debounce(() => {
-    const merged = mergeUpdates(pendingUpdates);
-    broadcast(merged);
-    pendingUpdates = [];
-  }, 100);
+    // 防抖合并
+    debounce(() => {
+        const merged = mergeUpdates(pendingUpdates);
+        broadcast(merged);
+        pendingUpdates = [];
+    }, 100);
 });
 ```
 
@@ -268,8 +268,8 @@ ydoc.on('update', (update, origin) => {
 ```typescript
 // ✅ 原子操作
 ydoc.transact(() => {
-  ytext.insert(0, 'Hello');
-  ytext.format(0, 5, { bold: true });
+    ytext.insert(0, 'Hello');
+    ytext.format(0, 5, { bold: true });
 });
 
 // ❌ 分散操作
@@ -285,7 +285,7 @@ ytext.format(0, 100, { bold: true });
 
 // ❌ 逐字符格式化
 for (let i = 0; i < 100; i++) {
-  ytext.format(i, 1, { bold: true });
+    ytext.format(i, 1, { bold: true });
 }
 ```
 
@@ -295,8 +295,8 @@ for (let i = 0; i < 100; i++) {
 // 分块加载
 const chunkSize = 10000;
 for (let i = 0; i < largeContent.length; i += chunkSize) {
-  const chunk = largeContent.slice(i, i + chunkSize);
-  ytext.insert(ytext.length, chunk);
+    const chunk = largeContent.slice(i, i + chunkSize);
+    ytext.insert(ytext.length, chunk);
 }
 ```
 
@@ -304,11 +304,11 @@ for (let i = 0; i < largeContent.length; i += chunkSize) {
 
 ```typescript
 try {
-  Y.applyUpdate(ydoc, remoteUpdate);
+    Y.applyUpdate(ydoc, remoteUpdate);
 } catch (error) {
-  console.error('Merge error:', error);
-  // 重新同步
-  requestFullSync();
+    console.error('Merge error:', error);
+    // 重新同步
+    requestFullSync();
 }
 ```
 

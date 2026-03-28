@@ -214,21 +214,21 @@
 **保持现有架构，但优化使用方式**：
 
 1. **利用 Next.js 能力**：
-   - 将文档列表页改为 RSC（Server Component），直接查询后端 API
-   - 使用 Server Actions 处理表单提交（注册/登录）
-   - 利用 `loading.tsx` 和 `error.tsx` 实现 Streaming UI
+    - 将文档列表页改为 RSC（Server Component），直接查询后端 API
+    - 使用 Server Actions 处理表单提交（注册/登录）
+    - 利用 `loading.tsx` 和 `error.tsx` 实现 Streaming UI
 
 2. **统一端口**：
-   - 将 Hocuspocus WebSocket 集成到 NestJS 主服务（去除 :3002）
-   - 减少一个进程管理
+    - 将 Hocuspocus WebSocket 集成到 NestJS 主服务（去除 :3002）
+    - 减少一个进程管理
 
 3. **共享类型**：
-   - 创建 `packages/shared` 包（monorepo 内）
-   - 前后端共享 DTO、接口、枚举
+    - 创建 `packages/shared` 包（monorepo 内）
+    - 前后端共享 DTO、接口、枚举
 
 4. **认证改进**：
-   - 改用 HttpOnly cookie 存储 JWT
-   - 实现 csrf token 机制
+    - 改用 HttpOnly cookie 存储 JWT
+    - 实现 csrf token 机制
 
 ### 5.2 中期建议（功能完善阶段）
 

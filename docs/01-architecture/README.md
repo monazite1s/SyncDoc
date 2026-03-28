@@ -6,13 +6,13 @@
 
 ## 架构核心目标
 
-| 目标 | 说明 |
-|------|------|
+| 目标         | 说明                   |
+| ------------ | ---------------------- |
 | **实时协同** | 毫秒级同步，无冲突合并 |
-| **离线支持** | 本地优先，断网可编辑 |
-| **版本管理** | 快照、回溯、Diff 对比 |
-| **安全可靠** | JWT 认证，RBAC 权限 |
-| **可扩展性** | 模块化设计，水平扩展 |
+| **离线支持** | 本地优先，断网可编辑   |
+| **版本管理** | 快照、回溯、Diff 对比  |
+| **安全可靠** | JWT 认证，RBAC 权限    |
+| **可扩展性** | 模块化设计，水平扩展   |
 
 ## 架构分层
 
@@ -43,16 +43,16 @@
 
 ## 文档目录
 
-| 文档 | 说明 |
-|------|------|
-| [ai-agent-guidelines.md](./ai-agent-guidelines.md) | **AI Agent 开发指南（必读）** |
-| [code-review-checklist.md](./code-review-checklist.md) | **代码审查检查清单** |
-| [tech-stack.md](./tech-stack.md) | 技术栈选型（2026 视角） |
-| [system-architecture.md](./system-architecture.md) | 整体架构设计 |
-| [data-flow.md](./data-flow.md) | 数据流向设计 |
-| [coding-standards.md](./coding-standards.md) | 编码规范 |
-| [testing-guide.md](./testing-guide.md) | 测试指南 |
-| [git-workflow.md](./git-workflow.md) | Git 工作流 |
+| 文档                                                   | 说明                          |
+| ------------------------------------------------------ | ----------------------------- |
+| [ai-agent-guidelines.md](./ai-agent-guidelines.md)     | **AI Agent 开发指南（必读）** |
+| [code-review-checklist.md](./code-review-checklist.md) | **代码审查检查清单**          |
+| [tech-stack.md](./tech-stack.md)                       | 技术栈选型（2026 视角）       |
+| [system-architecture.md](./system-architecture.md)     | 整体架构设计                  |
+| [data-flow.md](./data-flow.md)                         | 数据流向设计                  |
+| [coding-standards.md](./coding-standards.md)           | 编码规范                      |
+| [testing-guide.md](./testing-guide.md)                 | 测试指南                      |
+| [git-workflow.md](./git-workflow.md)                   | Git 工作流                    |
 
 ## 设计原则
 

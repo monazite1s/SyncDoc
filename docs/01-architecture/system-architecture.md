@@ -79,21 +79,21 @@ App (Next.js App Router)
 ```typescript
 // 状态层次结构
 interface AppState {
-  // 服务端状态（通过 React Query / SWR）
-  document: Document;
-  versions: Version[];
-  collaborators: Collaborator[];
+    // 服务端状态（通过 React Query / SWR）
+    document: Document;
+    versions: Version[];
+    collaborators: Collaborator[];
 
-  // 客户端状态（通过 Zustand）
-  ui: {
-    sidebarOpen: boolean;
-    activeVersion: string | null;
-    previewMode: boolean;
-  };
+    // 客户端状态（通过 Zustand）
+    ui: {
+        sidebarOpen: boolean;
+        activeVersion: string | null;
+        previewMode: boolean;
+    };
 
-  // 协同状态（通过 Yjs）
-  ydoc: Y.Doc;
-  awareness: Awareness;
+    // 协同状态（通过 Yjs）
+    ydoc: Y.Doc;
+    awareness: Awareness;
 }
 ```
 
@@ -109,55 +109,46 @@ import { Redis } from '@hocuspocus/extension-redis';
 import { Logger } from '@hocuspocus/extension-logger';
 
 const server = Server.configure({
-  port: parseInt(process.env.HOCUSPOCUS_PORT || '1234'),
+    port: parseInt(process.env.HOCUSPOCUS_PORT || '1234'),
 
-  // 扩展配置
-  extensions: [
-    new Logger(),
-    new Redis({
-      host: process.env.REDIS_HOST,
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-    }),
-    new Database({
-      fetch: async ({ documentName }) => {
-        // 从 PostgreSQL 加载文档
-        return await documentService.loadDocument(documentName);
-      },
-      store: async ({ documentName, state }) => {
-        // 持久化到 PostgreSQL
-        await documentService.saveDocument(documentName, state);
-      },
-    }),
-  ],
+    // 扩展配置
+    extensions: [
+        new Logger(),
+        new Redis({
+            host: process.env.REDIS_HOST,
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+        }),
+        new Database({
+            fetch: async ({ documentName }) => {
+                // 从 PostgreSQL 加载文档
+                return await documentService.loadDocument(documentName);
+            },
+            store: async ({ documentName, state }) => {
+                // 持久化到 PostgreSQL
+                await documentService.saveDocument(documentName, state);
+            },
+        }),
+    ],
 
-  // 认证钩子
-  async onAuthenticate({ token, documentName }) {
-    const user = await authService.verifyToken(token);
-    const hasAccess = await documentService.checkAccess(
-      documentName,
-      user.id
-    );
-    if (!hasAccess) {
-      throw new Error('Unauthorized');
-    }
-    return { user };
-  },
+    // 认证钩子
+    async onAuthenticate({ token, documentName }) {
+        const user = await authService.verifyToken(token);
+        const hasAccess = await documentService.checkAccess(documentName, user.id);
+        if (!hasAccess) {
+            throw new Error('Unauthorized');
+        }
+        return { user };
+    },
 
-  // 连接钩子
-  async onConnect({ documentName, context }) {
-    await documentService.recordConnection(
-      documentName,
-      context.user.id
-    );
-  },
+    // 连接钩子
+    async onConnect({ documentName, context }) {
+        await documentService.recordConnection(documentName, context.user.id);
+    },
 
-  // 断开钩子
-  async onDisconnect({ documentName, context }) {
-    await documentService.recordDisconnection(
-      documentName,
-      context.user.id
-    );
-  },
+    // 断开钩子
+    async onDisconnect({ documentName, context }) {
+        await documentService.recordDisconnection(documentName, context.user.id);
+    },
 });
 
 server.listen();
@@ -193,12 +184,12 @@ graph TB
 
 ### 核心服务职责
 
-| 服务 | 职责 | 关键方法 |
-|------|------|----------|
-| **AuthService** | 用户认证、Token 管理 | `login()`, `verifyToken()`, `refreshToken()` |
-| **DocumentService** | 文档 CRUD、权限检查 | `create()`, `loadDocument()`, `saveDocument()` |
-| **VersionService** | 版本快照、回溯 | `createSnapshot()`, `restore()`, `diff()` |
-| **CollaborationService** | 协作者管理 | `joinRoom()`, `leaveRoom()`, `getAwareness()` |
+| 服务                     | 职责                 | 关键方法                                       |
+| ------------------------ | -------------------- | ---------------------------------------------- |
+| **AuthService**          | 用户认证、Token 管理 | `login()`, `verifyToken()`, `refreshToken()`   |
+| **DocumentService**      | 文档 CRUD、权限检查  | `create()`, `loadDocument()`, `saveDocument()` |
+| **VersionService**       | 版本快照、回溯       | `createSnapshot()`, `restore()`, `diff()`      |
+| **CollaborationService** | 协作者管理           | `joinRoom()`, `leaveRoom()`, `getAwareness()`  |
 
 ## 数据层架构
 
@@ -314,9 +305,9 @@ channel:document:{documentId} -> Yjs Updates
 ```typescript
 // 跨实例消息同步
 redis.subscribe('channel:document:*', (message) => {
-  const { documentId, update } = JSON.parse(message);
-  // 广播给本实例的所有连接客户端
-  broadcastToLocalClients(documentId, update);
+    const { documentId, update } = JSON.parse(message);
+    // 广播给本实例的所有连接客户端
+    broadcastToLocalClients(documentId, update);
 });
 ```
 
@@ -326,25 +317,20 @@ redis.subscribe('channel:document:*', (message) => {
 
 ```typescript
 // y-websocket 重连策略
-const provider = new WebsocketProvider(
-  'wss://collab.example.com',
-  documentId,
-  ydoc,
-  {
+const provider = new WebsocketProvider('wss://collab.example.com', documentId, ydoc, {
     connect: true,
     maxBackoffTime: 30000, // 最大退避时间
     backoffFactor: 1.5,
-  }
-);
+});
 
 provider.on('status', (event) => {
-  if (event.status === 'disconnected') {
-    // 显示离线提示
-    // 本地编辑继续
-  }
-  if (event.status === 'connected') {
-    // 同步离线期间的变更
-  }
+    if (event.status === 'disconnected') {
+        // 显示离线提示
+        // 本地编辑继续
+    }
+    if (event.status === 'connected') {
+        // 同步离线期间的变更
+    }
 });
 ```
 

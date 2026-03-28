@@ -3,136 +3,151 @@
 # Usage: docker compose up -d
 # ============================================
 services:
-  # ==========================================
-  # Infrastructure Services
-  # ==========================================
-  postgres:
-    image: postgres:16-alpine
-    container_name: collab-editor-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${DB_USER:-collab}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-collab123}
-      POSTGRES_DB: ${DB_NAME:-collab_editor}
-    ports:
-      - '${DB_PORT:-5432}:5432'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-collab} -d ${DB_NAME:-collab_editor}']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - collab-network
+    # ==========================================
+    # Infrastructure Services
+    # ==========================================
+    postgres:
+        image: postgres:16-alpine
+        container_name: collab-editor-db
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: ${DB_USER:-collab}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-collab123}
+            POSTGRES_DB: ${DB_NAME:-collab_editor}
+        ports:
+            - '${DB_PORT:-5432}:5432'
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-collab} -d ${DB_NAME:-collab_editor}']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            - collab-network
 
-  redis:
-    image: redis:7-alpine
-    container_name: collab-editor-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    ports:
-      - '${REDIS_PORT:-6379}:6379'
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - collab-network
+    redis:
+        image: redis:7-alpine
+        container_name: collab-editor-redis
+        restart: unless-stopped
+        command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+        ports:
+            - '${REDIS_PORT:-6379}:6379'
+        volumes:
+            - redis_data:/data
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            - collab-network
 
-  # ==========================================
-  # Application Services (Production Build)
-  # ==========================================
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: collab-editor-backend
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://${DB_USER:-collab}:${DB_PASSWORD:-collab123}@postgres:5432/${DB_NAME:-collab_editor}
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
-      PORT: 3001
-      WS_PORT: 3002
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-    ports:
-      - '${BACKEND_PORT:-3001}:3001'
-      - '${WS_PORT:-3002}:3002'
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - collab-network
-    healthcheck:
-      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3001/health']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+    # ==========================================
+    # Application Services (Production Build)
+    # ==========================================
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        container_name: collab-editor-backend
+        restart: unless-stopped
+        environment:
+            NODE_ENV: production
+            DATABASE_URL: postgresql://${DB_USER:-collab}:${DB_PASSWORD:-collab123}@postgres:5432/${DB_NAME:-collab_editor}
+            REDIS_URL: redis://redis:6379
+            JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+            JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+            CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+            PORT: 3001
+            WS_PORT: 3002
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+        ports:
+            - '${BACKEND_PORT:-3001}:3001'
+            - '${WS_PORT:-3002}:3002'
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - collab-network
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'wget',
+                    '--no-verbose',
+                    '--tries=1',
+                    '--spider',
+                    'http://localhost:3001/health',
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 10s
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: collab-editor-frontend
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
-      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:3002}
-    ports:
-      - '${FRONTEND_PORT:-3000}:3000'
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - collab-network
-    healthcheck:
-      test:
-        ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000/api/health']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        container_name: collab-editor-frontend
+        restart: unless-stopped
+        environment:
+            NODE_ENV: production
+            NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+            NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:3002}
+        ports:
+            - '${FRONTEND_PORT:-3000}:3000'
+        depends_on:
+            backend:
+                condition: service_healthy
+        networks:
+            - collab-network
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'wget',
+                    '--no-verbose',
+                    '--tries=1',
+                    '--spider',
+                    'http://localhost:3000/api/health',
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 10s
 
-  # ==========================================
-  # Optional: Database Management
-  # ==========================================
-  adminer:
-    image: adminer:latest
-    container_name: collab-editor-adminer
-    restart: unless-stopped
-    ports:
-      - '${ADMINER_PORT:-8080}:8080'
-    depends_on:
-      - postgres
-    networks:
-      - collab-network
-    profiles:
-      - tools
+    # ==========================================
+    # Optional: Database Management
+    # ==========================================
+    adminer:
+        image: adminer:latest
+        container_name: collab-editor-adminer
+        restart: unless-stopped
+        ports:
+            - '${ADMINER_PORT:-8080}:8080'
+        depends_on:
+            - postgres
+        networks:
+            - collab-network
+        profiles:
+            - tools
 
 # ==========================================
 # Networks
 # ==========================================
 networks:
-  collab-network:
-    driver: bridge
+    collab-network:
+        driver: bridge
 
 # ==========================================
 # Volumes
 # ==========================================
 volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
+    postgres_data:
+        driver: local
+    redis_data:
+        driver: local

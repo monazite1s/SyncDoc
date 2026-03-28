@@ -21,9 +21,9 @@
 
 ```json
 {
-  "dependencies": {
-    "next-themes": "^0.3.0"
-  }
+    "dependencies": {
+        "next-themes": "^0.3.0"
+    }
 }
 ```
 
@@ -39,9 +39,9 @@
 
 ```json
 {
-  "dependencies": {
-    "@collab/types": "workspace:*"
-  }
+    "dependencies": {
+        "@collab/types": "workspace:*"
+    }
 }
 ```
 
@@ -57,11 +57,11 @@
 
 ```json
 {
-  "dependencies": {
-    "next": "^15.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  }
+    "dependencies": {
+        "next": "^15.0.0",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0"
+    }
 }
 ```
 
@@ -76,13 +76,13 @@
 
 ```json
 {
-  "dependencies": {
-    "@tiptap/react": "^3.0.0",
-    "@tiptap/starter-kit": "^3.0.0",
-    "@tiptap/extension-collaboration": "^3.0.0",
-    "@tiptap/extension-collaboration-cursor": "^3.0.0",
-    "yjs": "^13.6.0"
-  }
+    "dependencies": {
+        "@tiptap/react": "^3.0.0",
+        "@tiptap/starter-kit": "^3.0.0",
+        "@tiptap/extension-collaboration": "^3.0.0",
+        "@tiptap/extension-collaboration-cursor": "^3.0.0",
+        "yjs": "^13.6.0"
+    }
 }
 ```
 
@@ -97,13 +97,13 @@
 
 ```json
 {
-  "dependencies": {
-    "tailwindcss": "^4.0.0",
-    "@shadcn/ui": "^1.0.0",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.0.0",
-    "tailwind-merge": "^2.0.0"
-  }
+    "dependencies": {
+        "tailwindcss": "^4.0.0",
+        "@shadcn/ui": "^1.0.0",
+        "class-variance-authority": "^0.7.0",
+        "clsx": "^2.0.0",
+        "tailwind-merge": "^2.0.0"
+    }
 }
 ```
 
@@ -119,14 +119,14 @@
 
 ```json
 {
-  "dependencies": {
-    "@nestjs/core": "^11.0.0",
-    "@nestjs/common": "^11.0.0",
-    "@nestjs/platform-express": "^11.0.0",
-    "@nestjs/jwt": "^11.0.0",
-    "@nestjs/passport": "^11.0.0",
-    "@nestjs/websockets": "^11.0.0"
-  }
+    "dependencies": {
+        "@nestjs/core": "^11.0.0",
+        "@nestjs/common": "^11.0.0",
+        "@nestjs/platform-express": "^11.0.0",
+        "@nestjs/jwt": "^11.0.0",
+        "@nestjs/passport": "^11.0.0",
+        "@nestjs/websockets": "^11.0.0"
+    }
 }
 ```
 
@@ -141,12 +141,12 @@
 
 ```json
 {
-  "dependencies": {
-    "@hocuspocus/server": "^3.0.0",
-    "@hocuspocus/extension-database": "^3.0.0",
-    "@hocuspocus/extension-redis": "^3.0.0",
-    "@hocuspocus/extension-monitor": "^3.0.0"
-  }
+    "dependencies": {
+        "@hocuspocus/server": "^3.0.0",
+        "@hocuspocus/extension-database": "^3.0.0",
+        "@hocuspocus/extension-redis": "^3.0.0",
+        "@hocuspocus/extension-monitor": "^3.0.0"
+    }
 }
 ```
 
@@ -161,12 +161,12 @@
 
 ```json
 {
-  "dependencies": {
-    "@prisma/client": "^6.0.0"
-  },
-  "devDependencies": {
-    "prisma": "^6.0.0"
-  }
+    "dependencies": {
+        "@prisma/client": "^6.0.0"
+    },
+    "devDependencies": {
+        "prisma": "^6.0.0"
+    }
 }
 ```
 
@@ -213,13 +213,13 @@ bun install
 
 ```json
 {
-  "devDependencies": {
-    "typescript": "^5.5.0",
-    "eslint": "^9.0.0",
-    "prettier": "^3.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "vitest": "^2.0.0"
-  }
+    "devDependencies": {
+        "typescript": "^5.5.0",
+        "eslint": "^9.0.0",
+        "prettier": "^3.0.0",
+        "@typescript-eslint/eslint-plugin": "^8.0.0",
+        "vitest": "^2.0.0"
+    }
 }
 ```
 

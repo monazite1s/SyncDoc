@@ -75,210 +75,196 @@ import * as Y from 'yjs';
 
 @Injectable()
 export class HocuspocusService implements OnModuleInit, OnModuleDestroy {
-  private server: Server;
+    private server: Server;
 
-  constructor(
-    private config: ConfigService,
-    private jwt: JwtService,
-    private prisma: PrismaService,
-    private redis: RedisService,
-    private documents: DocumentsService,
-  ) {}
+    constructor(
+        private config: ConfigService,
+        private jwt: JwtService,
+        private prisma: PrismaService,
+        private redis: RedisService,
+        private documents: DocumentsService
+    ) {}
 
-  onModuleInit() {
-    this.server = Server.configure({
-      port: this.config.get('HOCUSPOCUS_PORT', 1234),
+    onModuleInit() {
+        this.server = Server.configure({
+            port: this.config.get('HOCUSPOCUS_PORT', 1234),
 
-      // 扩展配置
-      extensions: [
-        new Logger(),
-        new Redis({
-          host: this.config.get('REDIS_HOST', 'localhost'),
-          port: this.config.get('REDIS_PORT', 6379),
-        }),
-        new Database({
-          fetch: async ({ documentName }) => {
-            const content = await this.documents.loadContent(documentName);
-            return content ? new Uint8Array(content) : null;
-          },
-          store: async ({ documentName, state }) => {
-            await this.documents.saveContent(
-              documentName,
-              Buffer.from(state),
-            );
-          },
-        }),
-      ],
+            // 扩展配置
+            extensions: [
+                new Logger(),
+                new Redis({
+                    host: this.config.get('REDIS_HOST', 'localhost'),
+                    port: this.config.get('REDIS_PORT', 6379),
+                }),
+                new Database({
+                    fetch: async ({ documentName }) => {
+                        const content = await this.documents.loadContent(documentName);
+                        return content ? new Uint8Array(content) : null;
+                    },
+                    store: async ({ documentName, state }) => {
+                        await this.documents.saveContent(documentName, Buffer.from(state));
+                    },
+                }),
+            ],
 
-      // 认证钩子
-      async onAuthenticate({ token, documentName }) {
-        if (!token) {
-          throw new Error('Authentication required');
-        }
+            // 认证钩子
+            async onAuthenticate({ token, documentName }) {
+                if (!token) {
+                    throw new Error('Authentication required');
+                }
 
-        try {
-          const payload = this.jwt.verify(token);
+                try {
+                    const payload = this.jwt.verify(token);
 
-          // 检查 token 黑名单
-          const isBlacklisted = await this.redis.get(`blacklist:${token}`);
-          if (isBlacklisted) {
-            throw new Error('Token revoked');
-          }
+                    // 检查 token 黑名单
+                    const isBlacklisted = await this.redis.get(`blacklist:${token}`);
+                    if (isBlacklisted) {
+                        throw new Error('Token revoked');
+                    }
 
-          // 检查文档访问权限
-          const hasAccess = await this.checkDocumentAccess(
-            documentName,
-            payload.sub,
-          );
+                    // 检查文档访问权限
+                    const hasAccess = await this.checkDocumentAccess(documentName, payload.sub);
 
-          if (!hasAccess) {
-            throw new Error('Access denied');
-          }
+                    if (!hasAccess) {
+                        throw new Error('Access denied');
+                    }
 
-          return {
-            user: {
-              id: payload.sub,
-              email: payload.email,
-              name: payload.name,
+                    return {
+                        user: {
+                            id: payload.sub,
+                            email: payload.email,
+                            name: payload.name,
+                        },
+                    };
+                } catch (error) {
+                    throw new Error('Invalid token');
+                }
             },
-          };
-        } catch (error) {
-          throw new Error('Invalid token');
-        }
-      },
 
-      // 连接钩子
-      async onConnect({ documentName, context }) {
-        const userId = context.user.id;
+            // 连接钩子
+            async onConnect({ documentName, context }) {
+                const userId = context.user.id;
 
-        // 记录连接
-        await this.redis.sadd(`connections:${documentName}`, userId);
+                // 记录连接
+                await this.redis.sadd(`connections:${documentName}`, userId);
 
-        // 更新文档最后访问时间
-        await this.prisma.document.update({
-          where: { id: documentName },
-          data: { updatedAt: new Date() },
+                // 更新文档最后访问时间
+                await this.prisma.document.update({
+                    where: { id: documentName },
+                    data: { updatedAt: new Date() },
+                });
+            },
+
+            // 加载文档钩子
+            async onLoadDocument({ documentName, context }) {
+                const content = await this.documents.loadContent(documentName);
+
+                if (content) {
+                    const ydoc = new Y.Doc();
+                    Y.applyUpdate(ydoc, new Uint8Array(content));
+                    return ydoc;
+                }
+
+                return null;
+            },
+
+            // 应用更新钩子
+            async onChange({ documentName, context, update }) {
+                // 检查写权限
+                const role = await this.getUserRole(documentName, context.user.id);
+
+                if (role === 'VIEWER') {
+                    throw new Error('Read-only access');
+                }
+
+                // 发布更新事件（用于其他系统集成）
+                await this.redis.publish(
+                    `document:update:${documentName}`,
+                    JSON.stringify({
+                        userId: context.user.id,
+                        timestamp: Date.now(),
+                    })
+                );
+            },
+
+            // 存储文档钩子（防抖）
+            async onStoreDocument({ documentName, document, context }) {
+                const state = Y.encodeStateAsUpdate(document);
+                await this.documents.saveContent(documentName, Buffer.from(state));
+            },
+
+            // 断开连接钩子
+            async onDisconnect({ documentName, context }) {
+                const userId = context.user.id;
+
+                // 移除连接记录
+                await this.redis.srem(`connections:${documentName}`, userId);
+
+                // 清理空的连接集合
+                const remaining = await this.redis.client.sCard(`connections:${documentName}`);
+                if (remaining === 0) {
+                    await this.redis.del(`connections:${documentName}`);
+                }
+            },
+
+            // 监听钩子
+            async onListen() {
+                console.log(
+                    `Hocuspocus server listening on port ${this.config.get('HOCUSPOCUS_PORT', 1234)}`
+                );
+            },
+
+            // 关闭钩子
+            async onClose() {
+                console.log('Hocuspocus server closed');
+            },
         });
-      },
 
-      // 加载文档钩子
-      async onLoadDocument({ documentName, context }) {
-        const content = await this.documents.loadContent(documentName);
-
-        if (content) {
-          const ydoc = new Y.Doc();
-          Y.applyUpdate(ydoc, new Uint8Array(content));
-          return ydoc;
-        }
-
-        return null;
-      },
-
-      // 应用更新钩子
-      async onChange({ documentName, context, update }) {
-        // 检查写权限
-        const role = await this.getUserRole(documentName, context.user.id);
-
-        if (role === 'VIEWER') {
-          throw new Error('Read-only access');
-        }
-
-        // 发布更新事件（用于其他系统集成）
-        await this.redis.publish(
-          `document:update:${documentName}`,
-          JSON.stringify({
-            userId: context.user.id,
-            timestamp: Date.now(),
-          }),
-        );
-      },
-
-      // 存储文档钩子（防抖）
-      async onStoreDocument({ documentName, document, context }) {
-        const state = Y.encodeStateAsUpdate(document);
-        await this.documents.saveContent(documentName, Buffer.from(state));
-      },
-
-      // 断开连接钩子
-      async onDisconnect({ documentName, context }) {
-        const userId = context.user.id;
-
-        // 移除连接记录
-        await this.redis.srem(`connections:${documentName}`, userId);
-
-        // 清理空的连接集合
-        const remaining = await this.redis.client.sCard(
-          `connections:${documentName}`,
-        );
-        if (remaining === 0) {
-          await this.redis.del(`connections:${documentName}`);
-        }
-      },
-
-      // 监听钩子
-      async onListen() {
-        console.log(
-          `Hocuspocus server listening on port ${this.config.get('HOCUSPOCUS_PORT', 1234)}`,
-        );
-      },
-
-      // 关闭钩子
-      async onClose() {
-        console.log('Hocuspocus server closed');
-      },
-    });
-
-    this.server.listen();
-  }
-
-  onModuleDestroy() {
-    this.server?.destroy();
-  }
-
-  private async checkDocumentAccess(
-    documentId: string,
-    userId: string,
-  ): Promise<boolean> {
-    const document = await this.prisma.document.findUnique({
-      where: { id: documentId },
-      select: { ownerId: true },
-    });
-
-    if (document?.ownerId === userId) {
-      return true;
+        this.server.listen();
     }
 
-    const collaborator = await this.prisma.collaborator.findUnique({
-      where: {
-        documentId_userId: { documentId, userId },
-      },
-    });
-
-    return !!collaborator;
-  }
-
-  private async getUserRole(
-    documentId: string,
-    userId: string,
-  ): Promise<string | null> {
-    const document = await this.prisma.document.findUnique({
-      where: { id: documentId },
-      select: { ownerId: true },
-    });
-
-    if (document?.ownerId === userId) {
-      return 'OWNER';
+    onModuleDestroy() {
+        this.server?.destroy();
     }
 
-    const collaborator = await this.prisma.collaborator.findUnique({
-      where: {
-        documentId_userId: { documentId, userId },
-      },
-      select: { role: true },
-    });
+    private async checkDocumentAccess(documentId: string, userId: string): Promise<boolean> {
+        const document = await this.prisma.document.findUnique({
+            where: { id: documentId },
+            select: { ownerId: true },
+        });
 
-    return collaborator?.role || null;
-  }
+        if (document?.ownerId === userId) {
+            return true;
+        }
+
+        const collaborator = await this.prisma.collaborator.findUnique({
+            where: {
+                documentId_userId: { documentId, userId },
+            },
+        });
+
+        return !!collaborator;
+    }
+
+    private async getUserRole(documentId: string, userId: string): Promise<string | null> {
+        const document = await this.prisma.document.findUnique({
+            where: { id: documentId },
+            select: { ownerId: true },
+        });
+
+        if (document?.ownerId === userId) {
+            return 'OWNER';
+        }
+
+        const collaborator = await this.prisma.collaborator.findUnique({
+            where: {
+                documentId_userId: { documentId, userId },
+            },
+            select: { role: true },
+        });
+
+        return collaborator?.role || null;
+    }
 }
 ```
 
@@ -294,9 +280,9 @@ import { DocumentsModule } from '../modules/documents/documents.module';
 import { AuthModule } from '../modules/auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, RedisModule, DocumentsModule, AuthModule],
-  providers: [HocuspocusService],
-  exports: [HocuspocusService],
+    imports: [PrismaModule, RedisModule, DocumentsModule, AuthModule],
+    providers: [HocuspocusService],
+    exports: [HocuspocusService],
 })
 export class HocuspocusModule {}
 ```
@@ -447,12 +433,12 @@ async onDisconnect({ documentName, context }) {
 import { Redis } from '@hocuspocus/extension-redis';
 
 const redisExtension = new Redis({
-  host: 'localhost',
-  port: 6379,
-  // 可选：用于水平扩展
-  identifier: 'server-1',
-  // Pub/Sub 前缀
-  prefix: 'hocuspocus:',
+    host: 'localhost',
+    port: 6379,
+    // 可选：用于水平扩展
+    identifier: 'server-1',
+    // Pub/Sub 前缀
+    prefix: 'hocuspocus:',
 });
 ```
 
@@ -462,22 +448,22 @@ const redisExtension = new Redis({
 import { Database } from '@hocuspocus/extension-database';
 
 const databaseExtension = new Database({
-  // 获取文档
-  fetch: async ({ documentName }) => {
-    const doc = await prisma.document.findUnique({
-      where: { id: documentName },
-      select: { content: true },
-    });
-    return doc?.content;
-  },
+    // 获取文档
+    fetch: async ({ documentName }) => {
+        const doc = await prisma.document.findUnique({
+            where: { id: documentName },
+            select: { content: true },
+        });
+        return doc?.content;
+    },
 
-  // 存储文档
-  store: async ({ documentName, state }) => {
-    await prisma.document.update({
-      where: { id: documentName },
-      data: { content: Buffer.from(state) },
-    });
-  },
+    // 存储文档
+    store: async ({ documentName, state }) => {
+        await prisma.document.update({
+            where: { id: documentName },
+            data: { content: Buffer.from(state) },
+        });
+    },
 });
 ```
 
@@ -487,8 +473,8 @@ const databaseExtension = new Database({
 import { Monitor } from '@hocuspocus/extension-monitor';
 
 const monitorExtension = new Monitor({
-  enabled: true,
-  port: 3001, // 监控指标端口
+    enabled: true,
+    port: 3001, // 监控指标端口
 });
 ```
 
@@ -513,15 +499,15 @@ import { HocuspocusService } from './hocuspocus.config';
 
 @Controller('health')
 export class HealthController {
-  constructor(private hocuspocus: HocuspocusService) {}
+    constructor(private hocuspocus: HocuspocusService) {}
 
-  @Get('websocket')
-  checkWebSocket() {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-    };
-  }
+    @Get('websocket')
+    checkWebSocket() {
+        return {
+            status: 'ok',
+            timestamp: new Date().toISOString(),
+        };
+    }
 }
 ```
 

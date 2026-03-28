@@ -21,6 +21,7 @@ postgresql://[user]:[password]@[endpoint]/[database]?sslmode=require
 ```
 
 示例：
+
 ```
 postgresql://neondb_owner:abc123@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
 ```
@@ -58,18 +59,18 @@ Neon 默认使用 PgBouncer 连接池：
 ```typescript
 // 优化连接
 const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
+    datasources: {
+        db: {
+            url: process.env.DATABASE_URL,
+        },
     },
-  },
-  // 连接池设置
-  __internal: {
-    engine: {
-      connection_limit: 10,
-      pool_timeout: 30,
+    // 连接池设置
+    __internal: {
+        engine: {
+            connection_limit: 10,
+            pool_timeout: 30,
+        },
     },
-  },
 });
 ```
 
@@ -123,8 +124,8 @@ psql $DATABASE_URL < backup.sql
 import { Redis } from '@upstash/redis';
 
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
 // 使用
@@ -138,7 +139,7 @@ const value = await redis.get('key');
 import { createClient } from 'redis';
 
 const redis = createClient({
-  url: process.env.REDIS_URL,
+    url: process.env.REDIS_URL,
 });
 
 await redis.connect();
@@ -164,52 +165,52 @@ import { Redis } from '@upstash/redis';
 
 @Injectable()
 export class RedisService {
-  private redis: Redis;
+    private redis: Redis;
 
-  constructor() {
-    this.redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    });
-  }
-
-  async get(key: string): Promise<string | null> {
-    return this.redis.get(key);
-  }
-
-  async set(key: string, value: string, ttl?: number): Promise<void> {
-    if (ttl) {
-      await this.redis.setex(key, ttl, value);
-    } else {
-      await this.redis.set(key, value);
+    constructor() {
+        this.redis = new Redis({
+            url: process.env.UPSTASH_REDIS_REST_URL!,
+            token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+        });
     }
-  }
 
-  async del(key: string): Promise<void> {
-    await this.redis.del(key);
-  }
+    async get(key: string): Promise<string | null> {
+        return this.redis.get(key);
+    }
 
-  async incr(key: string): Promise<number> {
-    return this.redis.incr(key);
-  }
+    async set(key: string, value: string, ttl?: number): Promise<void> {
+        if (ttl) {
+            await this.redis.setex(key, ttl, value);
+        } else {
+            await this.redis.set(key, value);
+        }
+    }
 
-  // Pub/Sub（需要使用传统客户端）
-  async publish(channel: string, message: string): Promise<void> {
-    // Upstash REST API 不支持 Pub/Sub
-    // 需要使用传统 Redis 客户端
-  }
+    async del(key: string): Promise<void> {
+        await this.redis.del(key);
+    }
+
+    async incr(key: string): Promise<number> {
+        return this.redis.incr(key);
+    }
+
+    // Pub/Sub（需要使用传统客户端）
+    async publish(channel: string, message: string): Promise<void> {
+        // Upstash REST API 不支持 Pub/Sub
+        // 需要使用传统 Redis 客户端
+    }
 }
 ```
 
 ### 使用场景
 
-| 场景 | TTL | 说明 |
-|------|-----|------|
-| Session 存储 | 7 天 | 用户登录状态 |
+| 场景         | TTL          | 说明         |
+| ------------ | ------------ | ------------ |
+| Session 存储 | 7 天         | 用户登录状态 |
 | Token 黑名单 | Token 有效期 | JWT 失效列表 |
-| 速率限制 | 1-5 分钟 | API 限流 |
-| 缓存 | 5-30 分钟 | 热点数据缓存 |
-| 锁 | 30 秒 | 分布式锁 |
+| 速率限制     | 1-5 分钟     | API 限流     |
+| 缓存         | 5-30 分钟    | 热点数据缓存 |
+| 锁           | 30 秒        | 分布式锁     |
 
 ### 数据结构示例
 
@@ -223,14 +224,14 @@ await redis.setex(`blacklist:${token}`, ttl, '1');
 // 速率限制
 const count = await redis.incr(`rate:${ip}:${endpoint}`);
 if (count === 1) {
-  await redis.expire(`rate:${ip}:${endpoint}`, 60);
+    await redis.expire(`rate:${ip}:${endpoint}`, 60);
 }
 
 // 分布式锁
 const locked = await redis.set(`lock:${resource}`, '1', 'NX', 'EX', 30);
 if (locked) {
-  // 执行操作
-  await redis.del(`lock:${resource}`);
+    // 执行操作
+    await redis.del(`lock:${resource}`);
 }
 ```
 
@@ -265,15 +266,12 @@ datasource db {
 ```typescript
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
-);
+const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 
 // 登录
 const { data, error } = await supabase.auth.signInWithPassword({
-  email,
-  password,
+    email,
+    password,
 });
 ```
 
@@ -311,13 +309,13 @@ import { PrismaClient } from '@prisma/client';
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  });
+    globalForPrisma.prisma ||
+    new PrismaClient({
+        log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    });
 
 if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
+    globalForPrisma.prisma = prisma;
 }
 ```
 

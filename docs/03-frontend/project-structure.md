@@ -138,36 +138,36 @@ frontend/
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // 启用 Turbopack（开发模式）
-  experimental: {
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
+    // 启用 Turbopack（开发模式）
+    experimental: {
+        turbo: {
+            rules: {
+                '*.svg': {
+                    loaders: ['@svgr/webpack'],
+                    as: '*.js',
+                },
+            },
         },
-      },
     },
-  },
 
-  // 环境变量
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
-  },
+    // 环境变量
+    env: {
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+        NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
+    },
 
-  // 严格模式
-  reactStrictMode: true,
+    // 严格模式
+    reactStrictMode: true,
 
-  // 图片优化
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'avatars.githubusercontent.com',
-      },
-    ],
-  },
+    // 图片优化
+    images: {
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: 'avatars.githubusercontent.com',
+            },
+        ],
+    },
 };
 
 export default nextConfig;
@@ -177,33 +177,33 @@ export default nextConfig;
 
 ```json
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "paths": {
-      "@/*": ["./*"]
-    }
-  },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+    "compilerOptions": {
+        "target": "ES2022",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "allowJs": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "noEmit": true,
+        "esModuleInterop": true,
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "jsx": "preserve",
+        "incremental": true,
+        "plugins": [
+            {
+                "name": "next"
+            }
+        ],
+        "paths": {
+            "@/*": ["./*"]
+        }
+    },
+    "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+    "exclude": ["node_modules"]
 }
 ```
 
@@ -213,38 +213,38 @@ export default nextConfig;
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  darkMode: 'class',
-  content: ['./app/**/*.{js,ts,jsx,tsx,mdx}', './components/**/*.{js,ts,jsx,tsx,mdx}'],
-  theme: {
-    extend: {
-      colors: {
-        // 自定义颜色
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
+    darkMode: 'class',
+    content: ['./app/**/*.{js,ts,jsx,tsx,mdx}', './components/**/*.{js,ts,jsx,tsx,mdx}'],
+    theme: {
+        extend: {
+            colors: {
+                // 自定义颜色
+                primary: {
+                    DEFAULT: 'hsl(var(--primary))',
+                    foreground: 'hsl(var(--primary-foreground))',
+                },
+                // 编辑器光标颜色
+                cursor: {
+                    blue: '#3b82f6',
+                    green: '#22c55e',
+                    red: '#ef4444',
+                    yellow: '#eab308',
+                    purple: '#a855f7',
+                },
+            },
+            animation: {
+                // 协作光标动画
+                'cursor-blink': 'blink 1s infinite',
+            },
+            keyframes: {
+                blink: {
+                    '0%, 100%': { opacity: '1' },
+                    '50%': { opacity: '0' },
+                },
+            },
         },
-        // 编辑器光标颜色
-        cursor: {
-          blue: '#3b82f6',
-          green: '#22c55e',
-          red: '#ef4444',
-          yellow: '#eab308',
-          purple: '#a855f7',
-        },
-      },
-      animation: {
-        // 协作光标动画
-        'cursor-blink': 'blink 1s infinite',
-      },
-      keyframes: {
-        blink: {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0' },
-        },
-      },
     },
-  },
-  plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
+    plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 };
 
 export default config;
@@ -254,48 +254,48 @@ export default config;
 
 ```json
 {
-  "name": "collab-editor-frontend",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev --turbo",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix",
-    "type-check": "tsc --noEmit",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage"
-  },
-  "dependencies": {
-    "next": "^15.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "@tiptap/react": "^3.0.0",
-    "@tiptap/starter-kit": "^3.0.0",
-    "@tiptap/extension-collaboration": "^3.0.0",
-    "@tiptap/extension-collaboration-cursor": "^3.0.0",
-    "yjs": "^13.6.0",
-    "y-websocket": "^2.0.0",
-    "zustand": "^5.0.0",
-    "@tanstack/react-query": "^5.0.0",
-    "tailwindcss": "^4.0.0",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.0.0",
-    "tailwind-merge": "^2.0.0",
-    "lucide-react": "^0.400.0",
-    "zod": "^3.0.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.5.0",
-    "@types/node": "^22.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "eslint": "^9.0.0",
-    "eslint-config-next": "^15.0.0",
-    "prettier": "^3.0.0",
-    "vitest": "^2.0.0"
-  }
+    "name": "collab-editor-frontend",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev --turbo",
+        "build": "next build",
+        "start": "next start",
+        "lint": "eslint . --ext .ts,.tsx",
+        "lint:fix": "eslint . --ext .ts,.tsx --fix",
+        "type-check": "tsc --noEmit",
+        "test": "vitest",
+        "test:coverage": "vitest --coverage"
+    },
+    "dependencies": {
+        "next": "^15.0.0",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "@tiptap/react": "^3.0.0",
+        "@tiptap/starter-kit": "^3.0.0",
+        "@tiptap/extension-collaboration": "^3.0.0",
+        "@tiptap/extension-collaboration-cursor": "^3.0.0",
+        "yjs": "^13.6.0",
+        "y-websocket": "^2.0.0",
+        "zustand": "^5.0.0",
+        "@tanstack/react-query": "^5.0.0",
+        "tailwindcss": "^4.0.0",
+        "class-variance-authority": "^0.7.0",
+        "clsx": "^2.0.0",
+        "tailwind-merge": "^2.0.0",
+        "lucide-react": "^0.400.0",
+        "zod": "^3.0.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.5.0",
+        "@types/node": "^22.0.0",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "eslint": "^9.0.0",
+        "eslint-config-next": "^15.0.0",
+        "prettier": "^3.0.0",
+        "vitest": "^2.0.0"
+    }
 }
 ```
 
@@ -311,18 +311,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const compat = new FlatCompat({
-  baseDirectory: __dirname,
+    baseDirectory: __dirname,
 });
 
 const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
-  {
-    rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn',
-      'react-hooks/exhaustive-deps': 'error',
+    ...compat.extends('next/core-web-vitals', 'next/typescript'),
+    {
+        rules: {
+            '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+            '@typescript-eslint/no-explicit-any': 'warn',
+            'react-hooks/exhaustive-deps': 'error',
+        },
     },
-  },
 ];
 
 export default eslintConfig;
@@ -335,9 +335,9 @@ export default eslintConfig;
 ```json
 // frontend/package.json
 {
-  "dependencies": {
-    "@collab/types": "workspace:*"
-  }
+    "dependencies": {
+        "@collab/types": "workspace:*"
+    }
 }
 ```
 
@@ -384,12 +384,12 @@ import { FC } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ComponentProps {
-  className?: string;
-  // ...
+    className?: string;
+    // ...
 }
 
 export const Component: FC<ComponentProps> = ({ className, ...props }) => {
-  return <div className={cn('base-classes', className)}>{/* 内容 */}</div>;
+    return <div className={cn('base-classes', className)}>{/* 内容 */}</div>;
 };
 ```
 

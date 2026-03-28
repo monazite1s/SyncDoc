@@ -6,27 +6,27 @@
 
 ## 技术栈
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| Next.js | 15+ | 全栈框架 |
-| React | 19+ | UI 库 |
-| Tiptap | 3.x | 富文本编辑器 |
-| Yjs | 13.x | CRDT 协同引擎 |
-| Tailwind CSS | 4.x | 样式框架 |
-| ShadcnUI | 1.x | UI 组件库 |
-| Zustand | 5.x | 状态管理 |
-| TanStack Query | 5.x | 服务端状态 |
+| 技术           | 版本 | 用途          |
+| -------------- | ---- | ------------- |
+| Next.js        | 15+  | 全栈框架      |
+| React          | 19+  | UI 库         |
+| Tiptap         | 3.x  | 富文本编辑器  |
+| Yjs            | 13.x | CRDT 协同引擎 |
+| Tailwind CSS   | 4.x  | 样式框架      |
+| ShadcnUI       | 1.x  | UI 组件库     |
+| Zustand        | 5.x  | 状态管理      |
+| TanStack Query | 5.x  | 服务端状态    |
 
 ## 文档目录
 
-| 文档 | 说明 |
-|------|------|
-| [architecture.md](./architecture.md) | **前端架构详细设计** |
-| [project-structure.md](./project-structure.md) | 工程化结构 |
-| [tiptap-integration.md](./tiptap-integration.md) | Tiptap 编辑器集成 |
-| [yjs-client.md](./yjs-client.md) | Yjs 客户端配置 |
-| [error-handling.md](./error-handling.md) | 错误处理与边界 |
-| [performance.md](./performance.md) | 性能优化策略 |
+| 文档                                             | 说明                 |
+| ------------------------------------------------ | -------------------- |
+| [architecture.md](./architecture.md)             | **前端架构详细设计** |
+| [project-structure.md](./project-structure.md)   | 工程化结构           |
+| [tiptap-integration.md](./tiptap-integration.md) | Tiptap 编辑器集成    |
+| [yjs-client.md](./yjs-client.md)                 | Yjs 客户端配置       |
+| [error-handling.md](./error-handling.md)         | 错误处理与边界       |
+| [performance.md](./performance.md)               | 性能优化策略         |
 
 ## 项目结构
 

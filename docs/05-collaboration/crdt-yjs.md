@@ -12,10 +12,10 @@
 
 ### CRDT 分类
 
-| 类型 | 说明 | 示例 |
-|------|------|------|
-| **State-based** | 传输完整状态 | G-Counter, PN-Counter |
-| **Operation-based** | 传输操作 | Yjs, Automerge |
+| 类型                | 说明         | 示例                  |
+| ------------------- | ------------ | --------------------- |
+| **State-based**     | 传输完整状态 | G-Counter, PN-Counter |
+| **Operation-based** | 传输操作     | Yjs, Automerge        |
 
 ### 核心性质
 
@@ -45,6 +45,7 @@ Yjs 基于 **YATA 算法**，专为文本协同编辑设计。
 ### YATA 方案
 
 为每个字符分配唯一 ID，包含：
+
 - **origin**：前一个字符的 ID
 - **clock**：逻辑时钟
 
@@ -62,15 +63,15 @@ Yjs 基于 **YATA 算法**，专为文本协同编辑设计。
 
 ```typescript
 function compare(a: Item, b: Item): number {
-  // 1. 比较时钟
-  if (a.id.clock < b.id.clock) return -1;
-  if (a.id.clock > b.id.clock) return 1;
+    // 1. 比较时钟
+    if (a.id.clock < b.id.clock) return -1;
+    if (a.id.clock > b.id.clock) return 1;
 
-  // 2. 比较客户端 ID
-  if (a.id.client < b.id.client) return -1;
-  if (a.id.client > b.id.client) return 1;
+    // 2. 比较客户端 ID
+    if (a.id.client < b.id.client) return -1;
+    if (a.id.client > b.id.client) return 1;
 
-  return 0;
+    return 0;
 }
 ```
 
@@ -87,8 +88,8 @@ const ydoc = new Y.Doc();
 
 // 事务
 ydoc.transact(() => {
-  ytext.insert(0, 'Hello');
-  ytext.insert(5, ' World');
+    ytext.insert(0, 'Hello');
+    ytext.insert(5, ' World');
 });
 ```
 
@@ -110,7 +111,7 @@ ytext.format(0, 5, { bold: true });
 
 // 观察
 ytext.observe((event) => {
-  console.log('Changes:', event.changes);
+    console.log('Changes:', event.changes);
 });
 ```
 
@@ -131,9 +132,9 @@ ymap.delete('author');
 
 // 观察
 ymap.observe((event) => {
-  event.changes.keys.forEach((change, key) => {
-    console.log(`${key}: ${change.action}`);
-  });
+    event.changes.keys.forEach((change, key) => {
+        console.log(`${key}: ${change.action}`);
+    });
 });
 ```
 
@@ -241,12 +242,12 @@ textA.toString(); // 'HelloWorld' 或 'WorldHello'（取决于时钟）
 
 ```typescript
 interface Item {
-  id: ID;           // { client: string, clock: number }
-  origin: ID | null; // 前一个 item 的 ID
-  left: Item | null; // 左邻居
-  right: Item | null; // 右邻居
-  content: Content;  // 内容
-  deleted: boolean;  // 是否删除
+    id: ID; // { client: string, clock: number }
+    origin: ID | null; // 前一个 item 的 ID
+    left: Item | null; // 左邻居
+    right: Item | null; // 右邻居
+    content: Content; // 内容
+    deleted: boolean; // 是否删除
 }
 ```
 
@@ -274,12 +275,12 @@ const snapshot = Y.snapshot(ydoc);
 
 ### 时间复杂度
 
-| 操作 | 复杂度 |
-|------|--------|
+| 操作 | 复杂度   |
+| ---- | -------- |
 | 插入 | O(log n) |
-| 删除 | O(1) |
+| 删除 | O(1)     |
 | 查找 | O(log n) |
-| 合并 | O(n) |
+| 合并 | O(n)     |
 
 ### 空间优化
 
@@ -299,12 +300,12 @@ const ydoc = new Y.Doc();
 const ytext = ydoc.getText('content');
 
 const editor = new Editor({
-  extensions: [
-    Collaboration.configure({
-      document: ydoc,
-      field: 'content',
-    }),
-  ],
+    extensions: [
+        Collaboration.configure({
+            document: ydoc,
+            field: 'content',
+        }),
+    ],
 });
 
 // 编辑器操作自动同步到 ytext
@@ -316,15 +317,11 @@ const editor = new Editor({
 ```typescript
 import { WebsocketProvider } from 'y-websocket';
 
-const provider = new WebsocketProvider(
-  'wss://server.com',
-  'room-id',
-  ydoc
-);
+const provider = new WebsocketProvider('wss://server.com', 'room-id', ydoc);
 
 // 自动同步
 provider.on('sync', (isSynced) => {
-  console.log('Synced:', isSynced);
+    console.log('Synced:', isSynced);
 });
 ```
 
@@ -334,8 +331,8 @@ provider.on('sync', (isSynced) => {
 
 ```typescript
 ydoc.on('update', (update, origin) => {
-  console.log('Update:', update);
-  console.log('Origin:', origin);
+    console.log('Update:', update);
+    console.log('Origin:', origin);
 });
 ```
 
@@ -357,10 +354,10 @@ console.log('Full State:', state);
 import { applyUpdate } from 'yjs';
 
 try {
-  applyUpdate(ydoc, update);
+    applyUpdate(ydoc, update);
 } catch (error) {
-  console.error('Merge error:', error);
-  // 处理冲突
+    console.error('Merge error:', error);
+    // 处理冲突
 }
 ```
 

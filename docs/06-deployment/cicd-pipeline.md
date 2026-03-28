@@ -30,221 +30,221 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main]
 
 env:
-  NODE_VERSION: '22'
-  PNPM_VERSION: '9'
+    NODE_VERSION: '22'
+    PNPM_VERSION: '9'
 
 jobs:
-  # ==================== 代码质量 ====================
-  lint:
-    name: Lint & Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    # ==================== 代码质量 ====================
+    lint:
+        name: Lint & Type Check
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
+            - uses: pnpm/action-setup@v3
+              with:
+                  version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+            - run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm lint
+            - name: Lint
+              run: pnpm lint
 
-      - name: Type Check
-        run: pnpm type-check
+            - name: Type Check
+              run: pnpm type-check
 
-  # ==================== 测试 ====================
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    needs: lint
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:8
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    # ==================== 测试 ====================
+    test:
+        name: Test
+        runs-on: ubuntu-latest
+        needs: lint
+        services:
+            postgres:
+                image: postgres:17
+                env:
+                    POSTGRES_USER: test
+                    POSTGRES_PASSWORD: test
+                    POSTGRES_DB: test
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+            redis:
+                image: redis:8
+                ports:
+                    - 6379:6379
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
 
-    steps:
-      - uses: actions/checkout@v4
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
+            - uses: pnpm/action-setup@v3
+              with:
+                  version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+            - run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma Client
-        run: pnpm prisma generate
-        working-directory: backend
+            - name: Generate Prisma Client
+              run: pnpm prisma generate
+              working-directory: backend
 
-      - name: Run Tests
-        run: pnpm test:coverage
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-          REDIS_URL: redis://localhost:6379
+            - name: Run Tests
+              run: pnpm test:coverage
+              env:
+                  DATABASE_URL: postgresql://test:test@localhost:5432/test
+                  REDIS_URL: redis://localhost:6379
 
-      - name: Upload Coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage/lcov.info
+            - name: Upload Coverage
+              uses: codecov/codecov-action@v4
+              with:
+                  files: ./coverage/lcov.info
 
-  # ==================== 构建前端 ====================
-  build-frontend:
-    name: Build Frontend
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
+    # ==================== 构建前端 ====================
+    build-frontend:
+        name: Build Frontend
+        runs-on: ubuntu-latest
+        needs: test
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
+            - uses: pnpm/action-setup@v3
+              with:
+                  version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+            - run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: pnpm build
-        working-directory: frontend
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_WS_URL: ${{ secrets.NEXT_PUBLIC_WS_URL }}
+            - name: Build
+              run: pnpm build
+              working-directory: frontend
+              env:
+                  NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+                  NEXT_PUBLIC_WS_URL: ${{ secrets.NEXT_PUBLIC_WS_URL }}
 
-      - name: Upload Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/.next
+            - name: Upload Build
+              uses: actions/upload-artifact@v4
+              with:
+                  name: frontend-build
+                  path: frontend/.next
 
-  # ==================== 构建后端 ====================
-  build-backend:
-    name: Build Backend
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
+    # ==================== 构建后端 ====================
+    build-backend:
+        name: Build Backend
+        runs-on: ubuntu-latest
+        needs: test
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
+            - uses: pnpm/action-setup@v3
+              with:
+                  version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+            - run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma Client
-        run: pnpm prisma generate
-        working-directory: backend
+            - name: Generate Prisma Client
+              run: pnpm prisma generate
+              working-directory: backend
 
-      - name: Build
-        run: pnpm build
-        working-directory: backend
+            - name: Build
+              run: pnpm build
+              working-directory: backend
 
-      - name: Upload Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-build
-          path: backend/dist
+            - name: Upload Build
+              uses: actions/upload-artifact@v4
+              with:
+                  name: backend-build
+                  path: backend/dist
 
-  # ==================== 部署前端 ====================
-  deploy-frontend:
-    name: Deploy Frontend
-    runs-on: ubuntu-latest
-    needs: build-frontend
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
+    # ==================== 部署前端 ====================
+    deploy-frontend:
+        name: Deploy Frontend
+        runs-on: ubuntu-latest
+        needs: build-frontend
+        if: github.ref == 'refs/heads/main'
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          working-directory: frontend
+            - name: Deploy to Vercel
+              uses: amondnet/vercel-action@v25
+              with:
+                  vercel-token: ${{ secrets.VERCEL_TOKEN }}
+                  vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+                  vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+                  vercel-args: '--prod'
+                  working-directory: frontend
 
-  # ==================== 部署后端 ====================
-  deploy-backend:
-    name: Deploy Backend
-    runs-on: ubuntu-latest
-    needs: build-backend
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
+    # ==================== 部署后端 ====================
+    deploy-backend:
+        name: Deploy Backend
+        runs-on: ubuntu-latest
+        needs: build-backend
+        if: github.ref == 'refs/heads/main'
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Deploy to Railway
-        uses: bervProject/railway-deploy@v1.0.0
-        with:
-          railway_token: ${{ secrets.RAILWAY_TOKEN }}
-          service: collab-editor-api
+            - name: Deploy to Railway
+              uses: bervProject/railway-deploy@v1.0.0
+              with:
+                  railway_token: ${{ secrets.RAILWAY_TOKEN }}
+                  service: collab-editor-api
 
-  # ==================== 数据库迁移 ====================
-  migrate:
-    name: Database Migration
-    runs-on: ubuntu-latest
-    needs: deploy-backend
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
+    # ==================== 数据库迁移 ====================
+    migrate:
+        name: Database Migration
+        runs-on: ubuntu-latest
+        needs: deploy-backend
+        if: github.ref == 'refs/heads/main'
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
+            - uses: pnpm/action-setup@v3
+              with:
+                  version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+            - run: pnpm install --frozen-lockfile
 
-      - name: Run Migrations
-        run: pnpm prisma migrate deploy
-        working-directory: backend
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+            - name: Run Migrations
+              run: pnpm prisma migrate deploy
+              working-directory: backend
+              env:
+                  DATABASE_URL: ${{ secrets.DATABASE_URL }}
 ```
 
 ## PR 检查工作流
@@ -254,37 +254,37 @@ jobs:
 name: PR Check
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+    pull_request:
+        types: [opened, synchronize, reopened]
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    check:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
+            - uses: pnpm/action-setup@v3
+              with:
+                  version: 9
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: 'pnpm'
 
-      - run: pnpm install --frozen-lockfile
+            - run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm lint
+            - name: Lint
+              run: pnpm lint
 
-      - name: Type Check
-        run: pnpm type-check
+            - name: Type Check
+              run: pnpm type-check
 
-      - name: Test
-        run: pnpm test
+            - name: Test
+              run: pnpm test
 
-      - name: Build
-        run: pnpm build
+            - name: Build
+              run: pnpm build
 ```
 
 ## 预览部署
@@ -294,33 +294,33 @@ jobs:
 name: Preview Deploy
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+    pull_request:
+        types: [opened, synchronize, reopened]
 
 jobs:
-  preview:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    preview:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Deploy Preview
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        id: deploy
+            - name: Deploy Preview
+              uses: amondnet/vercel-action@v25
+              with:
+                  vercel-token: ${{ secrets.VERCEL_TOKEN }}
+                  vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+                  vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+              id: deploy
 
-      - name: Comment PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '🚀 Preview deployed to: ${{ steps.deploy.outputs.preview-url }}'
-            })
+            - name: Comment PR
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      github.rest.issues.createComment({
+                        issue_number: context.issue.number,
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        body: '🚀 Preview deployed to: ${{ steps.deploy.outputs.preview-url }}'
+                      })
 ```
 
 ## Secrets 配置
@@ -329,14 +329,14 @@ jobs:
 
 在仓库设置中配置以下 Secrets：
 
-| Secret | 说明 |
-|--------|------|
-| `VERCEL_TOKEN` | Vercel API Token |
-| `VERCEL_ORG_ID` | Vercel 组织 ID |
-| `VERCEL_PROJECT_ID` | Vercel 项目 ID |
-| `RAILWAY_TOKEN` | Railway Token |
-| `DATABASE_URL` | 生产数据库连接 |
-| `JWT_SECRET` | JWT 密钥 |
+| Secret              | 说明             |
+| ------------------- | ---------------- |
+| `VERCEL_TOKEN`      | Vercel API Token |
+| `VERCEL_ORG_ID`     | Vercel 组织 ID   |
+| `VERCEL_PROJECT_ID` | Vercel 项目 ID   |
+| `RAILWAY_TOKEN`     | Railway Token    |
+| `DATABASE_URL`      | 生产数据库连接   |
+| `JWT_SECRET`        | JWT 密钥         |
 
 ### 获取 Token
 
@@ -357,17 +357,17 @@ railway config show
 # 优化 pnpm 缓存
 - uses: actions/setup-node@v4
   with:
-    node-version: ${{ env.NODE_VERSION }}
-    cache: 'pnpm'
+      node-version: ${{ env.NODE_VERSION }}
+      cache: 'pnpm'
 
 # 或手动配置
 - name: Cache pnpm
   uses: actions/cache@v4
   with:
-    path: ~/.pnpm-store
-    key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-    restore-keys: |
-      ${{ runner.os }}-pnpm-
+      path: ~/.pnpm-store
+      key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+      restore-keys: |
+          ${{ runner.os }}-pnpm-
 ```
 
 ## 通知
@@ -379,10 +379,10 @@ railway config show
   if: always()
   uses: 8398a7/action-slack@v3
   with:
-    status: ${{ job.status }}
-    fields: repo,message,commit,author,action,eventName,ref,workflow
+      status: ${{ job.status }}
+      fields: repo,message,commit,author,action,eventName,ref,workflow
   env:
-    SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 ```
 
 ## 相关文档

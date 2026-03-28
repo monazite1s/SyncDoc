@@ -86,13 +86,13 @@
 
 ### 2.1 Input UX - 表达意图
 
-| 模式 | 描述 | 适用场景 |
-|------|------|----------|
-| **选中文本操作** | 选中文字后弹出快捷菜单 | 快速编辑、改写 |
-| **快捷按钮** | 预设的常用操作按钮 | 润色、翻译、总结 |
-| **自然语言输入** | 自由文本描述需求 | 复杂、定制化需求 |
-| **语音输入** | 语音转文字输入 | 移动端、快速记录 |
-| **模板选择** | 从预设模板开始 | 新建文档时 |
+| 模式             | 描述                   | 适用场景         |
+| ---------------- | ---------------------- | ---------------- |
+| **选中文本操作** | 选中文字后弹出快捷菜单 | 快速编辑、改写   |
+| **快捷按钮**     | 预设的常用操作按钮     | 润色、翻译、总结 |
+| **自然语言输入** | 自由文本描述需求       | 复杂、定制化需求 |
+| **语音输入**     | 语音转文字输入         | 移动端、快速记录 |
+| **模板选择**     | 从预设模板开始         | 新建文档时       |
 
 ### 2.2 Output UX - 展示结果
 
@@ -161,18 +161,18 @@
 ```css
 /* 协作者光标样式 */
 .cursor-张三 {
-  border-left: 2px solid #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
+    border-left: 2px solid #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
 }
 
 .cursor-李四 {
-  border-left: 2px solid #10b981;
-  background: rgba(16, 185, 129, 0.1);
+    border-left: 2px solid #10b981;
+    background: rgba(16, 185, 129, 0.1);
 }
 
 /* 选区样式 */
 .selection-张三 {
-  background: rgba(59, 130, 246, 0.2);
+    background: rgba(59, 130, 246, 0.2);
 }
 ```
 
@@ -236,20 +236,20 @@
 ```css
 /* 移动端 */
 @media (max-width: 640px) {
-  /* 侧边栏折叠为底部导航 */
-  /* AI 面板全屏显示 */
-  /* 工具栏简化 */
+    /* 侧边栏折叠为底部导航 */
+    /* AI 面板全屏显示 */
+    /* 工具栏简化 */
 }
 
 /* 平板 */
 @media (min-width: 641px) and (max-width: 1024px) {
-  /* 侧边栏可滑动展开 */
-  /* AI 面板半屏显示 */
+    /* 侧边栏可滑动展开 */
+    /* AI 面板半屏显示 */
 }
 
 /* 桌面端 */
 @media (min-width: 1025px) {
-  /* 完整三栏布局 */
+    /* 完整三栏布局 */
 }
 ```
 
@@ -275,14 +275,14 @@
 
 ### 6.1 键盘快捷键
 
-| 快捷键 | 功能 |
-|--------|------|
-| `Cmd/Ctrl + /` | 打开 AI 命令面板 |
-| `Cmd/Ctrl + Shift + A` | 打开 AI 助手 |
-| `Cmd/Ctrl + S` | 手动保存 |
-| `Cmd/Ctrl + Z` | 撤销 |
-| `Cmd/Ctrl + Shift + Z` | 重做 |
-| `Esc` | 关闭 AI 面板 |
+| 快捷键                 | 功能             |
+| ---------------------- | ---------------- |
+| `Cmd/Ctrl + /`         | 打开 AI 命令面板 |
+| `Cmd/Ctrl + Shift + A` | 打开 AI 助手     |
+| `Cmd/Ctrl + S`         | 手动保存         |
+| `Cmd/Ctrl + Z`         | 撤销             |
+| `Cmd/Ctrl + Shift + Z` | 重做             |
+| `Esc`                  | 关闭 AI 面板     |
 
 ### 6.2 ARIA 标签
 
@@ -313,25 +313,25 @@
 
 ```css
 :root {
-  /* 主色调 */
-  --primary: 59 130 246;      /* 蓝色 */
-  --primary-foreground: 255 255 255;
+    /* 主色调 */
+    --primary: 59 130 246; /* 蓝色 */
+    --primary-foreground: 255 255 255;
 
-  /* 协作光标颜色 */
-  --cursor-1: 59 130 246;     /* 蓝色 */
-  --cursor-2: 16 185 129;     /* 绿色 */
-  --cursor-3: 249 115 22;     /* 橙色 */
-  --cursor-4: 168 85 247;     /* 紫色 */
+    /* 协作光标颜色 */
+    --cursor-1: 59 130 246; /* 蓝色 */
+    --cursor-2: 16 185 129; /* 绿色 */
+    --cursor-3: 249 115 22; /* 橙色 */
+    --cursor-4: 168 85 247; /* 紫色 */
 
-  /* AI 状态颜色 */
-  --ai-ready: 34 197 94;      /* 绿色 */
-  --ai-processing: 234 179 8; /* 黄色 */
-  --ai-error: 239 68 68;      /* 红色 */
+    /* AI 状态颜色 */
+    --ai-ready: 34 197 94; /* 绿色 */
+    --ai-processing: 234 179 8; /* 黄色 */
+    --ai-error: 239 68 68; /* 红色 */
 }
 
 .dark {
-  --background: 15 23 42;
-  --foreground: 248 250 252;
+    --background: 15 23 42;
+    --foreground: 248 250 252;
 }
 ```
 
@@ -339,15 +339,11 @@
 
 ```tsx
 // 使用 next-themes
-import { ThemeProvider } from 'next-themes'
+import { ThemeProvider } from 'next-themes';
 
-<ThemeProvider
-  attribute="class"
-  defaultTheme="system"
-  enableSystem
->
-  {children}
-</ThemeProvider>
+<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    {children}
+</ThemeProvider>;
 ```
 
 ---

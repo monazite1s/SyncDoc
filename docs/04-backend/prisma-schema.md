@@ -209,48 +209,48 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  // 创建测试用户
-  const password = await bcrypt.hash('password123', 12);
+    // 创建测试用户
+    const password = await bcrypt.hash('password123', 12);
 
-  const user1 = await prisma.user.create({
-    data: {
-      email: 'alice@example.com',
-      password,
-      name: 'Alice',
-    },
-  });
+    const user1 = await prisma.user.create({
+        data: {
+            email: 'alice@example.com',
+            password,
+            name: 'Alice',
+        },
+    });
 
-  const user2 = await prisma.user.create({
-    data: {
-      email: 'bob@example.com',
-      password,
-      name: 'Bob',
-    },
-  });
+    const user2 = await prisma.user.create({
+        data: {
+            email: 'bob@example.com',
+            password,
+            name: 'Bob',
+        },
+    });
 
-  // 创建测试文档
-  const doc = await prisma.document.create({
-    data: {
-      title: 'Welcome Document',
-      ownerId: user1.id,
-    },
-  });
+    // 创建测试文档
+    const doc = await prisma.document.create({
+        data: {
+            title: 'Welcome Document',
+            ownerId: user1.id,
+        },
+    });
 
-  // 添加协作者
-  await prisma.collaborator.create({
-    data: {
-      documentId: doc.id,
-      userId: user2.id,
-      role: Role.EDITOR,
-    },
-  });
+    // 添加协作者
+    await prisma.collaborator.create({
+        data: {
+            documentId: doc.id,
+            userId: user2.id,
+            role: Role.EDITOR,
+        },
+    });
 
-  console.log('Seed data created');
+    console.log('Seed data created');
 }
 
 main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+    .catch(console.error)
+    .finally(() => prisma.$disconnect());
 ```
 
 ## 查询示例
@@ -260,60 +260,56 @@ main()
 ```typescript
 // 获取用户的所有文档（包括协作文档）
 async function getUserDocuments(userId: string) {
-  return prisma.document.findMany({
-    where: {
-      OR: [
-        { ownerId: userId },
-        { collaborators: { some: { userId } } },
-      ],
-    },
-    include: {
-      owner: {
-        select: { id: true, name: true, email: true },
-      },
-      collaborators: {
-        include: {
-          user: {
-            select: { id: true, name: true },
-          },
+    return prisma.document.findMany({
+        where: {
+            OR: [{ ownerId: userId }, { collaborators: { some: { userId } } }],
         },
-      },
-      _count: {
-        select: { versions: true },
-      },
-    },
-    orderBy: { updatedAt: 'desc' },
-  });
+        include: {
+            owner: {
+                select: { id: true, name: true, email: true },
+            },
+            collaborators: {
+                include: {
+                    user: {
+                        select: { id: true, name: true },
+                    },
+                },
+            },
+            _count: {
+                select: { versions: true },
+            },
+        },
+        orderBy: { updatedAt: 'desc' },
+    });
 }
 
 // 获取文档详情
 async function getDocumentDetail(documentId: string, userId: string) {
-  const document = await prisma.document.findUnique({
-    where: { id: documentId },
-    include: {
-      owner: {
-        select: { id: true, name: true, email: true },
-      },
-      collaborators: {
+    const document = await prisma.document.findUnique({
+        where: { id: documentId },
         include: {
-          user: {
-            select: { id: true, name: true, avatar: true },
-          },
+            owner: {
+                select: { id: true, name: true, email: true },
+            },
+            collaborators: {
+                include: {
+                    user: {
+                        select: { id: true, name: true, avatar: true },
+                    },
+                },
+            },
         },
-      },
-    },
-  });
+    });
 
-  if (!document) return null;
+    if (!document) return null;
 
-  // 检查访问权限
-  const hasAccess =
-    document.ownerId === userId ||
-    document.collaborators.some((c) => c.userId === userId);
+    // 检查访问权限
+    const hasAccess =
+        document.ownerId === userId || document.collaborators.some((c) => c.userId === userId);
 
-  if (!hasAccess) return null;
+    if (!hasAccess) return null;
 
-  return document;
+    return document;
 }
 ```
 
@@ -322,41 +318,41 @@ async function getDocumentDetail(documentId: string, userId: string) {
 ```typescript
 // 获取文档版本历史
 async function getDocumentVersions(documentId: string, page = 1, limit = 20) {
-  const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-  const [versions, total] = await Promise.all([
-    prisma.version.findMany({
-      where: { documentId },
-      skip,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        creator: {
-          select: { id: true, name: true, avatar: true },
+    const [versions, total] = await Promise.all([
+        prisma.version.findMany({
+            where: { documentId },
+            skip,
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                creator: {
+                    select: { id: true, name: true, avatar: true },
+                },
+            },
+        }),
+        prisma.version.count({ where: { documentId } }),
+    ]);
+
+    return {
+        versions,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
         },
-      },
-    }),
-    prisma.version.count({ where: { documentId } }),
-  ]);
-
-  return {
-    versions,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-  };
+    };
 }
 
 // 检查版本是否存在
 async function checkVersionExists(hash: string): Promise<boolean> {
-  const version = await prisma.version.findUnique({
-    where: { hash },
-    select: { id: true },
-  });
-  return !!version;
+    const version = await prisma.version.findUnique({
+        where: { hash },
+        select: { id: true },
+    });
+    return !!version;
 }
 ```
 
@@ -364,46 +360,38 @@ async function checkVersionExists(hash: string): Promise<boolean> {
 
 ```typescript
 // 添加协作者
-async function addCollaborator(
-  documentId: string,
-  userId: string,
-  role: Role,
-) {
-  return prisma.collaborator.create({
-    data: {
-      documentId,
-      userId,
-      role,
-    },
-    include: {
-      user: {
-        select: { id: true, name: true, email: true },
-      },
-    },
-  });
+async function addCollaborator(documentId: string, userId: string, role: Role) {
+    return prisma.collaborator.create({
+        data: {
+            documentId,
+            userId,
+            role,
+        },
+        include: {
+            user: {
+                select: { id: true, name: true, email: true },
+            },
+        },
+    });
 }
 
 // 更新协作者角色
-async function updateCollaboratorRole(
-  documentId: string,
-  userId: string,
-  role: Role,
-) {
-  return prisma.collaborator.update({
-    where: {
-      documentId_userId: { documentId, userId },
-    },
-    data: { role },
-  });
+async function updateCollaboratorRole(documentId: string, userId: string, role: Role) {
+    return prisma.collaborator.update({
+        where: {
+            documentId_userId: { documentId, userId },
+        },
+        data: { role },
+    });
 }
 
 // 移除协作者
 async function removeCollaborator(documentId: string, userId: string) {
-  return prisma.collaborator.delete({
-    where: {
-      documentId_userId: { documentId, userId },
-    },
-  });
+    return prisma.collaborator.delete({
+        where: {
+            documentId_userId: { documentId, userId },
+        },
+    });
 }
 ```
 
@@ -412,66 +400,66 @@ async function removeCollaborator(documentId: string, userId: string) {
 ```typescript
 // 记录审计日志
 async function logAudit(params: {
-  action: string;
-  userId?: string;
-  documentId?: string;
-  ipAddress?: string;
-  userAgent?: string;
-  details?: Record<string, unknown>;
+    action: string;
+    userId?: string;
+    documentId?: string;
+    ipAddress?: string;
+    userAgent?: string;
+    details?: Record<string, unknown>;
 }) {
-  return prisma.auditLog.create({
-    data: {
-      action: params.action,
-      userId: params.userId,
-      documentId: params.documentId,
-      ipAddress: params.ipAddress,
-      userAgent: params.userAgent,
-      details: params.details || {},
-    },
-  });
+    return prisma.auditLog.create({
+        data: {
+            action: params.action,
+            userId: params.userId,
+            documentId: params.documentId,
+            ipAddress: params.ipAddress,
+            userAgent: params.userAgent,
+            details: params.details || {},
+        },
+    });
 }
 
 // 查询审计日志
 async function getAuditLogs(
-  filters: {
-    userId?: string;
-    documentId?: string;
-    action?: string;
-    startDate?: Date;
-    endDate?: Date;
-  },
-  page = 1,
-  limit = 50,
+    filters: {
+        userId?: string;
+        documentId?: string;
+        action?: string;
+        startDate?: Date;
+        endDate?: Date;
+    },
+    page = 1,
+    limit = 50
 ) {
-  const where: any = {};
+    const where: any = {};
 
-  if (filters.userId) where.userId = filters.userId;
-  if (filters.documentId) where.documentId = filters.documentId;
-  if (filters.action) where.action = filters.action;
-  if (filters.startDate || filters.endDate) {
-    where.createdAt = {};
-    if (filters.startDate) where.createdAt.gte = filters.startDate;
-    if (filters.endDate) where.createdAt.lte = filters.endDate;
-  }
+    if (filters.userId) where.userId = filters.userId;
+    if (filters.documentId) where.documentId = filters.documentId;
+    if (filters.action) where.action = filters.action;
+    if (filters.startDate || filters.endDate) {
+        where.createdAt = {};
+        if (filters.startDate) where.createdAt.gte = filters.startDate;
+        if (filters.endDate) where.createdAt.lte = filters.endDate;
+    }
 
-  const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-  const [logs, total] = await Promise.all([
-    prisma.auditLog.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: { id: true, name: true, email: true },
-        },
-      },
-    }),
-    prisma.auditLog.count({ where }),
-  ]);
+    const [logs, total] = await Promise.all([
+        prisma.auditLog.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                user: {
+                    select: { id: true, name: true, email: true },
+                },
+            },
+        }),
+        prisma.auditLog.count({ where }),
+    ]);
 
-  return { logs, pagination: { page, limit, total } };
+    return { logs, pagination: { page, limit, total } };
 }
 ```
 
@@ -493,24 +481,24 @@ async function getAuditLogs(
 ```typescript
 // 使用 select 减少返回字段
 const documents = await prisma.document.findMany({
-  select: {
-    id: true,
-    title: true,
-    updatedAt: true,
-    // 不返回 content（大字段）
-  },
+    select: {
+        id: true,
+        title: true,
+        updatedAt: true,
+        // 不返回 content（大字段）
+    },
 });
 
 // 使用分页
 const documents = await prisma.document.findMany({
-  skip: (page - 1) * limit,
-  take: limit,
+    skip: (page - 1) * limit,
+    take: limit,
 });
 
 // 批量操作
 await prisma.document.updateMany({
-  where: { ownerId: userId },
-  data: { updatedAt: new Date() },
+    where: { ownerId: userId },
+    data: { updatedAt: new Date() },
 });
 ```
 

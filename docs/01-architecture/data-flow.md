@@ -3,6 +3,7 @@
 ## 概述
 
 本文档描述协同文档编辑系统中数据的流动方式，包括：
+
 - 客户端与服务端的同步流程
 - Yjs 更新的传播机制
 - 版本快照的创建与恢复
@@ -165,31 +166,31 @@ sequenceDiagram
 
 ```typescript
 interface AwarenessState {
-  // 用户信息
-  clientId: number;
-  user: {
-    id: string;
-    name: string;
-    color: string;
-    avatar?: string;
-  };
+    // 用户信息
+    clientId: number;
+    user: {
+        id: string;
+        name: string;
+        color: string;
+        avatar?: string;
+    };
 
-  // 编辑状态
-  cursor?: {
-    from: number;
-    to: number;
-  };
+    // 编辑状态
+    cursor?: {
+        from: number;
+        to: number;
+    };
 
-  selection?: {
-    from: number;
-    to: number;
-    anchor: number;
-    head: number;
-  };
+    selection?: {
+        from: number;
+        to: number;
+        anchor: number;
+        head: number;
+    };
 
-  // 元数据
-  isEditing: boolean;
-  lastActive: number;
+    // 元数据
+    isEditing: boolean;
+    lastActive: number;
 }
 ```
 
@@ -245,42 +246,42 @@ sequenceDiagram
 
 ### 写入策略
 
-| 场景 | 策略 | 说明 |
-|------|------|------|
+| 场景         | 策略     | 说明               |
+| ------------ | -------- | ------------------ |
 | **实时编辑** | 防抖写入 | 2 秒无新变更后写入 |
-| **版本快照** | 立即写入 | 用户主动创建时 |
-| **用户断开** | 立即写入 | 确保数据不丢失 |
-| **服务关闭** | 优雅关闭 | 等待所有写入完成 |
+| **版本快照** | 立即写入 | 用户主动创建时     |
+| **用户断开** | 立即写入 | 确保数据不丢失     |
+| **服务关闭** | 优雅关闭 | 等待所有写入完成   |
 
 ### 写入流程
 
 ```typescript
 // Hocuspocus 钩子配置
 const server = Server.configure({
-  async onStoreDocument({ documentName, document, context }) {
-    const state = Buffer.from(encodeStateAsUpdate(document));
+    async onStoreDocument({ documentName, document, context }) {
+        const state = Buffer.from(encodeStateAsUpdate(document));
 
-    // 使用乐观锁防止并发写入
-    const lockKey = `lock:document:${documentName}`;
-    const acquired = await redis.set(lockKey, '1', 'PX', 5000, 'NX');
+        // 使用乐观锁防止并发写入
+        const lockKey = `lock:document:${documentName}`;
+        const acquired = await redis.set(lockKey, '1', 'PX', 5000, 'NX');
 
-    if (!acquired) {
-      // 等待锁释放或超时
-      await waitForLock(lockKey, 3000);
-    }
+        if (!acquired) {
+            // 等待锁释放或超时
+            await waitForLock(lockKey, 3000);
+        }
 
-    try {
-      await prisma.document.update({
-        where: { id: documentName },
-        data: {
-          content: state,
-          updatedAt: new Date(),
-        },
-      });
-    } finally {
-      await redis.del(lockKey);
-    }
-  },
+        try {
+            await prisma.document.update({
+                where: { id: documentName },
+                data: {
+                    content: state,
+                    updatedAt: new Date(),
+                },
+            });
+        } finally {
+            await redis.del(lockKey);
+        }
+    },
 });
 ```
 
@@ -291,18 +292,18 @@ const server = Server.configure({
 ```typescript
 // 指数退避重连
 const reconnectConfig = {
-  maxRetries: 10,
-  baseDelay: 1000,    // 1 秒
-  maxDelay: 30000,    // 30 秒
-  backoffFactor: 1.5,
+    maxRetries: 10,
+    baseDelay: 1000, // 1 秒
+    maxDelay: 30000, // 30 秒
+    backoffFactor: 1.5,
 };
 
 function calculateDelay(attempt: number): number {
-  const delay = Math.min(
-    reconnectConfig.maxDelay,
-    reconnectConfig.baseDelay * Math.pow(reconnectConfig.backoffFactor, attempt)
-  );
-  return delay + Math.random() * 1000; // 添加抖动
+    const delay = Math.min(
+        reconnectConfig.maxDelay,
+        reconnectConfig.baseDelay * Math.pow(reconnectConfig.backoffFactor, attempt)
+    );
+    return delay + Math.random() * 1000; // 添加抖动
 }
 ```
 
@@ -336,36 +337,36 @@ stateDiagram-v2
 ```typescript
 // 只同步差异部分
 interface SyncRequest {
-  documentId: string;
-  clientStateVector: number[];  // 客户端已知状态
+    documentId: string;
+    clientStateVector: number[]; // 客户端已知状态
 }
 
 interface SyncResponse {
-  update: Uint8Array | null;    // 增量更新
-  fullSync: boolean;            // 是否需要全量同步
+    update: Uint8Array | null; // 增量更新
+    fullSync: boolean; // 是否需要全量同步
 }
 
 // 服务端逻辑
 async function handleSync(request: SyncRequest): Promise<SyncResponse> {
-  const document = await loadDocument(request.documentId);
-  const serverStateVector = encodeStateVector(document);
+    const document = await loadDocument(request.documentId);
+    const serverStateVector = encodeStateVector(document);
 
-  const clientSV = new Uint8Array(request.clientStateVector);
+    const clientSV = new Uint8Array(request.clientStateVector);
 
-  // 检查是否需要全量同步
-  if (!isStateVectorCompatible(clientSV, serverStateVector)) {
+    // 检查是否需要全量同步
+    if (!isStateVectorCompatible(clientSV, serverStateVector)) {
+        return {
+            update: encodeStateAsUpdate(document),
+            fullSync: true,
+        };
+    }
+
+    // 增量同步
+    const diff = encodeStateAsUpdate(document, clientSV);
     return {
-      update: encodeStateAsUpdate(document),
-      fullSync: true,
+        update: diff,
+        fullSync: false,
     };
-  }
-
-  // 增量同步
-  const diff = encodeStateAsUpdate(document, clientSV);
-  return {
-    update: diff,
-    fullSync: false,
-  };
 }
 ```
 
@@ -376,19 +377,19 @@ async function handleSync(request: SyncRequest): Promise<SyncResponse> {
 import { deflateSync, inflateSync } from 'zlib';
 
 function compressUpdate(update: Uint8Array): Buffer {
-  if (update.length > 1024) {
-    return deflateSync(Buffer.from(update));
-  }
-  return Buffer.from(update);
+    if (update.length > 1024) {
+        return deflateSync(Buffer.from(update));
+    }
+    return Buffer.from(update);
 }
 
 function decompressUpdate(data: Buffer): Uint8Array {
-  // 尝试解压，失败则返回原数据
-  try {
-    return inflateSync(data);
-  } catch {
-    return data;
-  }
+    // 尝试解压，失败则返回原数据
+    try {
+        return inflateSync(data);
+    } catch {
+        return data;
+    }
 }
 ```
 

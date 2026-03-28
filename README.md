@@ -16,17 +16,17 @@
 - [API 端点](#api-端点)
 - [环境变量](#环境变量)
 - [系统架构](#系统架构)
-  - [整体架构图](#整体架构图)
-  - [协作网关](#协作网关-the-hub)
-  - [数据流向](#数据流向-data-pipeline)
+    - [整体架构图](#整体架构图)
+    - [协作网关](#协作网关-the-hub)
+    - [数据流向](#数据流向-data-pipeline)
 - [协同算法核心](#协同算法核心)
-  - [CRDT 与 Yjs](#crdt-与-yjs)
-  - [用户感知 Awareness](#用户感知-awareness)
+    - [CRDT 与 Yjs](#crdt-与-yjs)
+    - [用户感知 Awareness](#用户感知-awareness)
 - [版本管理系统](#版本管理系统)
-  - [状态向量哈希](#核心逻辑状态向量哈希)
-  - [编辑器状态机](#编辑器状态机)
-  - [版本回溯流程](#版本回溯流程)
-  - [可视化差异比对](#可视化差异比对)
+    - [状态向量哈希](#核心逻辑状态向量哈希)
+    - [编辑器状态机](#编辑器状态机)
+    - [版本回溯流程](#版本回溯流程)
+    - [可视化差异比对](#可视化差异比对)
 - [数据模型设计](#数据模型设计)
 - [富文本分块与组件化](#富文本分块与组件化)
 - [工程化设计](#工程化设计)
@@ -38,13 +38,13 @@
 
 ## 核心能力
 
-| 能力 | 描述 |
-|------|------|
-| 实时协同 | 多用户同时编辑同一文档，毫秒级同步 |
-| 协作感知 | 实时光标追踪、选区高亮、在线头像 |
-| 版本回溯 | 类 Git 的版本管理，基于 CRDT 状态向量 |
-| 差异比对 | 可视化 Diff，红绿高亮展示版本变更 |
-| 富文本组件化 | 自定义块（Task、AI 生成块等） |
+| 能力         | 描述                                  |
+| ------------ | ------------------------------------- |
+| 实时协同     | 多用户同时编辑同一文档，毫秒级同步    |
+| 协作感知     | 实时光标追踪、选区高亮、在线头像      |
+| 版本回溯     | 类 Git 的版本管理，基于 CRDT 状态向量 |
+| 差异比对     | 可视化 Diff，红绿高亮展示版本变更     |
+| 富文本组件化 | 自定义块（Task、AI 生成块等）         |
 
 ---
 
@@ -52,10 +52,10 @@
 
 ### 前置条件
 
-| 工具 | 版本要求 | 用途 |
-|------|----------|------|
-| Node.js | >= 22 LTS | 运行前后端 |
-| pnpm | >= 10 | 包管理器 |
+| 工具                    | 版本要求   | 用途               |
+| ----------------------- | ---------- | ------------------ |
+| Node.js                 | >= 22 LTS  | 运行前后端         |
+| pnpm                    | >= 10      | 包管理器           |
 | Docker & Docker Compose | 最新稳定版 | PostgreSQL + Redis |
 
 ### 1. 安装依赖
@@ -83,6 +83,7 @@ cp backend/.env.example backend/.env
 ```
 
 确认 `backend/.env` 中 `DATABASE_URL` 与 `docker-compose.yml` 一致：
+
 ```
 DATABASE_URL="postgresql://collab:collab123@localhost:5432/collab_editor"
 ```
@@ -155,17 +156,17 @@ graph LR
     F --> I
 ```
 
-| 层级 | 技术 | 选型理由 |
-|------|------|----------|
-| **前端框架** | Next.js 15 (App Router) | RSC 支持，文档详情页 SSR 渲染 |
-| **UI 组件** | Tailwind CSS + ShadcnUI | 现代化交互，AI 生成友好 |
-| **编辑器内核** | Tiptap (ProseMirror) | 无头编辑器，与 Yjs 深度集成 |
-| **协同引擎** | Yjs (CRDT - YATA 算法) | 最强最终一致性方案，无需手动处理冲突 |
-| **后端框架** | NestJS 11 | 模块化架构，TypeScript 原生支持 |
-| **协同中继** | Hocuspocus | Tiptap 官方 Yjs 协同服务，钩子式开发 |
-| **ORM** | Prisma | 类型安全，AI 识别 Schema 效果最佳 |
-| **主存储** | PostgreSQL (BYTEA) | 二进制存储 Yjs 文档，版本回溯基石 |
-| **缓存/消息** | Redis | WebSocket 扩展与消息总线 |
+| 层级           | 技术                    | 选型理由                             |
+| -------------- | ----------------------- | ------------------------------------ |
+| **前端框架**   | Next.js 15 (App Router) | RSC 支持，文档详情页 SSR 渲染        |
+| **UI 组件**    | Tailwind CSS + ShadcnUI | 现代化交互，AI 生成友好              |
+| **编辑器内核** | Tiptap (ProseMirror)    | 无头编辑器，与 Yjs 深度集成          |
+| **协同引擎**   | Yjs (CRDT - YATA 算法)  | 最强最终一致性方案，无需手动处理冲突 |
+| **后端框架**   | NestJS 11               | 模块化架构，TypeScript 原生支持      |
+| **协同中继**   | Hocuspocus              | Tiptap 官方 Yjs 协同服务，钩子式开发 |
+| **ORM**        | Prisma                  | 类型安全，AI 识别 Schema 效果最佳    |
+| **主存储**     | PostgreSQL (BYTEA)      | 二进制存储 Yjs 文档，版本回溯基石    |
+| **缓存/消息**  | Redis                   | WebSocket 扩展与消息总线             |
 
 > **选型原则**：同构 TypeScript、黑盒化一致性、类型安全。
 
@@ -210,19 +211,19 @@ graph LR
 
 ## 可用脚本
 
-| 命令 | 说明 |
-|------|------|
-| `pnpm dev` | 启动所有服务（前端 + 后端） |
-| `pnpm dev:backend` | 仅启动后端 (http://localhost:3001) |
+| 命令                | 说明                               |
+| ------------------- | ---------------------------------- |
+| `pnpm dev`          | 启动所有服务（前端 + 后端）        |
+| `pnpm dev:backend`  | 仅启动后端 (http://localhost:3001) |
 | `pnpm dev:frontend` | 仅启动前端 (http://localhost:3000) |
-| `pnpm build` | 构建所有包 |
-| `pnpm lint` | Lint 所有包 |
-| `pnpm test` | 运行所有测试 |
-| `pnpm db:up` | 启动 Docker 基础设施 |
-| `pnpm db:down` | 停止 Docker 服务 |
-| `pnpm db:migrate` | 运行数据库迁移 |
-| `pnpm db:studio` | 打开 Prisma Studio |
-| `pnpm db:seed` | 填充种子数据 |
+| `pnpm build`        | 构建所有包                         |
+| `pnpm lint`         | Lint 所有包                        |
+| `pnpm test`         | 运行所有测试                       |
+| `pnpm db:up`        | 启动 Docker 基础设施               |
+| `pnpm db:down`      | 停止 Docker 服务                   |
+| `pnpm db:migrate`   | 运行数据库迁移                     |
+| `pnpm db:studio`    | 打开 Prisma Studio                 |
+| `pnpm db:seed`      | 填充种子数据                       |
 
 ---
 
@@ -230,35 +231,35 @@ graph LR
 
 ### Auth
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/auth/register` | 用户注册 |
-| POST | `/api/auth/login` | 用户登录 |
-| POST | `/api/auth/logout` | 用户登出（需认证） |
-| POST | `/api/auth/refresh` | 刷新令牌 |
-| GET | `/api/auth/me` | 获取当前用户信息（需认证） |
+| 方法 | 路径                 | 说明                       |
+| ---- | -------------------- | -------------------------- |
+| POST | `/api/auth/register` | 用户注册                   |
+| POST | `/api/auth/login`    | 用户登录                   |
+| POST | `/api/auth/logout`   | 用户登出（需认证）         |
+| POST | `/api/auth/refresh`  | 刷新令牌                   |
+| GET  | `/api/auth/me`       | 获取当前用户信息（需认证） |
 
 ### Documents
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/documents` | 文档列表 |
-| POST | `/api/documents` | 创建文档 |
-| GET | `/api/documents/:id` | 获取文档 |
-| PUT | `/api/documents/:id` | 更新文档 |
+| 方法   | 路径                 | 说明     |
+| ------ | -------------------- | -------- |
+| GET    | `/api/documents`     | 文档列表 |
+| POST   | `/api/documents`     | 创建文档 |
+| GET    | `/api/documents/:id` | 获取文档 |
+| PUT    | `/api/documents/:id` | 更新文档 |
 | DELETE | `/api/documents/:id` | 删除文档 |
 
 ### Versions
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/documents/:id/versions` | 版本列表 |
+| 方法 | 路径                          | 说明     |
+| ---- | ----------------------------- | -------- |
+| GET  | `/api/documents/:id/versions` | 版本列表 |
 | POST | `/api/documents/:id/versions` | 创建版本 |
 
 ### WebSocket
 
-| 端点 | 协议 | 说明 |
-|------|------|------|
+| 端点                  | 协议       | 说明                     |
+| --------------------- | ---------- | ------------------------ |
 | `ws://localhost:3002` | Hocuspocus | Yjs 实时协同（JWT 认证） |
 
 ---
@@ -340,13 +341,13 @@ graph TB
 
 Hocuspocus 作为 WebSocket 网关集成在 NestJS 中，提供以下核心钩子：
 
-| 钩子 | 职责 | 说明 |
-|------|------|------|
-| `onAuthenticate` | 鉴权 | 校验 JWT，判断用户读/写权限 |
-| `onConnect` | 连接管理 | 用户加入房间，初始化 Awareness |
-| `onApply` | 更新处理 | 接收并广播 Yjs 二进制 Update |
-| `onStoreDocument` | 持久化 | 将 Yjs 副本以 BYTEA 存入 PostgreSQL |
-| `onDisconnect` | 断连清理 | 清除用户 Awareness 状态 |
+| 钩子              | 职责     | 说明                                |
+| ----------------- | -------- | ----------------------------------- |
+| `onAuthenticate`  | 鉴权     | 校验 JWT，判断用户读/写权限         |
+| `onConnect`       | 连接管理 | 用户加入房间，初始化 Awareness      |
+| `onApply`         | 更新处理 | 接收并广播 Yjs 二进制 Update        |
+| `onStoreDocument` | 持久化   | 将 Yjs 副本以 BYTEA 存入 PostgreSQL |
+| `onDisconnect`    | 断连清理 | 清除用户 Awareness 状态             |
 
 **房间管理**：以 `documentId` 作为 Room Name，实现文档间的物理隔离。
 
@@ -409,11 +410,11 @@ graph LR
 
 Awareness 协议独立于文档同步，用于传递"非持久化"的协作状态：
 
-| 功能 | 实现方式 |
-|------|----------|
-| 实时光标 | 广播光标位置坐标，前端渲染彩色光标 |
-| 选区高亮 | 同步选中区域，以半透明色块展示 |
-| 协作者头像 | 在文档顶部展示当前在线用户列表 |
+| 功能       | 实现方式                           |
+| ---------- | ---------------------------------- |
+| 实时光标   | 广播光标位置坐标，前端渲染彩色光标 |
+| 选区高亮   | 同步选中区域，以半透明色块展示     |
+| 协作者头像 | 在文档顶部展示当前在线用户列表     |
 
 ---
 
@@ -436,13 +437,13 @@ graph LR
     style CID fill:#e76f51,color:#fff
 ```
 
-| 维度 | Git | 本系统 (Yjs CRDT) |
-|------|-----|-------------------|
-| 哈希来源 | 文件内容 | 状态向量 (State Vector) |
-| 版本结构 | 线性链表 / 分支树 | DAG (有向无环图) |
-| 冲突处理 | 手动 Merge | 自动收敛 (YATA) |
-| 存储开销 | 完整快照 / Delta | 几十字节状态向量 |
-| 回退方式 | 物理重置 HEAD 指针 | 生成逆向 Update 包 |
+| 维度     | Git                | 本系统 (Yjs CRDT)       |
+| -------- | ------------------ | ----------------------- |
+| 哈希来源 | 文件内容           | 状态向量 (State Vector) |
+| 版本结构 | 线性链表 / 分支树  | DAG (有向无环图)        |
+| 冲突处理 | 手动 Merge         | 自动收敛 (YATA)         |
+| 存储开销 | 完整快照 / Delta   | 几十字节状态向量        |
+| 回退方式 | 物理重置 HEAD 指针 | 生成逆向 Update 包      |
 
 ### 编辑器状态机
 
@@ -467,11 +468,11 @@ stateDiagram-v2
     Restore --> Live: Reverse Update broadcast complete
 ```
 
-| 状态 | 行为 | 数据流 | 编辑器 |
-|------|------|--------|--------|
-| **Live** | 双向同步 | Tiptap -> Yjs Updates -> Broadcast | 可编辑 |
-| **History** | 单向查看 | 加载历史 State Vector -> 渲染快照 | `readOnly` |
-| **Restore** | 逆向回退 | 计算差异 -> 逆向 Update -> 推送 Live | 自动切换 |
+| 状态        | 行为     | 数据流                               | 编辑器     |
+| ----------- | -------- | ------------------------------------ | ---------- |
+| **Live**    | 双向同步 | Tiptap -> Yjs Updates -> Broadcast   | 可编辑     |
+| **History** | 单向查看 | 加载历史 State Vector -> 渲染快照    | `readOnly` |
+| **Restore** | 逆向回退 | 计算差异 -> 逆向 Update -> 推送 Live | 自动切换   |
 
 ### 版本回溯流程
 
@@ -725,12 +726,14 @@ gantt
 ### AI 提示词参考
 
 **基础架构搭建：**
+
 ```
 请按照 NestJS 官方推荐的模块化结构，为我生成一个处理文档同步的 Gateway，
 集成 Hocuspocus 库，并连接我已有的权限守卫。
 ```
 
 **存储逻辑：**
+
 ```
 请在 NestJS 中使用 Prisma 建立两个模型：Document 存二进制 blob，Version 存 stateVector。
 当 Hocuspocus 触发 onStoreDocument 且达到 50 次更新时，请帮我实现一个逻辑：
@@ -738,6 +741,7 @@ gantt
 ```
 
 **版本回退逻辑：**
+
 ```
 我需要一个功能：给出一个版本的哈希值，从数据库读取其 stateVector，
 然后利用 Yjs 的 encodeStateAsUpdate 函数生成该版本的快照。
@@ -748,15 +752,15 @@ gantt
 
 ## 附录：关键概念速查
 
-| 概念 | 解释 |
-|------|------|
-| **CRDT** | 无冲突复制数据类型，保证分布式环境下数据最终一致 |
-| **YATA** | Yjs 使用的 CRDT 算法，专为文本协同优化 |
+| 概念             | 解释                                                 |
+| ---------------- | ---------------------------------------------------- |
+| **CRDT**         | 无冲突复制数据类型，保证分布式环境下数据最终一致     |
+| **YATA**         | Yjs 使用的 CRDT 算法，专为文本协同优化               |
 | **State Vector** | 记录每个客户端已处理到的逻辑时钟，是版本的"数学坐标" |
-| **Awareness** | 独立于文档的协作状态协议（光标、选区、在线状态） |
-| **Hocuspocus** | Tiptap 官方的 Yjs WebSocket 服务端，钩子式 API |
-| **BYTEA** | PostgreSQL 的二进制数据类型，用于存储 Yjs 文档 |
-| **DAG** | 有向无环图，CRDT 版本历史的组织结构 |
+| **Awareness**    | 独立于文档的协作状态协议（光标、选区、在线状态）     |
+| **Hocuspocus**   | Tiptap 官方的 Yjs WebSocket 服务端，钩子式 API       |
+| **BYTEA**        | PostgreSQL 的二进制数据类型，用于存储 Yjs 文档       |
+| **DAG**          | 有向无环图，CRDT 版本历史的组织结构                  |
 
 ---
 
