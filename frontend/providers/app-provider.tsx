@@ -1,16 +1,12 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { ThemeProvider } from './theme-provider';
 
 interface AppProviderProps {
   children: ReactNode;
 }
 
 export function AppProvider({ children }: AppProviderProps) {
-  // TODO: Add providers as needed
-  // - QueryClientProvider (React Query)
-  // - SessionProvider (NextAuth)
-  // - ThemeProvider
-
-  return <>{children}</>;
+  return <ThemeProvider>{children}</ThemeProvider>;
 }

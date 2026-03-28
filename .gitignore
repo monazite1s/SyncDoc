@@ -98,3 +98,4 @@ Desktop.ini
 .cache/
 .tmp/
 .turbo/
+.DS_Store

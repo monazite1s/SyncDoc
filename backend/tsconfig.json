@@ -17,12 +17,14 @@
     "strictNullChecks": true,
     "noImplicitAny": true,
     "strictBindCallApply": true,
+    "noEmit": false,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@collab/types": ["../packages/types/src"]
     }
   },
   "include": ["src/**/*"],

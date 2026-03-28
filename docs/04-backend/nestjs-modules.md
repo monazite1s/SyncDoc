@@ -53,6 +53,8 @@ graph TB
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { serveStatic } from '@nestjs/serve-static';
+import { join } from 'path';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { DocumentsModule } from './modules/documents/documents.module';
@@ -64,6 +66,7 @@ import { RedisModule } from './redis/redis.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { CookieMiddleware } from './common/middlewares/cookie.middleware';
 
 @Module({
   imports: [
@@ -84,6 +87,14 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     CollaborationModule,
   ],
   providers: [
+    // Cookie 中间件
+    {
+      provide: 'APP_COOKIE_PARSER',
+      useFactory: () => {
+        const cookieParser = require('cookie-parser');
+        return cookieParser();
+      },
+    },
     // 全局 JWT 认证守卫
     {
       provide: APP_GUARD,
@@ -101,7 +112,12 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     },
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer) {
+    // 应用 cookie 解析中间件
+    consumer.apply(CookieMiddleware).forRoutes('*');
+  }
+}
 ```
 
 ### Auth Module
@@ -155,7 +171,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
-    private redis: RedisService,
+    private redis: RedisService
   ) {}
 
   async register(email: string, password: string, name: string) {
@@ -242,29 +258,17 @@ export class AuthService {
     await this.redis.del(`refresh:${userId}`);
   }
 
-  private async generateTokens(
-    userId: string,
-    email: string,
-    name: string,
-  ) {
+  private async generateTokens(userId: string, email: string, name: string) {
     const accessToken = this.jwt.sign({
       sub: userId,
       email,
       name,
     });
 
-    const refreshToken = this.jwt.sign(
-      { sub: userId, type: 'refresh' },
-      { expiresIn: '7d' },
-    );
+    const refreshToken = this.jwt.sign({ sub: userId, type: 'refresh' }, { expiresIn: '7d' });
 
     // 存储 refresh token
-    await this.redis.set(
-      `refresh:${userId}`,
-      refreshToken,
-      'EX',
-      7 * 24 * 60 * 60,
-    );
+    await this.redis.set(`refresh:${userId}`, refreshToken, 'EX', 7 * 24 * 60 * 60);
 
     return {
       accessToken,
@@ -306,7 +310,7 @@ import * as Y from 'yjs';
 export class DocumentsService {
   constructor(
     private prisma: PrismaService,
-    private redis: RedisService,
+    private redis: RedisService
   ) {}
 
   async create(userId: string, title: string) {
@@ -341,8 +345,7 @@ export class DocumentsService {
 
     // 检查访问权限
     const hasAccess =
-      document.ownerId === userId ||
-      document.collaborators.some((c) => c.userId === userId);
+      document.ownerId === userId || document.collaborators.some((c) => c.userId === userId);
 
     if (!hasAccess) {
       throw new ForbiddenException('Access denied');
@@ -357,10 +360,7 @@ export class DocumentsService {
     const [documents, total] = await Promise.all([
       this.prisma.document.findMany({
         where: {
-          OR: [
-            { ownerId: userId },
-            { collaborators: { some: { userId } } },
-          ],
+          OR: [{ ownerId: userId }, { collaborators: { some: { userId } } }],
         },
         skip,
         take: limit,
@@ -377,10 +377,7 @@ export class DocumentsService {
       }),
       this.prisma.document.count({
         where: {
-          OR: [
-            { ownerId: userId },
-            { collaborators: { some: { userId } } },
-          ],
+          OR: [{ ownerId: userId }, { collaborators: { some: { userId } } }],
         },
       }),
     ]);
@@ -433,7 +430,7 @@ export class DocumentsService {
     documentId: string,
     userId: string,
     role: 'EDITOR' | 'VIEWER',
-    requesterId: string,
+    requesterId: string
   ) {
     // 检查权限
     const document = await this.prisma.document.findUnique({
@@ -450,11 +447,7 @@ export class DocumentsService {
     });
   }
 
-  async removeCollaborator(
-    documentId: string,
-    userId: string,
-    requesterId: string,
-  ) {
+  async removeCollaborator(documentId: string, userId: string, requesterId: string) {
     const document = await this.prisma.document.findUnique({
       where: { id: documentId },
       select: { ownerId: true },
@@ -505,14 +498,10 @@ import { createHash } from 'crypto';
 export class VersionsService {
   constructor(
     private prisma: PrismaService,
-    private documentsService: DocumentsService,
+    private documentsService: DocumentsService
   ) {}
 
-  async create(
-    documentId: string,
-    userId: string,
-    message?: string,
-  ) {
+  async create(documentId: string, userId: string, message?: string) {
     // 获取当前文档内容
     const content = await this.documentsService.loadContent(documentId);
     if (!content) {
@@ -681,16 +670,10 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
-export class PrismaService
-  extends PrismaClient
-  implements OnModuleInit, OnModuleDestroy
-{
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
     super({
-      log:
-        process.env.NODE_ENV === 'development'
-          ? ['query', 'info', 'warn', 'error']
-          : ['error'],
+      log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
     });
   }
 
@@ -747,7 +730,7 @@ export class RedisService implements OnModuleDestroy {
   async set(
     key: string,
     value: string,
-    options?: { EX?: number; PX?: number; NX?: boolean },
+    options?: { EX?: number; PX?: number; NX?: boolean }
   ): Promise<void> {
     if (options?.EX) {
       await this.client.set(key, value, { EX: options.EX });
@@ -779,10 +762,7 @@ export class RedisService implements OnModuleDestroy {
     await this.client.publish(channel, message);
   }
 
-  async subscribe(
-    channel: string,
-    callback: (message: string) => void,
-  ): Promise<void> {
+  async subscribe(channel: string, callback: (message: string) => void): Promise<void> {
     await this.client.subscribe(channel, callback);
   }
 }
@@ -794,12 +774,7 @@ export class RedisService implements OnModuleDestroy {
 
 ```typescript
 // src/common/interceptors/transform.interceptor.ts
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -810,19 +785,14 @@ export interface Response<T> {
 }
 
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, Response<T>>
-{
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<Response<T>> {
+export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
     return next.handle().pipe(
       map((data) => ({
         success: true,
         data,
         timestamp: new Date().toISOString(),
-      })),
+      }))
     );
   }
 }
@@ -832,13 +802,7 @@ export class TransformInterceptor<T>
 
 ```typescript
 // src/common/filters/global-exception.filter.ts
-import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Response } from 'express';
 
 @Catch()

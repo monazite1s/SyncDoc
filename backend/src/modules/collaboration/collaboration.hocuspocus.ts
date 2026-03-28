@@ -1,27 +1,30 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Server, onAuthenticatePayload, onLoadDocumentPayload, onChangePayload, onStoreDocumentPayload, onDisconnectPayload } from '@hocuspocus/server';
+import { Server } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
 import { Redis } from '@hocuspocus/extension-redis';
 import { Logger as HocuspocusLogger } from '@hocuspocus/extension-logger';
-import * as Jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import * as Y from 'yjs';
 import { CollaborationService } from './collaboration.service';
 
 @Injectable()
 export class CollaborationHocuspocus {
   private readonly _logger = new Logger(CollaborationHocuspocus.name);
-  private _server: Server | null = null;
+  private _server: ReturnType<typeof Server.configure> | null = null;
 
   constructor(
     private readonly _configService: ConfigService,
-    private readonly _collaborationService: CollaborationService,
+    private readonly _collaborationService: CollaborationService
   ) {}
 
   async start(port: number): Promise<void> {
     const redisHost = this._configService.get<string>('redis.host', 'localhost');
     const redisPort = this._configService.get<number>('redis.port', 6379);
     const redisPassword = this._configService.get<string>('redis.password');
+    const collaborationService = this._collaborationService;
+    const configService = this._configService;
+    const logger = this._logger;
 
     this._server = Server.configure({
       port,
@@ -30,60 +33,75 @@ export class CollaborationHocuspocus {
         new Redis({
           host: redisHost,
           port: redisPort,
-          ...(redisPassword && { password: redisPassword }),
+          ...(redisPassword ? { password: redisPassword } : {}),
         }),
         new Database({
-          fetch: async ({ documentName }: onLoadDocumentPayload) => {
-            const state = await this._collaborationService.loadDocumentState(documentName);
-            return state ?? undefined;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          fetch: async (data: any) => {
+            const state = await collaborationService.loadDocumentState(data.documentName as string);
+            if (!state) return null;
+            return new Uint8Array(state);
           },
-          store: async ({ documentName, state }: onStoreDocumentPayload & { state: Buffer }) => {
-            await this._collaborationService.storeDocumentState(documentName, state);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          store: async (data: any) => {
+            await collaborationService.storeDocumentState(
+              data.documentName as string,
+              Buffer.from(data.state as Uint8Array)
+            );
           },
         }),
       ],
 
-      onAuthenticate: async ({ token }: onAuthenticatePayload) => {
-        const jwtSecret = this._configService.get<string>('jwt.secret');
-        try {
-          const decoded = Jwt.verify(token, jwtSecret) as { sub: string; email: string };
-          const userId = decoded.sub;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      async onAuthenticate(data: any) {
+        const token = data.token as string;
+        const jwtSecret = configService.get<string>('jwt.secret')!;
+        const decoded = jwt.verify(token, jwtSecret) as { sub: string; email: string };
 
-          // 验证用户是否存在且活跃
-          const user = await this._collaborationService.validateUser(userId);
-          if (!user) {
-            throw new Error('用户不存在或已被禁用');
-          }
-
-          return { user: { id: user.id, name: user.username } };
-        } catch (error) {
-          throw new Error('认证失败');
+        const user = await collaborationService.validateUser(decoded.sub);
+        if (!user) {
+          throw new Error('用户不存在或已被禁用');
         }
+
+        return { user: { id: user.id, name: user.username } };
       },
 
-      onLoadDocument: async ({ documentName, document }: onLoadDocumentPayload) => {
-        const state = await this._collaborationService.loadDocumentState(documentName);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      async onLoadDocument(data: any) {
+        const documentName = data.documentName as string;
+        const document = data.document as Y.Doc;
+        const state = await collaborationService.loadDocumentState(documentName);
         if (state) {
-          Y.applyUpdate(document, state);
+          Y.applyUpdate(document, new Uint8Array(state));
         }
       },
 
-      onChange: async ({ documentName, document, context }: onChangePayload) => {
-        const userId = (context as { user?: { id: string } })?.user?.id;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      async onChange(data: any) {
+        const userId = data.context?.user?.id as string | undefined;
         if (!userId) return;
 
-        const update = Y.encodeStateAsUpdate(document);
-        await this._collaborationService.recordEdit(documentName, userId, Buffer.from(update));
+        const update = Y.encodeStateAsUpdate(data.document as Y.Doc);
+        await collaborationService.recordEdit(
+          data.documentName as string,
+          userId,
+          Buffer.from(update)
+        );
       },
 
-      onStoreDocument: async ({ documentName, document }: onStoreDocumentPayload) => {
-        const state = Y.encodeStateAsUpdate(document);
-        await this._collaborationService.storeDocumentState(documentName, Buffer.from(state));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      async onStoreDocument(data: any) {
+        const state = Y.encodeStateAsUpdate(data.document as Y.Doc);
+        await collaborationService.storeDocumentState(
+          data.documentName as string,
+          Buffer.from(state)
+        );
       },
 
-      onDisconnect: async ({ documentName, context }: onDisconnectPayload) => {
-        const userId = (context as { user?: { id: string } })?.user?.id;
-        this._logger.log(`用户 ${userId ?? '未知'} 断开文档 ${documentName} 连接`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      async onDisconnect(data: any) {
+        const userId = data.context?.user?.id as string | undefined;
+        logger.log(`用户 ${userId ?? '未知'} 断开文档 ${data.documentName} 连接`);
       },
     });
 

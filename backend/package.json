@@ -21,6 +21,11 @@
     "db:reset": "prisma migrate reset --force"
   },
   "dependencies": {
+    "@collab/types": "workspace:*",
+    "@hocuspocus/extension-database": "^2.13.5",
+    "@hocuspocus/extension-logger": "^2.13.5",
+    "@hocuspocus/extension-redis": "^2.13.5",
+    "@hocuspocus/server": "^2.13.5",
     "@nestjs/common": "^11.0.11",
     "@nestjs/config": "^4.0.1",
     "@nestjs/core": "^11.0.11",
@@ -28,14 +33,12 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.11",
     "@prisma/client": "^6.4.1",
-    "@hocuspocus/server": "^2.13.5",
-    "@hocuspocus/extension-redis": "^2.13.5",
-    "@hocuspocus/extension-database": "^2.13.5",
-    "@hocuspocus/extension-logger": "^2.13.5",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "cookie-parser": "^1.4.7",
     "ioredis": "^5.5.0",
+    "jsonwebtoken": "^9.0.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
@@ -48,8 +51,10 @@
     "@nestjs/schematics": "^11.0.1",
     "@nestjs/testing": "^11.0.11",
     "@types/bcrypt": "^5.0.2",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.13.5",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
@@ -68,13 +73,19 @@
     "typescript": "^5.7.3"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
-    "collectCoverageFrom": ["**/*.(t|j)s"],
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }

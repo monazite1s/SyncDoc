@@ -1,11 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { CollaborationHocuspocus } from './modules/collaboration/collaboration.hocuspocus';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Cookie 解析（用于 HttpOnly cookie 认证）
+  app.use(cookieParser());
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -16,7 +20,7 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true,
       },
-    }),
+    })
   );
 
   // Enable CORS

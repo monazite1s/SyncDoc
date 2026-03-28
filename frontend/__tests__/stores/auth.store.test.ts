@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useAuthStore } from '@/stores/auth.store';
-import type { User } from '@/types';
+import { UserStatus } from '@collab/types';
+import type { User } from '@collab/types';
 
 // mock 用户数据
 const mockUser: User = {
@@ -8,7 +9,7 @@ const mockUser: User = {
   email: 'test@example.com',
   username: 'testuser',
   nickname: 'Test User',
-  status: 'ACTIVE',
+  status: UserStatus.ACTIVE,
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-01T00:00:00.000Z',
 };
@@ -18,7 +19,6 @@ describe('useAuthStore', () => {
     // 每次测试前重置 store 状态
     useAuthStore.setState({
       user: null,
-      token: null,
       isAuthenticated: false,
     });
   });
@@ -26,7 +26,6 @@ describe('useAuthStore', () => {
   it('初始状态应为未认证', () => {
     const state = useAuthStore.getState();
     expect(state.user).toBeNull();
-    expect(state.token).toBeNull();
     expect(state.isAuthenticated).toBe(false);
   });
 
@@ -45,19 +44,11 @@ describe('useAuthStore', () => {
     expect(state.isAuthenticated).toBe(false);
   });
 
-  it('setToken 应设置 token', () => {
-    useAuthStore.getState().setToken('test-jwt-token');
-    const state = useAuthStore.getState();
-    expect(state.token).toBe('test-jwt-token');
-  });
-
   it('logout 应清除所有状态', () => {
     useAuthStore.getState().setUser(mockUser);
-    useAuthStore.getState().setToken('test-jwt-token');
     useAuthStore.getState().logout();
     const state = useAuthStore.getState();
     expect(state.user).toBeNull();
-    expect(state.token).toBeNull();
     expect(state.isAuthenticated).toBe(false);
   });
 });

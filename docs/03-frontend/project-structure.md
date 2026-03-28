@@ -41,6 +41,9 @@ frontend/
 │   │   ├── button.tsx
 │   │   ├── dialog.tsx
 │   │   ├── dropdown-menu.tsx
+│   │   ├── input.tsx
+│   │   ├── toast.tsx
+│   │   ├── skeleton.tsx      # 新增骨架屏
 │   │   └── ...
 │   │
 │   ├── editor/                # 编辑器组件
@@ -68,7 +71,9 @@ frontend/
 │       ├── header.tsx
 │       ├── sidebar.tsx
 │       ├── loading.tsx
-│       └── error-boundary.tsx
+│       ├── error-boundary.tsx
+│       ├── auth-guard.tsx     # 新增认证守卫
+│       └── skeleton.tsx     # 新增骨架屏
 │
 ├── hooks/                      # 自定义 Hooks
 │   ├── use-document.ts        # 文档操作
@@ -95,7 +100,7 @@ frontend/
 │   ├── app-provider.tsx       # 应用级 Provider
 │   ├── auth-provider.tsx      # 认证 Provider
 │   ├── query-provider.tsx     # TanStack Query
-│   └── theme-provider.tsx     # 主题 Provider
+│   └── theme-provider.tsx     # 主题 Provider（新增）
 │
 ├── stores/                     # Zustand Stores
 │   ├── document-store.ts      # 文档状态
@@ -103,10 +108,11 @@ frontend/
 │   └── user-store.ts          # 用户状态
 │
 ├── types/                      # TypeScript 类型
-│   ├── api.ts                 # API 类型
-│   ├── document.ts            # 文档类型
-│   ├── user.ts                # 用户类型
-│   └── version.ts             # 版本类型
+│   ├── index.ts               # 重新导出 @collab/types
+│   ├── api.ts                 # API 类型（兼容）
+│   ├── document.ts            # 文档类型（兼容）
+│   ├── user.ts                # 用户类型（兼容）
+│   └── version.ts             # 版本类型（兼容）
 │
 ├── styles/                     # 样式文件
 │   └── editor.css             # 编辑器样式
@@ -208,10 +214,7 @@ import type { Config } from 'tailwindcss';
 
 const config: Config = {
   darkMode: 'class',
-  content: [
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
+  content: ['./app/**/*.{js,ts,jsx,tsx,mdx}', './components/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {
       colors: {
@@ -241,10 +244,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [
-    require('tailwindcss-animate'),
-    require('@tailwindcss/typography'),
-  ],
+  plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 };
 
 export default config;
@@ -318,10 +318,7 @@ const eslintConfig = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     rules: {
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
       'react-hooks/exhaustive-deps': 'error',
     },
@@ -329,6 +326,25 @@ const eslintConfig = [
 ];
 
 export default eslintConfig;
+```
+
+## 类型共享
+
+项目使用 `@collab/types` 包共享前后端类型定义：
+
+```json
+// frontend/package.json
+{
+  "dependencies": {
+    "@collab/types": "workspace:*"
+  }
+}
+```
+
+```typescript
+// frontend/types/index.ts
+// 重新导出共享类型
+export * from '@collab/types';
 ```
 
 ## 环境变量
@@ -352,13 +368,13 @@ NEXT_PUBLIC_ENABLE_VERSIONS=true
 
 ### 命名约定
 
-| 类型 | 约定 | 示例 |
-|------|------|------|
-| 组件文件 | PascalCase | `DocumentEditor.tsx` |
-| Hook 文件 | camelCase + use 前缀 | `useDocument.ts` |
-| 工具函数 | camelCase | `formatDate.ts` |
-| 类型文件 | camelCase | `document.ts` |
-| 常量 | UPPER_SNAKE_CASE | `MAX_FILE_SIZE` |
+| 类型      | 约定                 | 示例                 |
+| --------- | -------------------- | -------------------- |
+| 组件文件  | PascalCase           | `DocumentEditor.tsx` |
+| Hook 文件 | camelCase + use 前缀 | `useDocument.ts`     |
+| 工具函数  | camelCase            | `formatDate.ts`      |
+| 类型文件  | camelCase            | `document.ts`        |
+| 常量      | UPPER_SNAKE_CASE     | `MAX_FILE_SIZE`      |
 
 ### 组件结构
 
@@ -373,11 +389,7 @@ interface ComponentProps {
 }
 
 export const Component: FC<ComponentProps> = ({ className, ...props }) => {
-  return (
-    <div className={cn('base-classes', className)}>
-      {/* 内容 */}
-    </div>
-  );
+  return <div className={cn('base-classes', className)}>{/* 内容 */}</div>;
 };
 ```
 

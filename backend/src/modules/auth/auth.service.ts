@@ -1,4 +1,10 @@
-import { Injectable, ConflictException, UnauthorizedException, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -13,7 +19,7 @@ export class AuthService {
   constructor(
     private readonly _prisma: PrismaService,
     private readonly _jwtService: JwtService,
-    private readonly _configService: ConfigService,
+    private readonly _configService: ConfigService
   ) {}
 
   /**
@@ -181,13 +187,13 @@ export class AuthService {
     // 生成 access token
     const token = this._jwtService.sign(
       { sub: userId, email },
-      { secret: jwtSecret, expiresIn },
+      { secret: jwtSecret, expiresIn: expiresIn as unknown as number }
     );
 
     // 生成 refresh token (30 天有效期)
     const refreshToken = this._jwtService.sign(
       { sub: userId, email, type: 'refresh' },
-      { secret: jwtSecret, expiresIn: '30d' },
+      { secret: jwtSecret, expiresIn: '30d' as unknown as number }
     );
 
     // 计算过期时间

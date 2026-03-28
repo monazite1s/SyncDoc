@@ -31,24 +31,9 @@ async function main() {
       id: 'sample-doc-1',
       title: 'Welcome to Collab Editor',
       description: 'This is a sample document to get you started.',
-      content: {
-        type: 'doc',
-        content: [
-          {
-            type: 'paragraph',
-            content: [{ type: 'text', text: 'Welcome to Collab Editor!' }],
-          },
-          {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: 'Start typing to create your document. Share it with others to collaborate in real-time.',
-              },
-            ],
-          },
-        ],
-      },
+      // content 使用 Bytes 类型，初始文档为空
+      // 前端编辑器打开后会通过 Hocuspocus 自动写入 Yjs 二进制状态
+      content: null,
       isPublic: false,
       status: 'DRAFT',
       authorId: user.id,

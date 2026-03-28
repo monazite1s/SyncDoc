@@ -72,13 +72,13 @@
 
 ### 1.2 设计原则
 
-| 原则 | 说明 | 实现 |
-|------|------|------|
-| **本地优先** | 客户端持有完整状态，离线可用 | Y.Doc + IndexedDB |
-| **组件化** | 原子设计，组件复用 | React + ShadcnUI |
-| **类型安全** | 全量 TypeScript | 严格模式 + Zod |
-| **性能优先** | 代码分割、懒加载、缓存 | Next.js + TanStack Query |
-| **渐进增强** | 基础功能可用，逐步增强体验 | SSR + CSR 混合 |
+| 原则         | 说明                         | 实现                     |
+| ------------ | ---------------------------- | ------------------------ |
+| **本地优先** | 客户端持有完整状态，离线可用 | Y.Doc + IndexedDB        |
+| **组件化**   | 原子设计，组件复用           | React + ShadcnUI         |
+| **类型安全** | 全量 TypeScript              | 严格模式 + Zod           |
+| **性能优先** | 代码分割、懒加载、缓存       | Next.js + TanStack Query |
+| **渐进增强** | 基础功能可用，逐步增强体验   | SSR + CSR 混合           |
 
 ---
 
@@ -86,41 +86,41 @@
 
 ### 2.1 核心技术
 
-| 技术 | 版本 | 用途 | 选型理由 |
-|------|------|------|----------|
-| **Next.js** | 15+ | 全栈框架 | App Router 成熟，RSC 支持 |
-| **React** | 19+ | UI 库 | 最新特性，性能优化 |
-| **TypeScript** | 5.5+ | 类型系统 | 类型安全，开发体验 |
-| **Tailwind CSS** | 4.x | 样式框架 | 原子化，AI 友好 |
-| **ShadcnUI** | 1.x | 组件库 | 可复制，完全可控 |
+| 技术             | 版本 | 用途     | 选型理由                  |
+| ---------------- | ---- | -------- | ------------------------- |
+| **Next.js**      | 15+  | 全栈框架 | App Router 成熟，RSC 支持 |
+| **React**        | 19+  | UI 库    | 最新特性，性能优化        |
+| **TypeScript**   | 5.5+ | 类型系统 | 类型安全，开发体验        |
+| **Tailwind CSS** | 4.x  | 样式框架 | 原子化，AI 友好           |
+| **ShadcnUI**     | 1.x  | 组件库   | 可复制，完全可控          |
 
 ### 2.2 协同技术
 
-| 技术 | 版本 | 用途 | 选型理由 |
-|------|------|------|----------|
-| **Tiptap** | 3.x | 富文本编辑器 | 无头设计，Yjs 集成 |
-| **Yjs** | 13.x | CRDT 引擎 | 工业级，性能优秀 |
-| **y-websocket** | 2.x | WebSocket Provider | 官方推荐 |
-| **y-indexeddb** | 9.x | 本地持久化 | 离线支持 |
+| 技术            | 版本 | 用途               | 选型理由           |
+| --------------- | ---- | ------------------ | ------------------ |
+| **Tiptap**      | 3.x  | 富文本编辑器       | 无头设计，Yjs 集成 |
+| **Yjs**         | 13.x | CRDT 引擎          | 工业级，性能优秀   |
+| **y-websocket** | 2.x  | WebSocket Provider | 官方推荐           |
+| **y-indexeddb** | 9.x  | 本地持久化         | 离线支持           |
 
 ### 2.3 状态管理
 
-| 技术 | 版本 | 用途 | 选型理由 |
-|------|------|------|----------|
-| **Zustand** | 5.x | 客户端状态 | 轻量，无 Provider |
-| **TanStack Query** | 5.x | 服务端状态 | 缓存，自动刷新 |
-| **Immer** | 10.x | 不可变更新 | 简化状态更新 |
+| 技术               | 版本 | 用途       | 选型理由          |
+| ------------------ | ---- | ---------- | ----------------- |
+| **Zustand**        | 5.x  | 客户端状态 | 轻量，无 Provider |
+| **TanStack Query** | 5.x  | 服务端状态 | 缓存，自动刷新    |
+| **Immer**          | 10.x | 不可变更新 | 简化状态更新      |
 
 ### 2.4 工具链
 
-| 技术 | 用途 |
-|------|------|
-| **pnpm** | 包管理 |
-| **Turbopack** | 构建工具（开发） |
-| **Vitest** | 单元测试 |
-| **Playwright** | E2E 测试 |
-| **ESLint** | 代码检查 |
-| **Prettier** | 代码格式化 |
+| 技术           | 用途             |
+| -------------- | ---------------- |
+| **pnpm**       | 包管理           |
+| **Turbopack**  | 构建工具（开发） |
+| **Vitest**     | 单元测试         |
+| **Playwright** | E2E 测试         |
+| **ESLint**     | 代码检查         |
+| **Prettier**   | 代码格式化       |
 
 ---
 
@@ -172,23 +172,95 @@
 
 ## 2.6 单文件行数限制
 
-| 文件类型 | 推荐行数 | 最大行数 | 说明 |
-|----------|----------|----------|------|
-| 页面组件 | 200-300 | 400 | `app/**/page.tsx` |
-| UI 组件 | 100-200 | 300 | `components/ui/*.tsx` |
-| Hook 文件 | 100-200 | 300 | `hooks/*.ts` |
-| 工具函数 | 50-150 | 200 | `lib/**/*.ts` |
-| **例外**（编辑器核心配置） | 300-500 | 800 | `lib/editor/extensions.ts` 等 |
+| 文件类型                   | 推荐行数 | 最大行数 | 说明                          |
+| -------------------------- | -------- | -------- | ----------------------------- |
+| 页面组件                   | 200-300  | 400      | `app/**/page.tsx`             |
+| UI 组件                    | 100-200  | 300      | `components/ui/*.tsx`         |
+| Hook 文件                  | 100-200  | 300      | `hooks/*.ts`                  |
+| 工具函数                   | 50-150   | 200      | `lib/**/*.ts`                 |
+| **例外**（编辑器核心配置） | 300-500  | 800      | `lib/editor/extensions.ts` 等 |
 
 ### 通用限制
 
-| 限制项 | 值 | 说明 |
-|--------|-----|------|
-| 单函数最大行数 | 50 行 | 超过需要拆分 |
-| 嵌套层级 | 4 层 | 超过需要重构 |
-| 参数数量 | 4 个 | 超过使用对象封装 |
+| 限制项         | 值    | 说明             |
+| -------------- | ----- | ---------------- |
+| 单函数最大行数 | 50 行 | 超过需要拆分     |
+| 嵌套层级       | 4 层  | 超过需要重构     |
+| 参数数量       | 4 个  | 超过使用对象封装 |
 
 > 详细规范请参阅 [AI Agent 开发指南](../01-architecture/ai-agent-guidelines.md)。
+
+### 2.6 主题系统
+
+项目使用 CSS 变量和 next-themes 实现主题切换：
+
+```css
+/* globals.css */
+:root {
+  /* 表面颜色 */
+  --surface: #ffffff;
+  --surface-hover: #f3f4f6;
+  --sidebar-bg: #fafafa;
+
+  /* 语义化颜色 */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+
+  /* Claude 橙色强调 */
+  --primary: 30 100% 50%;
+  --primary-foreground: 210 40% 98%;
+
+  /* 其他变量 */
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 30 100% 50%;
+}
+
+.dark {
+  --surface: #1a1a1a;
+  --surface-hover: #2a2a2a;
+  --sidebar-bg: #1f1f1f;
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+}
+```
+
+### 2.7 字体配置
+
+```typescript
+// layout.tsx
+import { Inter, JetBrains_Mono } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'] });
+const jetbrains = JetBrains_Mono({ subsets: ['latin'] });
+
+export const metadata = {
+  title: 'Collab Editor',
+  description: '实时协同文档编辑器',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="zh" className={`${inter.className} ${jetbrains.className}`}>
+      <body className="font-sans antialiased">
+        <div className="relative flex min-h-screen flex-col">
+          {children}
+        </div>
+      </body>
+    </html>
+  );
+}
+```
 
 ---
 
@@ -384,14 +456,14 @@ frontend/
 
 ### 4.2 模块职责
 
-| 模块 | 职责 | 核心文件 |
-|------|------|----------|
-| **认证模块** | 用户登录、注册、Token 管理 | `hooks/use-auth.ts`, `lib/auth/*` |
-| **文档模块** | 文档列表、详情、CRUD | `hooks/use-document.ts`, `components/document/*` |
-| **编辑器模块** | Tiptap 配置、扩展、样式 | `components/editor/*`, `lib/editor/*` |
-| **协同模块** | Yjs Provider、Awareness | `lib/yjs/*`, `components/collaboration/*` |
-| **版本模块** | 版本列表、预览、恢复 | `hooks/use-versions.ts`, `components/version/*` |
-| **设置模块** | 用户设置、偏好配置 | `app/(main)/settings/*` |
+| 模块           | 职责                       | 核心文件                                         |
+| -------------- | -------------------------- | ------------------------------------------------ |
+| **认证模块**   | 用户登录、注册、Token 管理 | `hooks/use-auth.ts`, `lib/auth/*`                |
+| **文档模块**   | 文档列表、详情、CRUD       | `hooks/use-document.ts`, `components/document/*` |
+| **编辑器模块** | Tiptap 配置、扩展、样式    | `components/editor/*`, `lib/editor/*`            |
+| **协同模块**   | Yjs Provider、Awareness    | `lib/yjs/*`, `components/collaboration/*`        |
+| **版本模块**   | 版本列表、预览、恢复       | `hooks/use-versions.ts`, `components/version/*`  |
+| **设置模块**   | 用户设置、偏好配置         | `app/(main)/settings/*`                          |
 
 ---
 
@@ -495,8 +567,7 @@ import api from '@/lib/api/client';
 export const documentKeys = {
   all: ['documents'] as const,
   lists: () => [...documentKeys.all, 'list'] as const,
-  list: (filters: Record<string, unknown>) =>
-    [...documentKeys.lists(), { filters }] as const,
+  list: (filters: Record<string, unknown>) => [...documentKeys.lists(), { filters }] as const,
   details: () => [...documentKeys.all, 'detail'] as const,
   detail: (id: string) => [...documentKeys.details(), id] as const,
 };
@@ -662,7 +733,7 @@ App (Root Layout)
 │
 ├── AuthProvider
 │   └── QueryProvider
-│       └── ThemeProvider
+│       └── ThemeProvider          # 新增主题提供者
 │           │
 │           ├── (auth) Layout
 │           │   ├── Login Page
@@ -703,6 +774,67 @@ App (Root Layout)
 │                       └── VersionPanel (可选)
 │                           ├── VersionList
 │                           └── VersionPreview
+```
+
+### 7.2 主题系统架构
+
+```typescript
+// providers/theme-provider.tsx
+'use client';
+
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { type ThemeProviderProps } from 'next-themes/dist/types';
+
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+  return (
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+      {...props}
+    >
+      {children}
+    </NextThemesProvider>
+  );
+}
+```
+
+### 7.3 错误处理和加载状态
+
+```typescript
+// error.tsx
+export default function ErrorPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold">出错了</h1>
+        <p>抱歉，发生了错误。</p>
+      </div>
+    </div>
+  );
+}
+
+// not-found.tsx
+export default function NotFoundPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold">页面未找到</h1>
+        <p>抱歉，您访问的页面不存在。</p>
+      </div>
+    </div>
+  );
+}
+
+// loading.tsx
+export default function LoadingPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+    </div>
+  );
+}
 ```
 
 ### 7.2 编辑器组件树
@@ -963,10 +1095,7 @@ function setupReconnectStrategy(provider: WebsocketProvider) {
   const reconnect = () => {
     if (retryCount >= maxRetries) return;
 
-    const delay = Math.min(
-      baseDelay * Math.pow(1.5, retryCount),
-      maxDelay
-    );
+    const delay = Math.min(baseDelay * Math.pow(1.5, retryCount), maxDelay);
 
     retryCount++;
     setTimeout(() => provider.connect(), delay);
@@ -1097,8 +1226,8 @@ const VersionPanel = dynamic(
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000,      // 1 分钟
-      gcTime: 5 * 60 * 1000,     // 5 分钟
+      staleTime: 60 * 1000, // 1 分钟
+      gcTime: 5 * 60 * 1000, // 5 分钟
       retry: 1,
       refetchOnWindowFocus: false,
     },
@@ -1277,7 +1406,23 @@ import DOMPurify from 'dompurify';
 
 function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'code', 'pre', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3'],
+    ALLOWED_TAGS: [
+      'p',
+      'br',
+      'strong',
+      'em',
+      'u',
+      's',
+      'code',
+      'pre',
+      'ul',
+      'ol',
+      'li',
+      'blockquote',
+      'h1',
+      'h2',
+      'h3',
+    ],
     ALLOWED_ATTR: ['class', 'data-color'],
   });
 }

@@ -2,18 +2,54 @@
 
 ## 技术栈总览
 
-| 层级 | 技术 | 版本 | 选型理由 |
-|------|------|------|----------|
-| **前端框架** | Next.js 15+ | App Router + Turbopack | RSC 成熟，性能优化完善 |
-| **UI 组件** | Tailwind CSS 4 + ShadcnUI | 最新稳定版 | 现代化，AI 生成友好 |
-| **编辑器内核** | Tiptap 3.x | ProseMirror | 无头编辑器，Yjs 深度集成 |
-| **协同引擎** | Yjs + y-websocket | 最新稳定版 | CRDT YATA 算法，工业级 |
-| **后端框架** | NestJS 11+ | 最新 LTS | 模块化，TypeScript 原生 |
-| **协同中继** | Hocuspocus 3.x | Tiptap 官方 | 钩子式开发，易扩展 |
-| **ORM** | Prisma 6+ | 最新稳定版 | 类型安全，迁移完善 |
-| **主存储** | PostgreSQL 17 | 最新 LTS | BYTEA 支持，JSONB 优化 |
-| **缓存/消息** | Redis 8+ | 最新稳定版 | Pub/Sub，分布式锁 |
-| **运行时** | Node.js 22 LTS | 或 Bun 2.x | 性能优化，原生 TS |
+| 层级           | 技术                      | 版本                   | 选型理由                 |
+| -------------- | ------------------------- | ---------------------- | ------------------------ |
+| **前端框架**   | Next.js 15+               | App Router + Turbopack | RSC 成熟，性能优化完善   |
+| **UI 组件**    | Tailwind CSS 4 + ShadcnUI | 最新稳定版             | 现代化，AI 生成友好      |
+| **编辑器内核** | Tiptap 3.x                | ProseMirror            | 无头编辑器，Yjs 深度集成 |
+| **协同引擎**   | Yjs + y-websocket         | 最新稳定版             | CRDT YATA 算法，工业级   |
+| **后端框架**   | NestJS 11+                | 最新 LTS               | 模块化，TypeScript 原生  |
+| **协同中继**   | Hocuspocus 3.x            | Tiptap 官方            | 钩子式开发，易扩展       |
+| **ORM**        | Prisma 6+                 | 最新稳定版             | 类型安全，迁移完善       |
+| **主存储**     | PostgreSQL 17             | 最新 LTS               | BYTEA 支持，JSONB 优化   |
+| **缓存/消息**  | Redis 8+                  | 最新稳定版             | Pub/Sub，分布式锁        |
+| **运行时**     | Node.js 22 LTS            | 或 Bun 2.x             | 性能优化，原生 TS        |
+
+## 前端技术栈详解
+
+### 主题和字体
+
+```json
+{
+  "dependencies": {
+    "next-themes": "^0.3.0"
+  }
+}
+```
+
+**功能：**
+
+1. **主题切换**：支持 dark/light 模式，跟随系统设置
+2. **CSS 变量**：语义化颜色定义，支持动态切换
+3. **客户端渲染**：避免服务端渲染主题闪烁
+
+### 类型共享
+
+使用 workspace 共享前后端类型：
+
+```json
+{
+  "dependencies": {
+    "@collab/types": "workspace:*"
+  }
+}
+```
+
+**优势：**
+
+1. **类型安全**：前后端使用相同的 TypeScript 类型
+2. **自动同步**：修改类型后自动在所有地方生效
+3. **代码生成**：基于 OpenAPI 生成类型定义
 
 ## 前端技术栈详解
 
@@ -194,12 +230,14 @@ bun install
 
 ## 版本兼容性矩阵
 
-| 组件 | 最低版本 | 推荐版本 | 说明 |
-|------|----------|----------|------|
-| Node.js | 20.x | 22 LTS | 运行时 |
-| pnpm | 8.x | 9.x | 包管理 |
-| PostgreSQL | 15 | 17 | 主数据库 |
-| Redis | 7.x | 8.x | 缓存/消息 |
+| 组件          | 最低版本     | 推荐版本 | 说明      |
+| ------------- | ------------ | -------- | --------- |
+| Node.js       | 20.x         | 22 LTS   | 运行时    |
+| pnpm          | 8.x          | 9.x      | 包管理    |
+| PostgreSQL    | 15           | 17       | 主数据库  |
+| Redis         | 7.x          | 8.x      | 缓存/消息 |
+| next-themes   | ^0.3.0       | 最新     | 主题切换  |
+| @collab/types | workspace:\* | -        | 类型共享  |
 
 ## 相关文档
 

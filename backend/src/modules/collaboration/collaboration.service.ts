@@ -10,28 +10,28 @@ export class CollaborationService {
   /**
    * 从数据库加载文档的 Yjs 二进制状态
    */
-  async loadDocumentState(documentName: string): Promise<Buffer | null> {
+  async loadDocumentState(documentName: string): Promise<Uint8Array | null> {
     const document = await this._prisma.document.findUnique({
       where: { id: documentName },
       select: { id: true, content: true },
     });
 
-    if (!document) {
+    if (!document || !document.content) {
       return null;
     }
 
-    // Prisma Bytes 类型直接返回 Buffer
-    return document.content as Buffer | null;
+    // Prisma Bytes → Uint8Array
+    return new Uint8Array(document.content);
   }
 
   /**
    * 持久化文档的 Yjs 二进制状态
    */
-  async storeDocumentState(documentName: string, state: Buffer): Promise<void> {
+  async storeDocumentState(documentName: string, state: Uint8Array): Promise<void> {
     try {
       await this._prisma.document.update({
         where: { id: documentName },
-        data: { content: state },
+        data: { content: Buffer.from(state) },
       });
     } catch (error) {
       this._logger.error(`存储文档 ${documentName} 状态失败: ${(error as Error).message}`);
@@ -42,7 +42,7 @@ export class CollaborationService {
   /**
    * 记录编辑操作到历史表
    */
-  async recordEdit(documentName: string, userId: string, operation: Buffer): Promise<void> {
+  async recordEdit(documentName: string, userId: string, operation: Uint8Array): Promise<void> {
     try {
       // 获取当前文档最大版本号
       const lastEdit = await this._prisma.documentEdit.findFirst({
@@ -57,7 +57,7 @@ export class CollaborationService {
         data: {
           documentId: documentName,
           userId,
-          operation,
+          operation: Buffer.from(operation),
           version: nextVersion,
         },
       });

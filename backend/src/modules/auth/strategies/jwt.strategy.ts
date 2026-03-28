@@ -12,7 +12,14 @@ interface JwtPayload {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly _configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        // 优先从 cookie 读取
+        (request: { cookies?: Record<string, string> }) => {
+          return request?.cookies?.access_token ?? null;
+        },
+        // 兼容：也支持 Authorization header（用于 WebSocket 等）
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
       secretOrKey: _configService.get<string>('jwt.secret')!,
     });

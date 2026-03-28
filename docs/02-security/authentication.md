@@ -1,8 +1,8 @@
-# JWT 认证机制
+# HttpOnly Cookie 认证机制
 
 ## 概述
 
-本系统使用 **JWT（JSON Web Token）** 实现无状态认证，配合 **Refresh Token** 机制实现安全的会话管理。
+本系统使用 **HttpOnly Cookie** 结合 **JWT（JSON Web Token）** 实现安全的认证机制，确保 token 的安全性，配合 **Refresh Token** 机制实现无状态会话管理。
 
 ## 认证流程
 
@@ -25,7 +25,9 @@ sequenceDiagram
         A->>A: 生成 accessToken (15min)
         A->>A: 生成 refreshToken (7d)
         A->>R: 存储 refreshToken
-        A-->>C: { accessToken, refreshToken }
+        A->>C: Set-Cookie: access_token=...
+        A->>C: Set-Cookie: refresh_token=...
+        A-->>C: { user: { id, email, name } }
     else 密码错误
         A-->>C: 401 Unauthorized
     end
@@ -102,16 +104,11 @@ sequenceDiagram
 
 ```typescript
 // 客户端
-const wsProvider = new WebsocketProvider(
-  'wss://collab.example.com',
-  documentId,
-  ydoc,
-  {
-    params: {
-      token: accessToken,  // 通过 URL 参数传递
-    },
-  }
-);
+const wsProvider = new WebsocketProvider('wss://collab.example.com', documentId, ydoc, {
+  params: {
+    token: accessToken, // 通过 URL 参数传递
+  },
+});
 
 // 或通过首次消息传递
 wsProvider.on('open', () => {
@@ -142,10 +139,7 @@ const server = Server.configure({
       }
 
       // 检查文档访问权限
-      const hasAccess = await documentService.checkAccess(
-        documentName,
-        payload.sub
-      );
+      const hasAccess = await documentService.checkAccess(documentName, payload.sub);
 
       if (!hasAccess) {
         throw new Error('Access denied');
@@ -216,7 +210,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-    private redis: RedisService,
+    private redis: RedisService
   ) {}
 
   async login(email: string, password: string) {
@@ -240,7 +234,7 @@ export class AuthService {
       `refresh:${user.id}`,
       tokens.refreshToken,
       'EX',
-      7 * 24 * 60 * 60, // 7 天
+      7 * 24 * 60 * 60 // 7 天
     );
 
     return tokens;
@@ -301,7 +295,7 @@ export class AuthService {
       },
       {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
-      },
+      }
     );
 
     return { accessToken, refreshToken };
@@ -313,7 +307,8 @@ export class AuthService {
 
 ```typescript
 // auth/auth.controller.ts
-import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
@@ -322,8 +317,30 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('login')
-  async login(@Body() loginDto: { email: string; password: string }) {
-    return this.authService.login(loginDto.email, loginDto.password);
+  async login(
+    @Body() loginDto: { email: string; password: string },
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const result = await this.authService.login(loginDto.email, loginDto.password);
+
+    // 设置 HttpOnly cookie
+    response.cookie('access_token', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    response.cookie('refresh_token', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // 返回用户信息（不包含 token）
+    const { accessToken, refreshToken, ...userInfo } = result;
+    return userInfo;
   }
 
   @Post('refresh')
@@ -333,9 +350,14 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  async logout(@Req() req: any) {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+  async logout(@Req() req: any, @Res({ passthrough: true }) response: Response) {
+    const token = req.cookies?.access_token;
     await this.authService.logout(req.user.sub, token);
+
+    // 清除 cookie
+    response.clearCookie('access_token');
+    response.clearCookie('refresh_token');
+
     return { message: 'Logged out successfully' };
   }
 }
@@ -354,7 +376,11 @@ import { RedisService } from '../../redis/redis.service';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private redis: RedisService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      // 优先从 cookie 提取 token
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        ExtractJwt.fromCookie('access_token'),
+      ]),
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET,
     });
@@ -372,57 +398,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
 ## 前端集成
 
-### Token 存储
+### Cookie 自动刷新
 
 ```typescript
-// lib/auth/token.ts
-const ACCESS_TOKEN_KEY = 'access_token';
-const REFRESH_TOKEN_KEY = 'refresh_token';
-
-export function storeTokens(accessToken: string, refreshToken: string) {
-  // Access token 可以存内存或 sessionStorage
-  sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-
-  // Refresh token 建议使用 httpOnly cookie（服务端设置）
-  // 如果必须前端存储，使用 localStorage（有 XSS 风险）
-  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-}
-
-export function getAccessToken(): string | null {
-  return sessionStorage.getItem(ACCESS_TOKEN_KEY);
-}
-
-export function getRefreshToken(): string | null {
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
-}
-
-export function clearTokens() {
-  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-}
-```
-
-### 自动刷新
-
-```typescript
-// lib/auth/axios-interceptor.ts
+// lib/api/client.ts
 import axios from 'axios';
-import { getAccessToken, getRefreshToken, storeTokens, clearTokens } from './token';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
-// 请求拦截器：添加 token
-api.interceptors.request.use((config) => {
-  const token = getAccessToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// 响应拦截器：处理 token 过期
+// 响应拦截器：处理 token 刷新
 let isRefreshing = false;
 let failedQueue: any[] = [];
 
@@ -442,27 +428,19 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = getRefreshToken();
-        const response = await axios.post('/api/auth/refresh', {
-          refreshToken,
-        });
+        // 使用 cookie 中的 refresh token 自动刷新
+        const response = await axios.post('/api/auth/refresh');
+        const { accessToken } = response.data;
 
-        const { accessToken, refreshToken: newRefreshToken } = response.data;
-        storeTokens(accessToken, newRefreshToken);
-
-        // 重试失败的请求
-        failedQueue.forEach(({ resolve, config }) => {
-          config.headers.Authorization = `Bearer ${accessToken}`;
-          resolve(api(config));
-        });
-
+        // 后端会设置新的 cookie，我们只需要继续请求
         return api(originalRequest);
       } catch (refreshError) {
-        clearTokens();
+        // 刷新失败，重定向到登录页
         window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
+        failedQueue.forEach(({ resolve, config }) => resolve(api(config)));
         failedQueue = [];
       }
     }
@@ -472,6 +450,83 @@ api.interceptors.response.use(
 );
 
 export default api;
+```
+
+### 自动刷新
+
+## 前端集成
+
+由于认证改为 HttpOnly Cookie 方式，前端不再需要手动管理 token。
+
+### Auth Store（简化版）
+
+```typescript
+// stores/auth-store.ts
+import { create } from 'zustand';
+
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  setUser: (user: User | null) => void;
+  logout: () => void;
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  isAuthenticated: false,
+
+  setUser: (user) => set({ user, isAuthenticated: !!user }),
+
+  logout: () => set({ user: null, isAuthenticated: false }),
+}));
+```
+
+### 路由保护（客户端）
+
+```typescript
+// components/common/auth-guard.tsx
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/auth-store';
+
+interface AuthGuardProps {
+  children: React.ReactNode;
+  requiredAuth?: boolean;
+}
+
+export function AuthGuard({ children, requiredAuth = true }: AuthGuardProps) {
+  const { isAuthenticated } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (requiredAuth && !isAuthenticated) {
+      router.push('/login');
+    } else if (!requiredAuth && isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, requiredAuth, router]);
+
+  // 检查 cookie 认证状态
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const user = await response.json();
+          useAuthStore.getState().setUser(user);
+        }
+      } catch (error) {
+        if (requiredAuth) {
+          router.push('/login');
+        }
+      }
+    };
+
+    checkAuth();
+  }, [requiredAuth, router]);
+
+  return <>{children}</>;
+}
 ```
 
 ## 安全配置
