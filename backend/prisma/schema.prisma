@@ -66,7 +66,7 @@ model Document {
   id          String        @id @default(cuid())
   title       String
   description String?
-  content     Json?         // Yjs document state (optional snapshot)
+  content     Bytes?         // Yjs document state (binary)
   isPublic    Boolean       @default(false)
   status      DocumentStatus @default(DRAFT)
   createdAt   DateTime      @default(now())
@@ -122,7 +122,7 @@ model DocumentVersion {
   id          String   @id @default(cuid())
   documentId  String
   version     Int
-  content     Json     // Yjs document state snapshot
+  content     Bytes     // Yjs document state snapshot (binary)
   changeLog   String?  // Description of changes
   createdBy   String
   createdAt   DateTime @default(now())
@@ -140,7 +140,7 @@ model DocumentEdit {
   id          String   @id @default(cuid())
   documentId  String
   userId      String
-  operation   Json     // Yjs update operation
+  operation   Bytes     // Yjs update operation (binary)
   version     Int      // Document version after this edit
   timestamp   DateTime @default(now())
 
