@@ -1,49 +1,32 @@
 'use client';
 
+import { useAuthStore } from '@/stores/auth.store';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
 export default function SettingsPage() {
+    const user = useAuthStore((s) => s.user);
+
     return (
         <div className="max-w-2xl mx-auto px-4 py-8">
-            <h1 className="text-2xl font-bold mb-8 text-foreground">Settings</h1>
+            <h1 className="text-2xl font-bold mb-8 text-foreground">设置</h1>
             <div className="bg-card rounded-lg border border-border p-6 space-y-6">
                 <div>
-                    <h2 className="text-lg font-medium mb-4 text-foreground">Profile</h2>
+                    <h2 className="text-lg font-medium mb-4 text-foreground">个人信息</h2>
                     <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-foreground mb-1">
-                                Username
-                            </label>
-                            <input
-                                type="text"
-                                className="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-                                placeholder="Username"
-                            />
+                        <div className="space-y-2">
+                            <Label>用户名</Label>
+                            <Input value={user?.username ?? ''} disabled />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-foreground mb-1">
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                className="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-                                placeholder="Email"
-                            />
+                        <div className="space-y-2">
+                            <Label>邮箱</Label>
+                            <Input value={user?.email ?? ''} disabled />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-foreground mb-1">
-                                Nickname
-                            </label>
-                            <input
-                                type="text"
-                                className="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
-                                placeholder="Nickname (optional)"
-                            />
+                        <div className="space-y-2">
+                            <Label>昵称</Label>
+                            <Input value={user?.nickname ?? '未设置'} disabled />
                         </div>
                     </div>
-                </div>
-                <div className="pt-4 border-t border-border">
-                    <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition">
-                        Save Changes
-                    </button>
                 </div>
             </div>
         </div>

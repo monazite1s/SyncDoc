@@ -8,9 +8,10 @@ import {
     Res,
     HttpCode,
     HttpStatus,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -39,19 +40,31 @@ export class AuthController {
     @UseGuards(AuthGuard('jwt'))
     @HttpCode(HttpStatus.OK)
     async logout(
-        @Req() req: { user: { userId: string } },
-        @Body() body: { refreshToken?: string },
+        @Req() req: Request & { user: { userId: string } },
         @Res({ passthrough: true }) res: Response
     ) {
-        await this._authService.logout(req.user.userId, body.refreshToken);
+        // 从 cookie 提取 refresh token
+        const refreshToken = req.cookies?.refresh_token as string | undefined;
+        await this._authService.logout(req.user.userId, refreshToken);
         this._clearTokenCookies(res);
         return { success: true };
     }
 
     @Post('refresh')
     @HttpCode(HttpStatus.OK)
-    async refreshToken(@Body() dto: RefreshTokenDto, @Res({ passthrough: true }) res: Response) {
-        const result = await this._authService.refreshToken(dto.refreshToken);
+    async refreshToken(
+        @Body() dto: RefreshTokenDto,
+        @Req() req: Request,
+        @Res({ passthrough: true }) res: Response
+    ) {
+        // 优先从 cookie 提取，兼容 body 传入
+        const refreshToken = dto.refreshToken || req.cookies?.refresh_token;
+
+        if (!refreshToken) {
+            throw new UnauthorizedException('缺少 refresh token');
+        }
+
+        const result = await this._authService.refreshToken(refreshToken);
         this._setTokenCookies(res, result.token, result.refreshToken);
         return { user: result.user };
     }

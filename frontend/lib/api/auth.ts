@@ -1,28 +1,20 @@
-import apiClient from './client';
-import type {
-    AuthResponse,
-    LoginCredentials,
-    RegisterCredentials,
-    ApiResponse,
-    User,
-} from '@/types';
+import { api } from './client';
+import type { AuthResponse, LoginCredentials, RegisterCredentials, User } from '@collab/types';
 
 export const authApi = {
-    // Register new user
+    // 注册
     register: (credentials: RegisterCredentials) =>
-        apiClient.post<ApiResponse<AuthResponse>>('/auth/register', credentials),
+        api.post<AuthResponse>('/auth/register', credentials),
 
-    // Login
-    login: (credentials: LoginCredentials) =>
-        apiClient.post<ApiResponse<AuthResponse>>('/auth/login', credentials),
+    // 登录
+    login: (credentials: LoginCredentials) => api.post<AuthResponse>('/auth/login', credentials),
 
-    // Logout
-    logout: () => apiClient.post<ApiResponse<void>>('/auth/logout'),
+    // 登出
+    logout: () => api.post<void>('/auth/logout'),
 
-    // Refresh token
-    refresh: (refreshToken: string) =>
-        apiClient.post<ApiResponse<AuthResponse>>('/auth/refresh', { refreshToken }),
+    // 刷新 token — refresh_token 通过 HttpOnly cookie 自动携带，无需传参
+    refresh: () => api.post<AuthResponse>('/auth/refresh', {}),
 
-    // Get current user
-    me: () => apiClient.get<ApiResponse<User>>('/auth/me'),
+    // 获取当前用户
+    me: () => api.get<User>('/auth/me'),
 };

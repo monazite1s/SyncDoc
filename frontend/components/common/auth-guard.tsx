@@ -11,6 +11,7 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children }: AuthGuardProps) {
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    const isInitializing = useAuthStore((s) => s.isInitializing);
     const [hydrated, setHydrated] = useState(false);
     const router = useRouter();
 
@@ -19,13 +20,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }, []);
 
     useEffect(() => {
-        if (hydrated && !isAuthenticated) {
+        // hydration 完成 + 会话验证完成 + 未认证 → 跳转登录
+        if (hydrated && !isInitializing && !isAuthenticated) {
             router.replace('/login');
         }
-    }, [hydrated, isAuthenticated, router]);
+    }, [hydrated, isInitializing, isAuthenticated, router]);
 
-    // hydration 完成前显示加载骨架屏
-    if (!hydrated) {
+    // hydration 或会话验证中 → 显示骨架屏
+    if (!hydrated || isInitializing) {
         return (
             <div className="min-h-screen flex flex-col bg-background">
                 <header className="bg-card border-b border-border">
