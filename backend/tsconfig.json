@@ -23,8 +23,7 @@
         "noUnusedLocals": false,
         "noUnusedParameters": false,
         "paths": {
-            "@/*": ["src/*"],
-            "@collab/types": ["../packages/types/src"]
+            "@/*": ["src/*"]
         }
     },
     "include": ["src/**/*"],

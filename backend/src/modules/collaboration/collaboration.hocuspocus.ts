@@ -28,6 +28,9 @@ export class CollaborationHocuspocus {
 
         this._server = Server.configure({
             port,
+            // onStoreDocument 防抖：2s 内无操作才持久化，最长 10s 必存一次
+            debounce: 2000,
+            maxDebounce: 10000,
             extensions: [
                 new HocuspocusLogger(),
                 new Redis({
@@ -44,13 +47,6 @@ export class CollaborationHocuspocus {
                         if (!state) return null;
                         return new Uint8Array(state);
                     },
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    store: async (data: any) => {
-                        await collaborationService.storeDocumentState(
-                            data.documentName as string,
-                            Buffer.from(data.state as Uint8Array)
-                        );
-                    },
                 }),
             ],
 
@@ -58,52 +54,65 @@ export class CollaborationHocuspocus {
             async onAuthenticate(data: any) {
                 const token = data.token as string;
                 const jwtSecret = configService.get<string>('jwt.secret')!;
-                const decoded = jwt.verify(token, jwtSecret) as { sub: string; email: string };
+
+                let decoded: { sub: string; email: string };
+                try {
+                    decoded = jwt.verify(token, jwtSecret) as { sub: string; email: string };
+                } catch {
+                    throw new Error('token 无效或已过期');
+                }
 
                 const user = await collaborationService.validateUser(decoded.sub);
                 if (!user) {
                     throw new Error('用户不存在或已被禁用');
                 }
 
+                // 校验文档访问权限，并设置只读模式
+                const access = await collaborationService.getDocumentRole(
+                    data.documentName as string,
+                    user.id
+                );
+                if (!access.canAccess) {
+                    throw new Error('无权访问此文档');
+                }
+                if (access.readOnly) {
+                    const connection = data.connection as { readOnly?: boolean } | undefined;
+                    if (connection) {
+                        connection.readOnly = true;
+                    }
+                }
+
                 return { user: { id: user.id, name: user.username } };
             },
 
+            // onLoadDocument 已移除：Database.fetch 扩展已处理文档加载
+            // 保留 onLoadDocument 会导致同一文档两次 DB 查询
+
+            // onChange 已移除：recordEdit 合并到 onStoreDocument，受 debounce 保护
+
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            async onLoadDocument(data: any) {
+            async onStoreDocument(data: any) {
                 const documentName = data.documentName as string;
-                const document = data.document as Y.Doc;
-                const state = await collaborationService.loadDocumentState(documentName);
-                if (state) {
-                    Y.applyUpdate(document, new Uint8Array(state));
+                const state = Y.encodeStateAsUpdate(data.document as Y.Doc);
+                const stateBuffer = Buffer.from(state);
+
+                await collaborationService.storeDocumentState(documentName, stateBuffer);
+
+                // 记录编辑历史，已受上层 debounce 保护，不会每次击键都写入
+                const userId = data.context?.user?.id as string | undefined;
+                if (userId) {
+                    await collaborationService.recordEdit(documentName, userId, stateBuffer);
                 }
             },
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            async onChange(data: any) {
-                const userId = data.context?.user?.id as string | undefined;
-                if (!userId) return;
-
-                const update = Y.encodeStateAsUpdate(data.document as Y.Doc);
-                await collaborationService.recordEdit(
-                    data.documentName as string,
-                    userId,
-                    Buffer.from(update)
-                );
-            },
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            async onStoreDocument(data: any) {
-                const state = Y.encodeStateAsUpdate(data.document as Y.Doc);
-                await collaborationService.storeDocumentState(
-                    data.documentName as string,
-                    Buffer.from(state)
-                );
-            },
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             async onDisconnect(data: any) {
+                const documentName = data.documentName as string;
                 const userId = data.context?.user?.id as string | undefined;
-                logger.log(`用户 ${userId ?? '未知'} 断开文档 ${data.documentName} 连接`);
+                logger.log(`用户 ${userId ?? '未知'} 断开文档 ${documentName} 连接`);
+
+                const state = Y.encodeStateAsUpdate(data.document as Y.Doc);
+                await collaborationService.storeDocumentState(documentName, Buffer.from(state));
             },
         });
 

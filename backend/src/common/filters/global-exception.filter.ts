@@ -1,5 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Response } from 'express';
+import type { ApiError } from '@collab/types';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -26,7 +27,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             message = exception.message;
         }
 
-        const errorResponse: Record<string, unknown> = {
+        const errorResponse: ApiError = {
             success: false,
             statusCode: status,
             message,
@@ -34,7 +35,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         };
 
         if (errors) {
-            errorResponse.errors = errors;
+            // ApiError 允许扩展 errors 字段
+            (errorResponse as ApiError & { errors?: Record<string, string[]> }).errors = errors;
         }
 
         response.status(status).json(errorResponse);

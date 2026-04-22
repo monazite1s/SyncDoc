@@ -1,5 +1,11 @@
 import { api } from './client';
-import type { AuthResponse, LoginCredentials, RegisterCredentials, User } from '@collab/types';
+import type {
+    AuthResponse,
+    LoginCredentials,
+    RegisterCredentials,
+    User,
+    WsTokenResponse,
+} from '@collab/types';
 
 export const authApi = {
     // 注册
@@ -12,9 +18,9 @@ export const authApi = {
     // 登出
     logout: () => api.post<void>('/auth/logout'),
 
-    // 刷新 token — refresh_token 通过 HttpOnly cookie 自动携带，无需传参
-    refresh: () => api.post<AuthResponse>('/auth/refresh', {}),
-
     // 获取当前用户
     me: () => api.get<User>('/auth/me'),
+
+    // 获取 WebSocket 认证 token（用于 Hocuspocus 握手）
+    getWsToken: () => api.get<WsTokenResponse>('/auth/ws-token'),
 };

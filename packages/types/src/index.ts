@@ -103,3 +103,145 @@ export interface AuthResponse {
 }
 
 // 注意：token 通过 HttpOnly cookie 传递，不在响应体中返回
+
+/**
+ * JWT 原始 payload（签发和解析时使用）
+ * - sub: 用户 ID（JWT 标准字段）
+ * - email: 用户邮箱
+ */
+export interface AuthJwtPayload {
+    sub: string;
+    email: string;
+}
+
+/**
+ * 经过 JwtStrategy.validate() 转换后的 req.user 类型
+ */
+export interface RequestUser {
+    userId: string;
+    email: string;
+}
+
+// ==================== 文档列表 ====================
+
+export interface DocumentListItem {
+    id: string;
+    title: string;
+    description?: string;
+    isPublic: boolean;
+    status: DocumentStatus;
+    authorId: string;
+    createdAt: string;
+    updatedAt: string;
+    author: Pick<User, 'id' | 'username' | 'nickname'>;
+    userRole: CollaboratorRole | null;
+    collaboratorCount: number;
+}
+
+export interface CreateDocumentRequest {
+    title: string;
+    description?: string;
+}
+
+export interface UpdateDocumentRequest {
+    title?: string;
+    description?: string;
+    isPublic?: boolean;
+    status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+}
+
+// ==================== 编辑器 ====================
+
+/** GET /api/auth/ws-token 响应 */
+export interface WsTokenResponse {
+    token: string;
+}
+
+/** GET /api/documents/:id 响应（含完整协作者列表） */
+export interface DocumentDetail {
+    id: string;
+    title: string;
+    description?: string;
+    isPublic: boolean;
+    status: DocumentStatus;
+    authorId: string;
+    createdAt: string;
+    updatedAt: string;
+    author: Pick<User, 'id' | 'username' | 'nickname'>;
+    userRole: CollaboratorRole | null;
+    collaboratorCount: number;
+    collaborators: Array<{
+        userId: string;
+        role: CollaboratorRole;
+        user: Pick<User, 'id' | 'username' | 'nickname'>;
+    }>;
+}
+
+// ==================== 文档查看页 ====================
+
+/** GET /api/documents/:id/view 响应 */
+export interface DocumentViewContent {
+    id: string;
+    title: string;
+    description?: string;
+    isPublic: boolean;
+    status: DocumentStatus;
+    authorId: string;
+    createdAt: string;
+    updatedAt: string;
+    author: Pick<User, 'id' | 'username' | 'nickname'>;
+    userRole: CollaboratorRole | null;
+    collaboratorCount: number;
+    collaborators: Array<{
+        userId: string;
+        role: CollaboratorRole;
+        user: Pick<User, 'id' | 'username' | 'nickname'>;
+    }>;
+    /** Yjs 二进制状态的 Base64 编码，前端转换为 HTML 渲染 */
+    contentBase64?: string;
+    /** 最新快照版本号 */
+    latestVersion?: number;
+    /** 最后编辑者 */
+    lastEditedBy?: Pick<User, 'id' | 'username' | 'nickname'>;
+}
+
+/** GET /api/documents/:id/content 响应 */
+export interface DocumentContentResponse {
+    content: string; // Base64 编码的 Yjs 状态
+}
+
+// ==================== 版本管理 ====================
+
+/** 版本列表项（不含二进制 content） */
+export interface DocumentVersionItem {
+    id: string;
+    documentId: string;
+    version: number;
+    changeLog?: string;
+    createdBy: string;
+    createdAt: string;
+    author: Pick<User, 'id' | 'username' | 'nickname'>;
+}
+
+/** 版本详情（含 Base64 编码的内容） */
+export interface DocumentVersionDetail extends DocumentVersionItem {
+    contentBase64: string;
+}
+
+/** POST /api/documents/:id/versions 请求 */
+export interface CreateVersionRequest {
+    changeLog?: string;
+}
+
+/** POST /api/documents/:id/versions/diff 请求 */
+export interface VersionDiffRequest {
+    fromVersion: number;
+    toVersion: number;
+}
+
+/** POST /api/documents/:id/versions/diff 响应 */
+export interface VersionDiffResponse {
+    fromVersion: number;
+    toVersion: number;
+    diffHtml: string;
+}

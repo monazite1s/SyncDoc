@@ -1,6 +1,7 @@
 import { IsEmail, IsString, MinLength, MaxLength, IsOptional } from 'class-validator';
+import type { RegisterCredentials } from '@collab/types';
 
-export class RegisterDto {
+export class RegisterDto implements RegisterCredentials {
     @IsEmail({}, { message: '邮箱格式不正确' })
     email!: string;
 

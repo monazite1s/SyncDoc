@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Loading() {
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <div className="mx-auto px-4 py-8 space-y-6">
             {/* 标题栏骨架 */}
             <div className="flex items-center justify-between">
                 <Skeleton className="h-8 w-40" />

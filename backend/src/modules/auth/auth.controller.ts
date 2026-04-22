@@ -12,10 +12,15 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
+import type { RequestUser } from '@collab/types';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+
+interface AuthRequest extends Request {
+    user: RequestUser;
+}
 
 @Controller('auth')
 export class AuthController {
@@ -39,12 +44,9 @@ export class AuthController {
     @Post('logout')
     @UseGuards(AuthGuard('jwt'))
     @HttpCode(HttpStatus.OK)
-    async logout(
-        @Req() req: Request & { user: { userId: string } },
-        @Res({ passthrough: true }) res: Response
-    ) {
+    async logout(@Req() req: AuthRequest, @Res({ passthrough: true }) res: Response) {
         // 从 cookie 提取 refresh token
-        const refreshToken = req.cookies?.refresh_token as string | undefined;
+        const refreshToken = req.cookies.refresh_token as string | undefined;
         await this._authService.logout(req.user.userId, refreshToken);
         this._clearTokenCookies(res);
         return { success: true };
@@ -58,7 +60,7 @@ export class AuthController {
         @Res({ passthrough: true }) res: Response
     ) {
         // 优先从 cookie 提取，兼容 body 传入
-        const refreshToken = dto.refreshToken || req.cookies?.refresh_token;
+        const refreshToken = dto.refreshToken || req.cookies.refresh_token;
 
         if (!refreshToken) {
             throw new UnauthorizedException('缺少 refresh token');
@@ -71,8 +73,23 @@ export class AuthController {
 
     @Get('me')
     @UseGuards(AuthGuard('jwt'))
-    async me(@Req() req: { user: { userId: string } }) {
+    async me(@Req() req: AuthRequest) {
         return this._authService.findById(req.user.userId);
+    }
+
+    /**
+     * 获取 WebSocket 认证 token
+     * HttpOnly cookie 无法被 JS 读取，通过此端点将当前 JWT 暴露给前端用于 WS 握手
+     */
+    @Get('ws-token')
+    @UseGuards(AuthGuard('jwt'))
+    getWsToken(@Req() req: AuthRequest) {
+        const token = (req as Request & { cookies: Record<string, string | undefined> }).cookies
+            .access_token;
+        if (!token) {
+            throw new UnauthorizedException('缺少认证 token');
+        }
+        return { token };
     }
 
     /**

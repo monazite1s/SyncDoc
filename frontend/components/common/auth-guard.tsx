@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,12 +12,8 @@ interface AuthGuardProps {
 export function AuthGuard({ children }: AuthGuardProps) {
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const isInitializing = useAuthStore((s) => s.isInitializing);
-    const [hydrated, setHydrated] = useState(false);
+    const hydrated = typeof window !== 'undefined';
     const router = useRouter();
-
-    useEffect(() => {
-        setHydrated(true);
-    }, []);
 
     useEffect(() => {
         // hydration 完成 + 会话验证完成 + 未认证 → 跳转登录
@@ -31,7 +27,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return (
             <div className="min-h-screen flex flex-col bg-background">
                 <header className="bg-card border-b border-border">
-                    <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                    <div className="mx-auto px-4 py-4 flex items-center justify-between">
                         <Skeleton className="h-7 w-32" />
                         <div className="flex gap-4">
                             <Skeleton className="h-5 w-20" />

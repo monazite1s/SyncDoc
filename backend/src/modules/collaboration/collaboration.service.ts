@@ -85,6 +85,44 @@ export class CollaborationService {
     }
 
     /**
+     * 获取用户在文档中的角色及访问权限（用于 WS 认证）
+     */
+    async getDocumentRole(
+        documentId: string,
+        userId: string
+    ): Promise<{ canAccess: boolean; readOnly: boolean }> {
+        const document = await this._prisma.document.findUnique({
+            where: { id: documentId },
+            select: { authorId: true, isPublic: true, status: true },
+        });
+
+        if (!document || document.status === 'DELETED') {
+            return { canAccess: false, readOnly: true };
+        }
+
+        if (document.authorId === userId) {
+            return { canAccess: true, readOnly: false };
+        }
+
+        const collaborator = await this._prisma.documentCollaborator.findUnique({
+            where: { documentId_userId: { documentId, userId } },
+        });
+
+        if (collaborator) {
+            return {
+                canAccess: true,
+                readOnly: collaborator.role === 'VIEWER',
+            };
+        }
+
+        if (document.isPublic) {
+            return { canAccess: true, readOnly: true };
+        }
+
+        return { canAccess: false, readOnly: true };
+    }
+
+    /**
      * 检查用户是否有文档的访问权限
      */
     async checkDocumentAccess(documentId: string, userId: string): Promise<boolean> {
