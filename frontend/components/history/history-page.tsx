@@ -2,13 +2,32 @@
 
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Eye, GitCompare, Loader2, RotateCcw } from 'lucide-react';
+import {
+    AlertTriangle,
+    ArrowLeft,
+    ChevronLeft,
+    ChevronRight,
+    Loader2,
+    RotateCcw,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { versionsApi } from '@/lib/api/versions';
+import { documentsApi } from '@/lib/api/documents';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { VersionTimeline } from './version-timeline';
 import { VersionPreview } from './version-preview';
-import { VersionDiffViewer } from './version-diff-viewer';
+import { VersionType } from '@collab/types';
+import type { DocumentVersionItem } from '@collab/types';
+import { format, isToday, isYesterday } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 
 interface HistoryPageProps {
     paramsPromise: Promise<{ id: string }>;
@@ -26,10 +45,31 @@ interface VersionListState {
     hasMore: boolean;
 }
 
+function formatVersionLabel(item: DocumentVersionItem): string {
+    const typeLabel =
+        item.type === VersionType.MANUAL
+            ? '手动保存'
+            : item.type === VersionType.RESTORE
+              ? '版本恢复'
+              : '自动保存';
+    const date = new Date(item.createdAt);
+    let dateLabel: string;
+    if (isToday(date)) {
+        dateLabel = `今天 ${format(date, 'HH:mm')}`;
+    } else if (isYesterday(date)) {
+        dateLabel = `昨天 ${format(date, 'HH:mm')}`;
+    } else {
+        dateLabel = format(date, 'M月d日 HH:mm', { locale: zhCN });
+    }
+    const note = item.changeLog ? `"${item.changeLog}"` : null;
+    return note ? `${typeLabel} · ${dateLabel} · ${note}` : `${typeLabel} · ${dateLabel}`;
+}
+
 export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
     const router = useRouter();
     const { id: documentId } = use(paramsPromise);
     const [pageState, setPageState] = useState<HistoryPageState>({ status: 'loading' });
+    const [documentTitle, setDocumentTitle] = useState<string>('历史版本');
     const [listState, setListState] = useState<VersionListState>({
         items: [],
         page: 1,
@@ -37,24 +77,32 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
         hasMore: false,
     });
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [selectedVersions, setSelectedVersions] = useState<number[]>([]);
-    const [isComparing, setIsComparing] = useState(false);
+    const [typeFilter, setTypeFilter] = useState<VersionType | 'ALL'>('ALL');
+    const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
+    const [showDiff, setShowDiff] = useState(true);
     const [isPreviewLoading, setIsPreviewLoading] = useState(false);
     const [isRestoring, setIsRestoring] = useState(false);
+    const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
     const [selectedDetail, setSelectedDetail] = useState<
         Awaited<ReturnType<typeof versionsApi.get>>['data'] | null
     >(null);
-    const [diffResult, setDiffResult] = useState<
-        Awaited<ReturnType<typeof versionsApi.diff>>['data'] | null
-    >(null);
 
-    const selectedVersionSet = useMemo(() => new Set(selectedVersions), [selectedVersions]);
-    const activeVersion = selectedVersions.length === 1 ? selectedVersions[0] : null;
-    const hasTwoSelected = selectedVersions.length === 2;
-    const restoreTargetVersion = useMemo(() => {
-        if (selectedVersions.length === 0) return null;
-        return Math.max(...selectedVersions);
-    }, [selectedVersions]);
+    const filteredItems = useMemo(() => {
+        if (typeFilter === 'ALL') return listState.items;
+        return listState.items.filter((item) => item.type === typeFilter);
+    }, [listState.items, typeFilter]);
+
+    const restoreTargetVersion = selectedVersion;
+    const selectedVersionIndex = useMemo(() => {
+        if (!selectedVersion) return -1;
+        return filteredItems.findIndex((item) => item.version === selectedVersion);
+    }, [filteredItems, selectedVersion]);
+    const selectedVersionCount = filteredItems.length;
+
+    const restoreTargetMeta = useMemo(() => {
+        if (!restoreTargetVersion) return null;
+        return listState.items.find((item) => item.version === restoreTargetVersion) ?? null;
+    }, [restoreTargetVersion, listState.items]);
 
     const fetchVersions = useCallback(
         async (page: number, append: boolean) => {
@@ -66,12 +114,7 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
                 const deduped = Array.from(dedupedMap.values()).sort(
                     (a, b) => b.version - a.version
                 );
-                return {
-                    items: deduped,
-                    page,
-                    total,
-                    hasMore: page * limit < total,
-                };
+                return { items: deduped, page, total, hasMore: page * limit < total };
             });
             return items;
         },
@@ -83,18 +126,20 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
 
         async function loadInitialData() {
             try {
-                const response = await versionsApi.list(documentId, 1, 20);
+                const [versionsRes, docRes] = await Promise.all([
+                    versionsApi.list(documentId, 1, 20),
+                    documentsApi.getById(documentId).catch(() => null),
+                ]);
                 if (cancelled) return;
 
-                const { items, total, limit } = response.data;
-                setListState({
-                    items,
-                    page: 1,
-                    total,
-                    hasMore: limit < total,
-                });
+                if (docRes?.data?.title) {
+                    setDocumentTitle(docRes.data.title);
+                }
+
+                const { items, total, limit } = versionsRes.data;
+                setListState({ items, page: 1, total, hasMore: limit < total });
                 const defaultVersion = items[0]?.version ?? null;
-                setSelectedVersions(defaultVersion ? [defaultVersion] : []);
+                setSelectedVersion(defaultVersion);
                 setPageState({ status: 'ready' });
             } catch (error) {
                 if (cancelled) return;
@@ -115,33 +160,13 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
         let cancelled = false;
         async function loadSelectedData() {
             setSelectedDetail(null);
-            setDiffResult(null);
 
-            if (selectedVersions.length === 0) {
-                return;
-            }
+            if (!selectedVersion) return;
 
             try {
                 setIsPreviewLoading(true);
-                if (selectedVersions.length === 1) {
-                    const response = await versionsApi.get(documentId, selectedVersions[0]);
-                    if (!cancelled) {
-                        setSelectedDetail(response.data);
-                    }
-                    return;
-                }
-
-                if (selectedVersions.length === 2) {
-                    const [v1, v2] = [...selectedVersions].sort((a, b) => a - b);
-                    setIsComparing(true);
-                    const response = await versionsApi.diff(documentId, {
-                        fromVersion: v1,
-                        toVersion: v2,
-                    });
-                    if (!cancelled) {
-                        setDiffResult(response.data);
-                    }
-                }
+                const response = await versionsApi.get(documentId, selectedVersion);
+                if (!cancelled) setSelectedDetail(response.data);
             } catch (error) {
                 if (!cancelled) {
                     const message = error instanceof Error ? error.message : '加载版本内容失败';
@@ -150,7 +175,6 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
             } finally {
                 if (!cancelled) {
                     setIsPreviewLoading(false);
-                    setIsComparing(false);
                 }
             }
         }
@@ -158,18 +182,10 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
         return () => {
             cancelled = true;
         };
-    }, [documentId, selectedVersions]);
+    }, [documentId, selectedVersion]);
 
-    const handleToggleVersion = (version: number) => {
-        setSelectedVersions((prev) => {
-            if (prev.includes(version)) {
-                return prev.filter((item) => item !== version);
-            }
-            if (prev.length >= 2) {
-                return [prev[1], version];
-            }
-            return [...prev, version];
-        });
+    const handleSelectVersion = (version: number) => {
+        setSelectedVersion((prev) => (prev === version ? null : version));
     };
 
     const handleLoadMore = async () => {
@@ -185,19 +201,32 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
         }
     };
 
+    const handleSelectPrev = () => {
+        if (selectedVersionIndex <= 0) return;
+        const next = filteredItems[selectedVersionIndex - 1];
+        if (next) {
+            setSelectedVersion(next.version);
+        }
+    };
+
+    const handleSelectNext = () => {
+        if (selectedVersionIndex < 0 || selectedVersionIndex >= filteredItems.length - 1) return;
+        const next = filteredItems[selectedVersionIndex + 1];
+        if (next) {
+            setSelectedVersion(next.version);
+        }
+    };
+
     const handleRestore = async () => {
         if (!restoreTargetVersion) return;
-        const confirmed = window.confirm(
-            `确认恢复到版本 v${restoreTargetVersion} 吗？系统会创建新的恢复快照。`
-        );
-        if (!confirmed) return;
+        setRestoreConfirmOpen(false);
 
         try {
             setIsRestoring(true);
-            const response = await versionsApi.restore(documentId, restoreTargetVersion);
-            toast.success(`已恢复到 v${restoreTargetVersion}`);
+            await versionsApi.restore(documentId, restoreTargetVersion);
+            toast.success('已成功恢复至历史版本，建议刷新编辑器以同步最新内容');
             await fetchVersions(1, false);
-            setSelectedVersions([response.data.version]);
+            setSelectedVersion(restoreTargetVersion);
         } catch (error) {
             const message = error instanceof Error ? error.message : '恢复版本失败';
             toast.error(message);
@@ -226,77 +255,140 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
     }
 
     return (
-        <div className="h-screen flex bg-background">
-            <VersionTimeline
-                versions={listState.items}
-                selectedVersions={selectedVersionSet}
-                total={listState.total}
-                hasMore={listState.hasMore}
-                isLoadingMore={isLoadingMore}
-                onToggleVersion={handleToggleVersion}
-                onLoadMore={() => void handleLoadMore()}
-            />
-            <div className="flex-1 min-w-0 flex flex-col">
-                <div className="px-6 py-4 border-b border-border bg-card flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => router.push(`/documents/${documentId}`)}
-                            title="返回查看页"
-                        >
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                        <h1 className="text-lg font-semibold">历史版本</h1>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={selectedVersions.length !== 1}
-                            onClick={() => {
-                                if (activeVersion) {
-                                    setSelectedVersions([activeVersion]);
+        <>
+            <div className="h-screen flex bg-background">
+                <div className="flex-1 min-w-0 flex flex-col">
+                    <div className="px-6 py-4 border-b border-border bg-card flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 flex-shrink-0"
+                                onClick={() => router.push(`/documents/${documentId}`)}
+                                title="返回查看页"
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                            <div className="min-w-0">
+                                <h1 className="text-sm font-semibold truncate">{documentTitle}</h1>
+                                <p className="text-xs text-muted-foreground">历史版本</p>
+                            </div>
+                        </div>
+                        <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>
+                                编辑记录 {selectedVersionIndex >= 0 ? selectedVersionIndex + 1 : 0}/
+                                {selectedVersionCount}
+                            </span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2"
+                                onClick={handleSelectPrev}
+                                disabled={selectedVersionIndex <= 0}
+                            >
+                                <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+                                上一项
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2"
+                                onClick={handleSelectNext}
+                                disabled={
+                                    selectedVersionIndex < 0 ||
+                                    selectedVersionIndex >= filteredItems.length - 1
                                 }
-                            }}
-                        >
-                            <Eye className="h-4 w-4 mr-1.5" />
-                            单版本预览
-                        </Button>
-                        <Button variant="outline" size="sm" disabled={!hasTwoSelected}>
-                            <GitCompare className="h-4 w-4 mr-1.5" />
-                            对比模式
-                        </Button>
-                        <Button
-                            size="sm"
-                            disabled={!restoreTargetVersion || isRestoring}
-                            onClick={() => void handleRestore()}
-                        >
-                            {isRestoring ? (
-                                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                            ) : (
-                                <RotateCcw className="h-4 w-4 mr-1.5" />
-                            )}
-                            恢复
-                        </Button>
+                            >
+                                下一项
+                                <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                            </Button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                size="sm"
+                                variant={showDiff ? 'default' : 'outline'}
+                                onClick={() => setShowDiff((prev) => !prev)}
+                                disabled={!selectedVersion}
+                            >
+                                {showDiff ? '显示更改' : '仅看内容'}
+                            </Button>
+                            <Button
+                                size="sm"
+                                disabled={!restoreTargetVersion || isRestoring}
+                                onClick={() => setRestoreConfirmOpen(true)}
+                            >
+                                {isRestoring ? (
+                                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                                ) : (
+                                    <RotateCcw className="h-4 w-4 mr-1.5" />
+                                )}
+                                恢复此版本
+                            </Button>
+                        </div>
                     </div>
-                </div>
 
-                {hasTwoSelected ? (
-                    <VersionDiffViewer
-                        diffResult={diffResult}
-                        isLoading={isPreviewLoading || isComparing}
-                        selectedVersions={selectedVersions}
-                    />
-                ) : (
                     <VersionPreview
                         detail={selectedDetail}
                         isLoading={isPreviewLoading}
-                        activeVersion={activeVersion}
+                        activeVersion={selectedVersion}
+                        showDiff={showDiff}
                     />
-                )}
+                </div>
+                <VersionTimeline
+                    versions={filteredItems}
+                    selectedVersion={selectedVersion}
+                    total={listState.total}
+                    totalLoaded={listState.items.length}
+                    hasMore={listState.hasMore}
+                    isLoadingMore={isLoadingMore}
+                    typeFilter={typeFilter}
+                    onTypeFilterChange={setTypeFilter}
+                    onSelectVersion={handleSelectVersion}
+                    onLoadMore={() => void handleLoadMore()}
+                />
             </div>
-        </div>
+
+            {/* 恢复版本确认弹窗 */}
+            <Dialog open={restoreConfirmOpen} onOpenChange={setRestoreConfirmOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-500" />
+                            确认恢复版本
+                        </DialogTitle>
+                        <DialogDescription asChild>
+                            <div className="space-y-2 text-sm">
+                                <p>此操作将把文档当前内容恢复至所选历史版本：</p>
+                                {restoreTargetMeta && (
+                                    <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-foreground">
+                                        {formatVersionLabel(restoreTargetMeta)}
+                                    </div>
+                                )}
+                                <p className="text-muted-foreground">
+                                    系统会自动创建一条「版本恢复」记录，原有编辑历史不会丢失。
+                                    <strong className="text-foreground">
+                                        {' '}
+                                        如有其他协作者正在编辑，他们将看到内容变化。
+                                    </strong>
+                                </p>
+                            </div>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setRestoreConfirmOpen(false)}
+                            disabled={isRestoring}
+                        >
+                            取消
+                        </Button>
+                        <Button onClick={() => void handleRestore()} disabled={isRestoring}>
+                            {isRestoring && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            确认恢复
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

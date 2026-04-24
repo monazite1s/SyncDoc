@@ -1,9 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { VersionType } from '@prisma/client';
 
 @Injectable()
 export class CollaborationService {
     private readonly _logger = new Logger(CollaborationService.name);
+    private static readonly AUTO_SNAPSHOT_INTERVAL_MS = 30 * 60 * 1000;
 
     constructor(private readonly _prisma: PrismaService) {}
 
@@ -40,30 +42,85 @@ export class CollaborationService {
     }
 
     /**
-     * 记录编辑操作到历史表
+     * 按间隔自动创建版本快照，避免历史版本长期为空。
+     * force=true 时忽略时间间隔（用于断开连接时兜底快照）。
+     * 包含短时去重：同一用户 5 分钟内若已有自动快照，直接覆盖而非新增。
      */
-    async recordEdit(documentName: string, userId: string, operation: Uint8Array): Promise<void> {
+    async maybeCreateAutoSnapshot(
+        documentName: string,
+        userId: string,
+        state: Uint8Array,
+        options?: { force?: boolean }
+    ): Promise<void> {
         try {
-            // 获取当前文档最大版本号
-            const lastEdit = await this._prisma.documentEdit.findFirst({
-                where: { documentId: documentName },
-                orderBy: { version: 'desc' },
-                select: { version: true },
+            const document = await this._prisma.document.findUnique({
+                where: { id: documentName },
+                select: { id: true, status: true },
             });
 
-            const nextVersion = (lastEdit?.version ?? 0) + 1;
+            if (!document || document.status === 'DELETED') {
+                return;
+            }
 
-            await this._prisma.documentEdit.create({
+            const latestVersion = await this._prisma.documentVersion.findFirst({
+                where: { documentId: documentName },
+                orderBy: { version: 'desc' },
+                select: {
+                    id: true,
+                    version: true,
+                    type: true,
+                    content: true,
+                    createdBy: true,
+                    createdAt: true,
+                },
+            });
+
+            const currentState = Buffer.from(state);
+            if (
+                latestVersion?.content &&
+                Buffer.compare(Buffer.from(latestVersion.content), currentState) === 0
+            ) {
+                return;
+            }
+
+            // 短时去重：同一用户 5 分钟内的自动快照直接覆盖（不新增版本号）
+            const DEDUP_INTERVAL_MS = 5 * 60 * 1000;
+            if (
+                latestVersion &&
+                latestVersion.type === VersionType.AUTO &&
+                latestVersion.createdBy === userId
+            ) {
+                const elapsed = Date.now() - latestVersion.createdAt.getTime();
+                if (elapsed < DEDUP_INTERVAL_MS) {
+                    await this._prisma.documentVersion.update({
+                        where: { id: latestVersion.id },
+                        data: { content: currentState, createdAt: new Date() },
+                    });
+                    return;
+                }
+            }
+
+            if (!options?.force && latestVersion) {
+                const elapsed = Date.now() - latestVersion.createdAt.getTime();
+                if (elapsed < CollaborationService.AUTO_SNAPSHOT_INTERVAL_MS) {
+                    return;
+                }
+            }
+
+            const nextVersion = (latestVersion?.version ?? 0) + 1;
+            await this._prisma.documentVersion.create({
                 data: {
                     documentId: documentName,
-                    userId,
-                    operation: Buffer.from(operation),
                     version: nextVersion,
+                    type: VersionType.AUTO,
+                    content: currentState,
+                    changeLog: null,
+                    createdBy: userId,
                 },
             });
         } catch (error) {
             this._logger.error(
-                `记录文档 ${documentName} 编辑历史失败: ${(error as Error).message}`
+                `自动创建文档 ${documentName} 快照失败: ${(error as Error).message}`
             );
         }
     }

@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class AuthService {
@@ -152,6 +153,31 @@ export class AuthService {
         if (!user) {
             throw new NotFoundException('用户不存在');
         }
+
+        return user;
+    }
+
+    /**
+     * 更新当前用户资料（昵称、头像）
+     */
+    async updateProfile(userId: string, dto: UpdateProfileDto) {
+        const user = await this._prisma.user.update({
+            where: { id: userId },
+            data: {
+                ...(dto.nickname !== undefined ? { nickname: dto.nickname.trim() || null } : {}),
+                ...(dto.avatar !== undefined ? { avatar: dto.avatar.trim() || null } : {}),
+            },
+            select: {
+                id: true,
+                email: true,
+                username: true,
+                nickname: true,
+                avatar: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true,
+            },
+        });
 
         return user;
     }

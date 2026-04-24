@@ -19,6 +19,12 @@ export enum CollaboratorRole {
     VIEWER = 'VIEWER',
 }
 
+export enum VersionType {
+    AUTO = 'AUTO',
+    MANUAL = 'MANUAL',
+    RESTORE = 'RESTORE',
+}
+
 // ==================== 用户 ====================
 
 export interface User {
@@ -39,6 +45,8 @@ export interface Document {
     title: string;
     description?: string;
     content?: unknown;
+    parentId?: string | null;
+    position: number;
     isPublic: boolean;
     status: DocumentStatus;
     authorId: string;
@@ -98,6 +106,11 @@ export interface RegisterCredentials {
     nickname?: string;
 }
 
+export interface UpdateProfileRequest {
+    nickname?: string;
+    avatar?: string;
+}
+
 export interface AuthResponse {
     user: User;
 }
@@ -128,6 +141,8 @@ export interface DocumentListItem {
     id: string;
     title: string;
     description?: string;
+    parentId?: string | null;
+    position: number;
     isPublic: boolean;
     status: DocumentStatus;
     authorId: string;
@@ -141,6 +156,7 @@ export interface DocumentListItem {
 export interface CreateDocumentRequest {
     title: string;
     description?: string;
+    parentId?: string;
 }
 
 export interface UpdateDocumentRequest {
@@ -162,18 +178,22 @@ export interface DocumentDetail {
     id: string;
     title: string;
     description?: string;
+    parentId?: string | null;
+    position: number;
     isPublic: boolean;
     status: DocumentStatus;
     authorId: string;
     createdAt: string;
     updatedAt: string;
-    author: Pick<User, 'id' | 'username' | 'nickname'>;
+    author: Pick<User, 'id' | 'username' | 'nickname' | 'avatar'>;
     userRole: CollaboratorRole | null;
     collaboratorCount: number;
+    latestVersion?: number;
+    latestVersionHash?: string;
     collaborators: Array<{
         userId: string;
         role: CollaboratorRole;
-        user: Pick<User, 'id' | 'username' | 'nickname'>;
+        user: Pick<User, 'id' | 'username' | 'nickname' | 'avatar'>;
     }>;
 }
 
@@ -184,23 +204,25 @@ export interface DocumentViewContent {
     id: string;
     title: string;
     description?: string;
+    parentId?: string | null;
+    position: number;
     isPublic: boolean;
     status: DocumentStatus;
     authorId: string;
     createdAt: string;
     updatedAt: string;
-    author: Pick<User, 'id' | 'username' | 'nickname'>;
+    author: Pick<User, 'id' | 'username' | 'nickname' | 'avatar'>;
     userRole: CollaboratorRole | null;
     collaboratorCount: number;
+    latestVersion?: number;
+    latestVersionHash?: string;
     collaborators: Array<{
         userId: string;
         role: CollaboratorRole;
-        user: Pick<User, 'id' | 'username' | 'nickname'>;
+        user: Pick<User, 'id' | 'username' | 'nickname' | 'avatar'>;
     }>;
     /** Yjs 二进制状态的 Base64 编码，前端转换为 HTML 渲染 */
     contentBase64?: string;
-    /** 最新快照版本号 */
-    latestVersion?: number;
     /** 最后编辑者 */
     lastEditedBy?: Pick<User, 'id' | 'username' | 'nickname'>;
 }
@@ -217,6 +239,7 @@ export interface DocumentVersionItem {
     id: string;
     documentId: string;
     version: number;
+    type: VersionType;
     changeLog?: string;
     createdBy: string;
     createdAt: string;
@@ -226,6 +249,7 @@ export interface DocumentVersionItem {
 /** 版本详情（含 Base64 编码的内容） */
 export interface DocumentVersionDetail extends DocumentVersionItem {
     contentBase64: string;
+    prevContentBase64?: string | null;
 }
 
 /** POST /api/documents/:id/versions 请求 */

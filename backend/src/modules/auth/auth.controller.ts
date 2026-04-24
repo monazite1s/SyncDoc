@@ -2,6 +2,7 @@ import {
     Controller,
     Post,
     Get,
+    Patch,
     Body,
     UseGuards,
     Req,
@@ -17,6 +18,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 interface AuthRequest extends Request {
     user: RequestUser;
@@ -75,6 +77,12 @@ export class AuthController {
     @UseGuards(AuthGuard('jwt'))
     async me(@Req() req: AuthRequest) {
         return this._authService.findById(req.user.userId);
+    }
+
+    @Patch('profile')
+    @UseGuards(AuthGuard('jwt'))
+    async updateProfile(@Req() req: AuthRequest, @Body() dto: UpdateProfileDto) {
+        return this._authService.updateProfile(req.user.userId, dto);
     }
 
     /**

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import type { ComponentType, ReactElement } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     ChevronDown,
@@ -9,14 +9,15 @@ import {
     ChevronLeft,
     ChevronRightSquare,
     FileText,
-    FolderKanban,
     FolderOpen,
-    Settings,
     Share2,
     Archive,
+    Plus,
+    Loader2,
 } from 'lucide-react';
-import type { DocumentFilter } from '@/hooks/use-documents';
-import { useDocuments } from '@/hooks/use-documents';
+import { toast } from 'sonner';
+import type { DocumentFilter, DocumentTreeNode } from '@/hooks/use-documents';
+import { buildDocumentTree, useDocuments } from '@/hooks/use-documents';
 import { useUIStore } from '@/stores/ui.store';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,9 +28,9 @@ interface SidebarProps {
 }
 
 type SidebarSection = {
-    key: DocumentFilter;
+    key: Exclude<DocumentFilter, 'all'>;
     label: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: ComponentType<{ className?: string }>;
 };
 
 const sections: SidebarSection[] = [
@@ -47,10 +48,12 @@ export function Sidebar({ currentDocumentId }: SidebarProps) {
         shared: true,
         archived: true,
     });
-    const { filteredDocuments, counts, fetchDocuments } = useDocuments();
+    const { filteredDocuments, counts, fetchDocuments, createDocument } = useDocuments();
     const sidebarCollapsed = useUIStore((state) => state.sidebarCollapsed);
     const toggleSidebar = useUIStore((state) => state.toggleSidebar);
     const setSidebarCollapsed = useUIStore((state) => state.setSidebarCollapsed);
+    const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
+    const [creatingParentId, setCreatingParentId] = useState<string | null>(null);
 
     useEffect(() => {
         void fetchDocuments();
@@ -76,42 +79,136 @@ export function Sidebar({ currentDocumentId }: SidebarProps) {
         return match?.[1];
     }, [currentDocumentId, pathname]);
 
+    const parentById = useMemo(() => {
+        const map = new Map<string, string | null>();
+        Object.values(filteredDocuments)
+            .flat()
+            .forEach((doc) => {
+                map.set(doc.id, doc.parentId ?? null);
+            });
+        return map;
+    }, [filteredDocuments]);
+
+    useEffect(() => {
+        if (!activeDocumentId) return;
+        const expanded: Record<string, boolean> = {};
+        let current = parentById.get(activeDocumentId);
+        while (current) {
+            expanded[current] = true;
+            current = parentById.get(current) ?? null;
+        }
+        if (Object.keys(expanded).length > 0) {
+            setExpandedNodes((prev) => ({ ...prev, ...expanded }));
+        }
+    }, [activeDocumentId, parentById]);
+
+    const treeBySection = useMemo(
+        () => ({
+            mine: buildDocumentTree(filteredDocuments.mine),
+            shared: buildDocumentTree(filteredDocuments.shared),
+            archived: buildDocumentTree(filteredDocuments.archived),
+        }),
+        [filteredDocuments]
+    );
+
+    const handleCreateChild = async (parentId: string) => {
+        try {
+            setCreatingParentId(parentId);
+            const doc = await createDocument({ title: '未命名文档', parentId });
+            setExpandedNodes((prev) => ({ ...prev, [parentId]: true }));
+            router.push(`/documents/${doc.id}/edit`);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : '创建子文档失败');
+        } finally {
+            setCreatingParentId(null);
+        }
+    };
+
+    const renderTree = (nodes: DocumentTreeNode[], level: number): ReactElement[] =>
+        nodes.map((node) => {
+            const hasChildren = node.children.length > 0;
+            const isExpanded =
+                expandedNodes[node.id] ??
+                (level === 0 || (activeDocumentId ? node.id === activeDocumentId : false));
+            const isActive = activeDocumentId === node.id;
+            const isCreating = creatingParentId === node.id;
+
+            return (
+                <div key={node.id} className="space-y-0.5">
+                    <div className="group relative">
+                        <Button
+                            variant="ghost"
+                            className={cn(
+                                'w-full h-8 text-left text-xs pr-8',
+                                isActive && 'bg-secondary text-foreground'
+                            )}
+                            style={{ paddingLeft: `${level * 14 + 8}px` }}
+                            onClick={() => router.push(`/documents/${node.id}`)}
+                        >
+                            <span className="inline-flex items-center min-w-0 w-full gap-1.5">
+                                {hasChildren ? (
+                                    <span
+                                        role="button"
+                                        aria-label={isExpanded ? '收起子文档' : '展开子文档'}
+                                        className="inline-flex h-4 w-4 items-center justify-center rounded hover:bg-muted"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            setExpandedNodes((prev) => ({
+                                                ...prev,
+                                                [node.id]: !(prev[node.id] ?? level === 0),
+                                            }));
+                                        }}
+                                    >
+                                        {isExpanded ? (
+                                            <ChevronDown className="h-3.5 w-3.5" />
+                                        ) : (
+                                            <ChevronRight className="h-3.5 w-3.5" />
+                                        )}
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex h-4 w-4" />
+                                )}
+                                <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                <span className="truncate">{node.title}</span>
+                            </span>
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                                'absolute right-1 top-1 h-6 w-6 opacity-0 transition-opacity',
+                                'group-hover:opacity-100',
+                                isCreating && 'opacity-100'
+                            )}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                void handleCreateChild(node.id);
+                            }}
+                            title="新增子文档"
+                            disabled={isCreating}
+                        >
+                            {isCreating ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                                <Plus className="h-3.5 w-3.5" />
+                            )}
+                        </Button>
+                    </div>
+
+                    {hasChildren && isExpanded && <div>{renderTree(node.children, level + 1)}</div>}
+                </div>
+            );
+        });
+
     return (
         <aside
             className={cn(
-                'h-full border-r border-border bg-card/95 backdrop-blur transition-[width] duration-200',
+                'h-full border-r border-border bg-card/95 backdrop-blur transition-[width] duration-200 flex flex-col',
                 sidebarCollapsed ? 'w-16' : 'w-64'
             )}
         >
-            <div className="h-14 border-b border-border px-3 flex items-center justify-between">
-                {sidebarCollapsed ? (
-                    <div className="h-8 w-8 rounded-md bg-primary/10 text-primary flex items-center justify-center">
-                        <FolderKanban className="h-4 w-4" />
-                    </div>
-                ) : (
-                    <Link
-                        href="/documents"
-                        className="text-sm font-semibold text-foreground truncate"
-                    >
-                        Collab Editor
-                    </Link>
-                )}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={toggleSidebar}
-                    aria-label={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
-                >
-                    {sidebarCollapsed ? (
-                        <ChevronRightSquare className="h-4 w-4" />
-                    ) : (
-                        <ChevronLeft className="h-4 w-4" />
-                    )}
-                </Button>
-            </div>
-
-            <ScrollArea className="h-[calc(100%-56px)]">
+            <ScrollArea className="flex-1 min-h-0">
                 <div className="p-2 space-y-1">
                     <Button
                         variant={pathname === '/documents' ? 'secondary' : 'ghost'}
@@ -130,7 +227,7 @@ export function Sidebar({ currentDocumentId }: SidebarProps) {
                     {sections.map((section) => {
                         const Icon = section.icon;
                         const sectionOpen = expanded[section.key];
-                        const docs = filteredDocuments[section.key];
+                        const treeNodes = treeBySection[section.key];
 
                         if (sidebarCollapsed) {
                             return (
@@ -173,28 +270,12 @@ export function Sidebar({ currentDocumentId }: SidebarProps) {
 
                                 {sectionOpen && (
                                     <div className="space-y-0.5 pl-2">
-                                        {docs.length === 0 ? (
+                                        {treeNodes.length === 0 ? (
                                             <p className="px-2 py-1 text-xs text-muted-foreground">
                                                 暂无文档
                                             </p>
                                         ) : (
-                                            docs.slice(0, 30).map((doc) => (
-                                                <Button
-                                                    key={doc.id}
-                                                    variant="ghost"
-                                                    className={cn(
-                                                        'w-full justify-start h-8 px-2 text-left text-xs',
-                                                        activeDocumentId === doc.id &&
-                                                            'bg-secondary text-foreground'
-                                                    )}
-                                                    onClick={() =>
-                                                        router.push(`/documents/${doc.id}`)
-                                                    }
-                                                >
-                                                    <FileText className="h-3.5 w-3.5 mr-2 shrink-0" />
-                                                    <span className="truncate">{doc.title}</span>
-                                                </Button>
-                                            ))
+                                            <div>{renderTree(treeNodes, 0)}</div>
                                         )}
                                     </div>
                                 )}
@@ -202,21 +283,28 @@ export function Sidebar({ currentDocumentId }: SidebarProps) {
                         );
                     })}
                 </div>
-
-                <div className="mt-3 p-2 border-t border-border/60 space-y-1">
-                    <Button
-                        variant={pathname.startsWith('/settings') ? 'secondary' : 'ghost'}
-                        className={cn(
-                            'w-full justify-start gap-2',
-                            sidebarCollapsed && 'justify-center px-0'
-                        )}
-                        onClick={() => router.push('/settings')}
-                    >
-                        <Settings className="h-4 w-4" />
-                        {!sidebarCollapsed && <span>设置</span>}
-                    </Button>
-                </div>
             </ScrollArea>
+
+            <div className="border-t border-border p-2">
+                <Button
+                    variant="ghost"
+                    onClick={toggleSidebar}
+                    className={cn(
+                        'w-full h-10 text-muted-foreground hover:text-foreground',
+                        sidebarCollapsed ? 'justify-center px-0' : 'justify-start gap-2.5 px-2'
+                    )}
+                    aria-label={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
+                >
+                    {sidebarCollapsed ? (
+                        <ChevronRightSquare className="h-5 w-5" />
+                    ) : (
+                        <>
+                            <ChevronLeft className="h-5 w-5 shrink-0" />
+                            <span className="text-sm">收起</span>
+                        </>
+                    )}
+                </Button>
+            </div>
         </aside>
     );
 }

@@ -34,6 +34,12 @@ export const api = {
             .then((res) => res.data)
             .catch((error) => Promise.reject(extractApiError(error))),
 
+    patch: <T>(url: string, data?: unknown) =>
+        axiosInstance
+            .patch<ApiResponse<T>>(url, data)
+            .then((res) => res.data)
+            .catch((error) => Promise.reject(extractApiError(error))),
+
     delete: <T>(url: string) =>
         axiosInstance
             .delete<ApiResponse<T>>(url)

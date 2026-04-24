@@ -2,13 +2,30 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, MoreVertical, Archive, Trash2, Eye } from 'lucide-react';
+import {
+    ArrowLeft,
+    Archive,
+    Eye,
+    History,
+    Loader2,
+    MoreVertical,
+    Save,
+    Trash2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import type { DocumentDetail } from '@collab/types';
 import { documentsApi } from '@/lib/api/documents';
+import { versionsApi } from '@/lib/api/versions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,29 +34,31 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Textarea } from '@/components/ui/textarea';
 import { useEditorContext } from './editor-provider';
 import { getCursorColor } from '@/lib/editor/cursor-colors';
-import { cn } from '@/lib/utils';
 
 interface EditorHeaderProps {
     document: DocumentDetail;
     isReadonly: boolean;
 }
 
-const TITLE_DEBOUNCE_MS = 500;
-
+/**
+ * 编辑页顶部操作区：完成编辑、保存版本、历史版本、在线协作头像、更多操作。
+ */
 export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
     const router = useRouter();
     const { provider, isSynced, connectionStatus } = useEditorContext();
-    const [title, setTitle] = useState(document.title);
-    const [isSavingTitle, setIsSavingTitle] = useState(false);
     const [onlineUsers, setOnlineUsers] = useState<
         Array<{ id: string; name: string; color: string }>
     >([]);
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [saveVersionOpen, setSaveVersionOpen] = useState(false);
+    const [changeLog, setChangeLog] = useState('');
+    const [isSavingVersion, setIsSavingVersion] = useState(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isOwner = document.userRole === 'OWNER';
+    const canWrite = document.userRole === 'OWNER' || document.userRole === 'EDITOR';
 
-    // 监听在线用户变化
     useEffect(() => {
         if (!provider) return;
 
@@ -71,25 +90,41 @@ export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
         };
     }, [provider]);
 
-    // 防抖更新标题
-    function handleTitleChange(value: string) {
-        setTitle(value);
+    // 快捷键 Cmd/Ctrl+Shift+S 触发保存版本
+    useEffect(() => {
+        if (!canWrite || isReadonly) return;
 
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => {
-            void (async () => {
-                if (value.trim() === document.title) return;
-                try {
-                    setIsSavingTitle(true);
-                    await documentsApi.update(document.id, { title: value.trim() || '无标题文档' });
-                } catch {
-                    toast.error('标题保存失败');
-                    setTitle(document.title);
-                } finally {
-                    setIsSavingTitle(false);
-                }
-            })();
-        }, TITLE_DEBOUNCE_MS);
+        function handleKeyDown(e: KeyboardEvent) {
+            if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'S') {
+                e.preventDefault();
+                setSaveVersionOpen(true);
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [canWrite, isReadonly]);
+
+    // 打开弹窗时自动聚焦
+    useEffect(() => {
+        if (saveVersionOpen) {
+            setTimeout(() => textareaRef.current?.focus(), 100);
+        } else {
+            setChangeLog('');
+        }
+    }, [saveVersionOpen]);
+
+    async function handleSaveVersion() {
+        setIsSavingVersion(true);
+        try {
+            await versionsApi.create(document.id, { changeLog: changeLog.trim() || undefined });
+            toast.success('版本已保存');
+            setSaveVersionOpen(false);
+        } catch {
+            toast.error('保存版本失败，请重试');
+        } finally {
+            setIsSavingVersion(false);
+        }
     }
 
     async function handleArchive() {
@@ -120,107 +155,165 @@ export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
               : '正在同步，返回查看页';
 
     return (
-        <header className="h-14 border-b border-border bg-card flex items-center px-4 gap-3 flex-shrink-0">
-            {/* 返回按钮 */}
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 gap-1.5"
-                            onClick={() => router.push(`/documents/${document.id}`)}
-                        >
-                            <ArrowLeft className="h-4 w-4" />
-                            完成编辑
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{exitTooltip}</TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
+        <>
+            <header className="shrink-0 border-b border-border bg-card/95">
+                <div className="w-full px-4 sm:px-6 py-3 flex items-center gap-2 flex-wrap">
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 gap-1.5"
+                                    onClick={() => router.push(`/documents/${document.id}`)}
+                                >
+                                    <ArrowLeft className="h-4 w-4" />
+                                    完成编辑
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{exitTooltip}</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
 
-            {/* 文档标题 */}
-            <div className="flex-1 flex items-center gap-2 min-w-0">
-                {isReadonly ? (
-                    <span className="text-base font-medium text-foreground truncate">{title}</span>
-                ) : (
-                    <Input
-                        value={title}
-                        onChange={(e) => handleTitleChange(e.target.value)}
-                        className={cn(
-                            'h-auto flex-1 min-w-0 px-0 py-0 text-base font-medium bg-transparent border-none shadow-none',
-                            'text-foreground placeholder:text-muted-foreground',
-                            'focus-visible:ring-0 focus-visible:ring-offset-0',
-                            isSavingTitle && 'opacity-60'
-                        )}
-                        placeholder="无标题文档"
-                        maxLength={200}
-                    />
-                )}
-                {isReadonly && (
-                    <Badge variant="secondary" className="flex-shrink-0 gap-1">
-                        <Eye className="h-3 w-3" />
-                        只读
-                    </Badge>
-                )}
-            </div>
-
-            {/* 在线用户头像列表 */}
-            {onlineUsers.length > 0 && (
-                <div className="flex items-center gap-1 flex-shrink-0">
-                    {onlineUsers.slice(0, 5).map((u) => (
-                        <TooltipProvider key={u.id}>
+                    {canWrite && !isReadonly && (
+                        <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <div
-                                        className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0 ring-2 ring-background"
-                                        style={{ backgroundColor: u.color }}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 gap-1.5"
+                                        onClick={() => setSaveVersionOpen(true)}
                                     >
-                                        {u.name.charAt(0).toUpperCase()}
-                                    </div>
+                                        <Save className="h-4 w-4" />
+                                        保存版本
+                                    </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>{u.name}</TooltipContent>
+                                <TooltipContent>保存当前为版本节点 (⌘⇧S)</TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-                    ))}
-                    {onlineUsers.length > 5 && (
-                        <div className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium bg-muted text-muted-foreground ring-2 ring-background">
-                            +{onlineUsers.length - 5}
-                        </div>
                     )}
-                </div>
-            )}
 
-            {/* 操作菜单（仅 OWNER） */}
-            {isOwner && (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground flex-shrink-0"
-                        >
-                            <MoreVertical className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-44">
-                        {document.status !== 'ARCHIVED' && (
-                            <DropdownMenuItem onClick={() => void handleArchive()}>
-                                <Archive className="h-4 w-4 mr-2" />
-                                归档文档
-                            </DropdownMenuItem>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5"
+                        onClick={() => router.push(`/documents/${document.id}/history`)}
+                    >
+                        <History className="h-4 w-4" />
+                        历史版本
+                    </Button>
+
+                    {isReadonly && (
+                        <Badge variant="secondary" className="h-8 gap-1 px-2">
+                            <Eye className="h-3 w-3" />
+                            只读
+                        </Badge>
+                    )}
+
+                    <div className="ml-auto flex items-center gap-2">
+                        {onlineUsers.length > 0 && (
+                            <div className="flex items-center gap-1">
+                                {onlineUsers.slice(0, 5).map((u) => (
+                                    <TooltipProvider key={u.id}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div
+                                                    className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0 ring-2 ring-background"
+                                                    style={{ backgroundColor: u.color }}
+                                                >
+                                                    {u.name.charAt(0).toUpperCase()}
+                                                </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>{u.name}</TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                ))}
+                                {onlineUsers.length > 5 && (
+                                    <div className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-medium bg-muted text-muted-foreground ring-2 ring-background">
+                                        +{onlineUsers.length - 5}
+                                    </div>
+                                )}
+                            </div>
                         )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => void handleDelete()}
+
+                        {isOwner && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-muted-foreground hover:text-foreground flex-shrink-0"
+                                    >
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-44">
+                                    {document.status !== 'ARCHIVED' && (
+                                        <DropdownMenuItem onClick={() => void handleArchive()}>
+                                            <Archive className="h-4 w-4 mr-2" />
+                                            归档文档
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        className="text-destructive focus:text-destructive"
+                                        onClick={() => void handleDelete()}
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        删除文档
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                    </div>
+                </div>
+            </header>
+
+            {/* 保存版本弹窗 */}
+            <Dialog open={saveVersionOpen} onOpenChange={setSaveVersionOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>保存版本</DialogTitle>
+                        <DialogDescription>
+                            将当前文档内容保存为一个版本节点，方便后续回溯。
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-2">
+                        <Textarea
+                            ref={textareaRef}
+                            placeholder="描述本次修改内容（可选），例如：修改了第三章结论部分"
+                            value={changeLog}
+                            onChange={(e) => setChangeLog(e.target.value)}
+                            maxLength={100}
+                            rows={3}
+                            className="resize-none"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                    e.preventDefault();
+                                    void handleSaveVersion();
+                                }
+                            }}
+                        />
+                        <p className="text-xs text-muted-foreground text-right mt-1">
+                            {changeLog.length}/100
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setSaveVersionOpen(false)}
+                            disabled={isSavingVersion}
                         >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            删除文档
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            )}
-        </header>
+                            取消
+                        </Button>
+                        <Button onClick={() => void handleSaveVersion()} disabled={isSavingVersion}>
+                            {isSavingVersion && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            保存版本
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

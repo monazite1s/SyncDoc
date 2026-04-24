@@ -98,10 +98,13 @@ export class CollaborationHocuspocus {
 
                 await collaborationService.storeDocumentState(documentName, stateBuffer);
 
-                // 记录编辑历史，已受上层 debounce 保护，不会每次击键都写入
                 const userId = data.context?.user?.id as string | undefined;
                 if (userId) {
-                    await collaborationService.recordEdit(documentName, userId, stateBuffer);
+                    await collaborationService.maybeCreateAutoSnapshot(
+                        documentName,
+                        userId,
+                        stateBuffer
+                    );
                 }
             },
 
@@ -112,7 +115,17 @@ export class CollaborationHocuspocus {
                 logger.log(`用户 ${userId ?? '未知'} 断开文档 ${documentName} 连接`);
 
                 const state = Y.encodeStateAsUpdate(data.document as Y.Doc);
-                await collaborationService.storeDocumentState(documentName, Buffer.from(state));
+                const stateBuffer = Buffer.from(state);
+                await collaborationService.storeDocumentState(documentName, stateBuffer);
+
+                if (userId) {
+                    await collaborationService.maybeCreateAutoSnapshot(
+                        documentName,
+                        userId,
+                        stateBuffer,
+                        { force: true }
+                    );
+                }
             },
         });
 

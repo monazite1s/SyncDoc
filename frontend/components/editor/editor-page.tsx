@@ -10,6 +10,7 @@ import type { DocumentDetail } from '@collab/types';
 import { Button } from '@/components/ui/button';
 import { EditorProvider } from './editor-provider';
 import { EditorHeader } from './editor-header';
+import { EditorDocumentChrome } from './editor-document-chrome';
 import { EditorToolbar } from './editor-toolbar';
 import { TiptapEditor } from './tiptap-editor';
 import { EditorStatusBar } from './editor-status-bar';
@@ -125,10 +126,17 @@ export default function EditorPage({ paramsPromise }: EditorPageProps) {
 
     return (
         <EditorProvider documentId={documentId} wsToken={wsToken} isReadonly={isReadonly}>
-            <div className="h-full flex flex-col overflow-hidden">
+            <div className="h-full flex min-h-0 flex-col overflow-hidden bg-background">
+                {/* 上：操作区（全宽） */}
                 <EditorHeader document={document} isReadonly={isReadonly} />
-                <EditorToolbar />
-                <TiptapEditor className="flex-1 min-h-0" />
+                {/* 下：编辑区 — 文档标题/元信息 → 工具栏 → 正文 */}
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/25">
+                    <div className="w-full shrink-0 border-b border-border/60 bg-background px-4 py-4 sm:px-6">
+                        <EditorDocumentChrome document={document} isReadonly={isReadonly} />
+                    </div>
+                    <EditorToolbar />
+                    <TiptapEditor className="min-h-0 flex-1 bg-background" />
+                </div>
                 <EditorStatusBar isReadonly={isReadonly} />
             </div>
         </EditorProvider>

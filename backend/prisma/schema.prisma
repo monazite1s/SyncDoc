@@ -67,6 +67,8 @@ model Document {
   title       String
   description String?
   content     Bytes?         // Yjs document state (binary)
+  parentId    String?
+  position    Int           @default(0)
   isPublic    Boolean       @default(false)
   status      DocumentStatus @default(DRAFT)
   createdAt   DateTime      @default(now())
@@ -75,11 +77,14 @@ model Document {
   // Relations
   authorId       String
   author         User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent         Document?           @relation("DocumentTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children       Document[]          @relation("DocumentTree")
   collaborators  DocumentCollaborator[]
   versions       DocumentVersion[]
   edits          DocumentEdit[]
 
   @@index([authorId])
+  @@index([parentId, position])
   @@index([status])
   @@map("documents")
 }
@@ -118,14 +123,22 @@ enum CollaboratorRole {
 // Version Control
 // ============================================
 
+enum VersionType {
+  AUTO    // 自动保存快照
+  MANUAL  // 用户手动保存
+  RESTORE // 版本恢复产生的快照
+}
+
 model DocumentVersion {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   documentId  String
   version     Int
-  content     Bytes     // Yjs document state snapshot (binary)
-  changeLog   String?  // Description of changes
+  type        VersionType @default(AUTO)
+  content     Bytes       // Yjs document state snapshot (binary)
+  changeLog   String?     // 版本备注
+  summary     String?     // 自动生成摘要（预留）
   createdBy   String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime    @default(now())
 
   // Relations
   document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
@@ -133,6 +146,7 @@ model DocumentVersion {
 
   @@unique([documentId, version])
   @@index([documentId])
+  @@index([documentId, type])
   @@map("document_versions")
 }
 

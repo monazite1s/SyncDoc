@@ -26,6 +26,7 @@ import { ResizableTableHeader } from './resizable-table-header';
 
 interface DocumentTableProps {
     documents: DocumentListItem[];
+    allDocuments: DocumentListItem[];
     onArchive: (id: string) => void;
     onRestore: (id: string) => void;
     onDelete: (id: string) => void;
@@ -39,21 +40,58 @@ function canDelete(document: DocumentListItem): boolean {
     return document.userRole === 'OWNER';
 }
 
-export function DocumentTable({ documents, onArchive, onRestore, onDelete }: DocumentTableProps) {
+export function DocumentTable({
+    documents,
+    allDocuments,
+    onArchive,
+    onRestore,
+    onDelete,
+}: DocumentTableProps) {
     const router = useRouter();
-    const [colWidths, setColWidths] = useState<number[]>([320, 160, 160, 170, 170]);
+    const [colWidths, setColWidths] = useState<number[]>([200, 150, 140, 160, 160]);
     const actionsColWidth = 72;
 
     const columns = useMemo(
         () => [
-            { key: 'title', label: '标题', width: colWidths[0], minWidth: 260 },
-            { key: 'location', label: '位置', width: colWidths[1], minWidth: 130 },
-            { key: 'owner', label: '所有者', width: colWidths[2], minWidth: 130 },
-            { key: 'createdAt', label: '创建时间', width: colWidths[3], minWidth: 150 },
-            { key: 'updatedAt', label: '最近访问', width: colWidths[4], minWidth: 150 },
+            { key: 'title', label: '标题', width: colWidths[0], minWidth: 160 },
+            { key: 'location', label: '位置', width: colWidths[1], minWidth: 120 },
+            { key: 'owner', label: '所有者', width: colWidths[2], minWidth: 120 },
+            { key: 'createdAt', label: '创建时间', width: colWidths[3], minWidth: 140 },
+            { key: 'updatedAt', label: '最近访问', width: colWidths[4], minWidth: 140 },
         ],
         [colWidths]
     );
+
+    const titleById = useMemo(
+        () => new Map(allDocuments.map((item) => [item.id, item.title])),
+        [allDocuments]
+    );
+
+    const formatLocation = (document: DocumentListItem): string => {
+        if (!document.parentId) {
+            return document.userRole === 'OWNER' ? '我的空间' : '与我共享';
+        }
+
+        const parentTitles: string[] = [];
+        let currentParentId: string | null = document.parentId;
+        let depth = 0;
+
+        while (currentParentId && depth < 5) {
+            const parentTitle = titleById.get(currentParentId);
+            if (!parentTitle) break;
+            parentTitles.unshift(parentTitle);
+            const parent = allDocuments.find((item) => item.id === currentParentId);
+            currentParentId = parent?.parentId ?? null;
+            depth += 1;
+        }
+
+        if (parentTitles.length === 0) {
+            return document.userRole === 'OWNER' ? '我的空间' : '与我共享';
+        }
+
+        const rootLabel = document.userRole === 'OWNER' ? '我的空间' : '与我共享';
+        return `${rootLabel} / ${parentTitles.join(' / ')}`;
+    };
 
     if (documents.length === 0) {
         return (
@@ -66,7 +104,7 @@ export function DocumentTable({ documents, onArchive, onRestore, onDelete }: Doc
 
     return (
         <div className="rounded-lg border border-border bg-card">
-            <Table className="table-fixed min-w-[980px]">
+            <Table className="table-fixed min-w-[860px]">
                 <colgroup>
                     {columns.map((column) => (
                         <col key={column.key} style={{ width: column.width }} />
@@ -122,7 +160,12 @@ export function DocumentTable({ documents, onArchive, onRestore, onDelete }: Doc
                                     </div>
                                 </TableCell>
                                 <TableCell className="px-3 py-3 text-sm text-muted-foreground">
-                                    {document.userRole === 'OWNER' ? '我的空间' : '与我共享'}
+                                    <span
+                                        className="block truncate"
+                                        title={formatLocation(document)}
+                                    >
+                                        {formatLocation(document)}
+                                    </span>
                                 </TableCell>
                                 <TableCell className="px-3 py-3 text-sm">{authorName}</TableCell>
                                 <TableCell className="px-3 py-3 text-sm text-muted-foreground">

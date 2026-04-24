@@ -7,6 +7,8 @@ const mockDocument: Document = {
     id: 'doc-1',
     title: '测试文档',
     description: '这是一个测试文档',
+    parentId: null,
+    position: 0,
     isPublic: false,
     status: DocumentStatus.DRAFT,
     authorId: 'user-1',

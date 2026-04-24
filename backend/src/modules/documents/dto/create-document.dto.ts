@@ -11,4 +11,8 @@ export class CreateDocumentDto implements CreateDocumentRequest {
     @IsString({ message: '描述必须是字符串' })
     @MaxLength(1000, { message: '描述最多 1000 个字符' })
     description?: string;
+
+    @IsOptional()
+    @IsString({ message: '父文档 ID 必须是字符串' })
+    parentId?: string;
 }

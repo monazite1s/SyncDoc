@@ -19,6 +19,8 @@ export class DocumentsService {
         id: true,
         title: true,
         description: true,
+        parentId: true,
+        position: true,
         isPublic: true,
         status: true,
         authorId: true,
@@ -31,6 +33,45 @@ export class DocumentsService {
             select: { collaborators: true },
         },
     };
+
+    private _toDocumentListItem(
+        document: {
+            id: string;
+            title: string;
+            description: string | null;
+            parentId: string | null;
+            position: number;
+            isPublic: boolean;
+            status: DocumentStatus;
+            authorId: string;
+            createdAt: Date;
+            updatedAt: Date;
+            author: {
+                id: string;
+                username: string;
+                nickname: string | null;
+                avatar: string | null;
+            };
+            _count: { collaborators: number };
+        },
+        userRole: CollaboratorRole | null
+    ) {
+        return {
+            id: document.id,
+            title: document.title,
+            description: document.description,
+            parentId: document.parentId,
+            position: document.position,
+            isPublic: document.isPublic,
+            status: document.status,
+            authorId: document.authorId,
+            createdAt: document.createdAt.toISOString(),
+            updatedAt: document.updatedAt.toISOString(),
+            author: document.author,
+            userRole,
+            collaboratorCount: document._count.collaborators,
+        };
+    }
 
     /**
      * 获取用户在文档中的角色
@@ -138,22 +179,14 @@ export class DocumentsService {
         });
 
         // 转换为前端需要的格式
-        return documents.map((doc) => ({
-            id: doc.id,
-            title: doc.title,
-            description: doc.description,
-            isPublic: doc.isPublic,
-            status: doc.status,
-            authorId: doc.authorId,
-            createdAt: doc.createdAt.toISOString(),
-            updatedAt: doc.updatedAt.toISOString(),
-            author: doc.author,
-            userRole:
+        return documents.map((doc) =>
+            this._toDocumentListItem(
+                doc,
                 doc.authorId === userId
                     ? CollaboratorRole.OWNER
-                    : (doc.collaborators[0]?.role ?? null),
-            collaboratorCount: doc._count.collaborators,
-        }));
+                    : (doc.collaborators[0]?.role ?? null)
+            )
+        );
     }
 
     /**
@@ -162,21 +195,28 @@ export class DocumentsService {
     async findOne(documentId: string, userId: string) {
         await this._requireAccess(documentId, userId);
 
-        const document = await this._prisma.document.findUnique({
-            where: { id: documentId },
-            select: {
-                ...this._DOCUMENT_PUBLIC_SELECT,
-                collaborators: {
-                    select: {
-                        userId: true,
-                        role: true,
-                        user: {
-                            select: { id: true, username: true, nickname: true },
+        const [document, latestVersion] = await Promise.all([
+            this._prisma.document.findUnique({
+                where: { id: documentId },
+                select: {
+                    ...this._DOCUMENT_PUBLIC_SELECT,
+                    collaborators: {
+                        select: {
+                            userId: true,
+                            role: true,
+                            user: {
+                                select: { id: true, username: true, nickname: true, avatar: true },
+                            },
                         },
                     },
                 },
-            },
-        });
+            }),
+            this._prisma.documentVersion.findFirst({
+                where: { documentId },
+                orderBy: { version: 'desc' },
+                select: { version: true, id: true },
+            }),
+        ]);
 
         if (!document) {
             throw new NotFoundException('文档不存在');
@@ -185,17 +225,9 @@ export class DocumentsService {
         const userRole = await this._getUserRole(documentId, userId);
 
         return {
-            id: document.id,
-            title: document.title,
-            description: document.description,
-            isPublic: document.isPublic,
-            status: document.status,
-            authorId: document.authorId,
-            createdAt: document.createdAt.toISOString(),
-            updatedAt: document.updatedAt.toISOString(),
-            author: document.author,
-            userRole,
-            collaboratorCount: document._count.collaborators,
+            ...this._toDocumentListItem(document, userRole),
+            latestVersion: latestVersion?.version,
+            latestVersionHash: latestVersion?.id,
             collaborators: document.collaborators.map((c) => ({
                 userId: c.userId,
                 role: c.role,
@@ -241,10 +273,25 @@ export class DocumentsService {
      * 创建文档
      */
     async create(userId: string, dto: CreateDocumentDto) {
+        if (dto.parentId) {
+            await this._requireWriteAccess(dto.parentId, userId);
+        }
+
+        const siblingPosition = await this._prisma.document.aggregate({
+            where: {
+                parentId: dto.parentId ?? null,
+                status: { not: DocumentStatus.DELETED },
+            },
+            _max: { position: true },
+        });
+        const nextPosition = (siblingPosition._max.position ?? -1) + 1;
+
         const document = await this._prisma.document.create({
             data: {
                 title: dto.title,
                 description: dto.description,
+                parentId: dto.parentId ?? null,
+                position: nextPosition,
                 authorId: userId,
                 status: DocumentStatus.DRAFT,
                 isPublic: false,
@@ -252,19 +299,47 @@ export class DocumentsService {
             select: this._DOCUMENT_PUBLIC_SELECT,
         });
 
-        return {
-            id: document.id,
-            title: document.title,
-            description: document.description,
-            isPublic: document.isPublic,
-            status: document.status,
-            authorId: document.authorId,
-            createdAt: document.createdAt.toISOString(),
-            updatedAt: document.updatedAt.toISOString(),
-            author: document.author,
-            userRole: CollaboratorRole.OWNER,
-            collaboratorCount: 0,
-        };
+        return this._toDocumentListItem(document, CollaboratorRole.OWNER);
+    }
+
+    /**
+     * 移动文档到新的父节点并调整同级排序（预留）
+     */
+    async moveDocument(
+        documentId: string,
+        userId: string,
+        targetParentId: string | null,
+        targetPosition: number
+    ) {
+        await this._requireWriteAccess(documentId, userId);
+
+        if (targetParentId) {
+            if (targetParentId === documentId) {
+                throw new BadRequestException('不能将文档移动到自身下');
+            }
+            await this._requireWriteAccess(targetParentId, userId);
+        }
+
+        const siblingMax = await this._prisma.document.aggregate({
+            where: {
+                parentId: targetParentId,
+                status: { not: DocumentStatus.DELETED },
+                id: { not: documentId },
+            },
+            _max: { position: true },
+        });
+        const maxPosition = siblingMax._max.position ?? -1;
+        const safePosition = Math.min(Math.max(targetPosition, 0), maxPosition + 1);
+
+        await this._prisma.document.update({
+            where: { id: documentId },
+            data: {
+                parentId: targetParentId,
+                position: safePosition,
+            },
+        });
+
+        return { success: true };
     }
 
     /**
@@ -282,19 +357,7 @@ export class DocumentsService {
 
         const userRole = await this._getUserRole(documentId, userId);
 
-        return {
-            id: document.id,
-            title: document.title,
-            description: document.description,
-            isPublic: document.isPublic,
-            status: document.status,
-            authorId: document.authorId,
-            createdAt: document.createdAt.toISOString(),
-            updatedAt: document.updatedAt.toISOString(),
-            author: document.author,
-            userRole,
-            collaboratorCount: document._count.collaborators,
-        };
+        return this._toDocumentListItem(document, userRole);
     }
 
     /**

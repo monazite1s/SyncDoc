@@ -6,6 +6,48 @@ import type { DocumentListItem, CollaboratorRole } from '@collab/types';
 import { useAuthStore } from '@/stores/auth.store';
 
 export type DocumentFilter = 'all' | 'mine' | 'shared' | 'archived';
+export interface DocumentTreeNode extends DocumentListItem {
+    children: DocumentTreeNode[];
+}
+
+export function buildDocumentTree(documents: DocumentListItem[]): DocumentTreeNode[] {
+    const nodeMap = new Map<string, DocumentTreeNode>();
+    const roots: DocumentTreeNode[] = [];
+
+    for (const doc of documents) {
+        nodeMap.set(doc.id, { ...doc, children: [] });
+    }
+
+    for (const doc of documents) {
+        const node = nodeMap.get(doc.id);
+        if (!node) continue;
+
+        const parentId = doc.parentId ?? null;
+        if (!parentId) {
+            roots.push(node);
+            continue;
+        }
+
+        const parent = nodeMap.get(parentId);
+        if (!parent) {
+            roots.push(node);
+            continue;
+        }
+
+        parent.children.push(node);
+    }
+
+    const sortNodes = (nodes: DocumentTreeNode[]) => {
+        nodes.sort((a, b) => {
+            if (a.position !== b.position) return a.position - b.position;
+            return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        });
+        nodes.forEach((node) => sortNodes(node.children));
+    };
+
+    sortNodes(roots);
+    return roots;
+}
 
 export function useDocuments() {
     const [documents, setDocuments] = useState<DocumentListItem[]>([]);
@@ -57,12 +99,15 @@ export function useDocuments() {
     );
 
     // 创建文档
-    const createDocument = useCallback(async (data: { title: string; description?: string }) => {
-        const response = await documentsApi.create(data);
-        const newDoc = response.data;
-        setDocuments((prev) => [newDoc, ...prev]);
-        return newDoc;
-    }, []);
+    const createDocument = useCallback(
+        async (data: { title: string; description?: string; parentId?: string }) => {
+            const response = await documentsApi.create(data);
+            const newDoc = response.data;
+            setDocuments((prev) => [newDoc, ...prev]);
+            return newDoc;
+        },
+        []
+    );
 
     // 归档文档
     const archiveDocument = useCallback(async (id: string) => {

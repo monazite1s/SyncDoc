@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -18,6 +19,9 @@ import configuration from './config/configuration';
             isGlobal: true,
             load: [configuration],
         }),
+
+        // Scheduler
+        ScheduleModule.forRoot(),
 
         // Database
         PrismaModule,

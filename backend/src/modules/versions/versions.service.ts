@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { DocumentStatus, CollaboratorRole } from '@prisma/client';
+import { DocumentStatus, CollaboratorRole, VersionType } from '@prisma/client';
 import { CreateVersionDto } from './dto/create-version.dto';
 import * as Y from 'yjs';
 import * as Diff from 'diff';
@@ -60,7 +60,7 @@ export class VersionsService {
     // ==================== 核心方法 ====================
 
     /**
-     * 创建快照：复制当前文档 content → DocumentVersion
+     * 手动创建快照：复制当前文档 content → DocumentVersion（type = MANUAL）
      */
     async createSnapshot(documentId: string, userId: string, dto: CreateVersionDto) {
         await this._requireWriteAccess(documentId, userId);
@@ -74,7 +74,6 @@ export class VersionsService {
             throw new NotFoundException('文档不存在');
         }
 
-        // 获取当前最大版本号
         const lastVersion = await this._prisma.documentVersion.findFirst({
             where: { documentId },
             orderBy: { version: 'desc' },
@@ -87,8 +86,9 @@ export class VersionsService {
             data: {
                 documentId,
                 version: nextVersion,
+                type: VersionType.MANUAL,
                 content: document.content ?? Buffer.alloc(0),
-                changeLog: dto.changeLog ?? `版本 ${nextVersion}`,
+                changeLog: dto.changeLog || null,
                 createdBy: userId,
             },
             include: {
@@ -145,16 +145,28 @@ export class VersionsService {
             throw new NotFoundException('版本不存在');
         }
 
+        const prevVersionRecord = await this._prisma.documentVersion.findFirst({
+            where: {
+                documentId,
+                version: { lt: version },
+            },
+            orderBy: { version: 'desc' },
+            select: { content: true },
+        });
+
         return {
             ...this._formatVersionItem(versionRecord),
             contentBase64: versionRecord.content
                 ? Buffer.from(versionRecord.content).toString('base64')
                 : '',
+            prevContentBase64: prevVersionRecord?.content
+                ? Buffer.from(prevVersionRecord.content).toString('base64')
+                : null,
         };
     }
 
     /**
-     * 版本 Diff：将两个版本转为文本后做文本级 diff
+     * 版本 Diff：将两个版本转为 Markdown 后做行级 diff，输出人类可读的对比 HTML
      */
     async diffVersions(documentId: string, fromVersion: number, toVersion: number, userId: string) {
         await this._requireReadAccess(documentId, userId);
@@ -170,62 +182,75 @@ export class VersionsService {
             }),
         ]);
 
-        if (!fromRecord) {
-            throw new NotFoundException(`版本 ${fromVersion} 不存在`);
-        }
-        if (!toRecord) {
-            throw new NotFoundException(`版本 ${toVersion} 不存在`);
-        }
+        if (!fromRecord) throw new NotFoundException(`版本 ${fromVersion} 不存在`);
+        if (!toRecord) throw new NotFoundException(`版本 ${toVersion} 不存在`);
 
-        const fromText = this._yjsStateToText(fromRecord.content);
-        const toText = this._yjsStateToText(toRecord.content);
+        const fromText = this._yjsStateToMarkdown(fromRecord.content);
+        const toText = this._yjsStateToMarkdown(toRecord.content);
 
-        const changes = Diff.diffWords(fromText, toText);
-        const diffHtml = changes
-            .map((change) => {
-                const text = change.value
+        // 行级 diff：每行（段落/标题）作为最小比较单位
+        const changes = Diff.diffLines(fromText, toText);
+
+        const MAX_LINES = 2000;
+        let lineCount = 0;
+        const htmlParts: string[] = [];
+
+        for (const change of changes) {
+            const lines = change.value.split('\n').filter((l, i, arr) => {
+                // diffLines 末尾可能有空字符串
+                return !(i === arr.length - 1 && l === '');
+            });
+
+            for (const line of lines) {
+                if (lineCount >= MAX_LINES) {
+                    htmlParts.push(
+                        '<div class="diff-truncated">…（内容过长，已截断剩余部分）</div>'
+                    );
+                    break;
+                }
+                const escaped = line
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/\n/g, '<br/>');
+                    .replace(/>/g, '&gt;');
+
                 if (change.added) {
-                    return `<ins class="diff-added">${text}</ins>`;
+                    htmlParts.push(`<div class="diff-line diff-added">+ ${escaped}</div>`);
+                } else if (change.removed) {
+                    htmlParts.push(`<div class="diff-line diff-removed">- ${escaped}</div>`);
+                } else {
+                    htmlParts.push(`<div class="diff-line diff-unchanged">  ${escaped}</div>`);
                 }
-                if (change.removed) {
-                    return `<del class="diff-removed">${text}</del>`;
-                }
-                return text;
-            })
-            .join('');
+                lineCount++;
+            }
+        }
 
         return {
             fromVersion,
             toVersion,
-            diffHtml,
+            diffHtml: htmlParts.join(''),
         };
     }
 
     /**
-     * 恢复版本：用目标版本 content 覆盖当前文档，并创建恢复快照
+     * 恢复版本：用目标版本 content 覆盖当前文档，并创建恢复快照（type = RESTORE）
      */
     async restoreVersion(documentId: string, version: number, userId: string) {
         await this._requireWriteAccess(documentId, userId);
 
         const versionRecord = await this._prisma.documentVersion.findUnique({
             where: { documentId_version: { documentId, version } },
+            include: { author: { select: { id: true, username: true, nickname: true } } },
         });
 
         if (!versionRecord) {
             throw new NotFoundException(`版本 ${version} 不存在`);
         }
 
-        // 覆盖文档当前 content
         await this._prisma.document.update({
             where: { id: documentId },
             data: { content: versionRecord.content },
         });
 
-        // 自动创建恢复快照
         const lastVersion = await this._prisma.documentVersion.findFirst({
             where: { documentId },
             orderBy: { version: 'desc' },
@@ -233,13 +258,21 @@ export class VersionsService {
         });
 
         const nextVersion = (lastVersion?.version ?? 0) + 1;
+        const restoredAuthor = versionRecord.author.nickname || versionRecord.author.username;
+        const restoredAt = new Intl.DateTimeFormat('zh-CN', {
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        }).format(versionRecord.createdAt);
 
         const snapshot = await this._prisma.documentVersion.create({
             data: {
                 documentId,
                 version: nextVersion,
+                type: VersionType.RESTORE,
                 content: versionRecord.content,
-                changeLog: `恢复到版本 ${version}`,
+                changeLog: `恢复自 ${restoredAuthor} 于 ${restoredAt} 的版本`,
                 createdBy: userId,
             },
             include: {
@@ -255,21 +288,85 @@ export class VersionsService {
     // ==================== 工具方法 ====================
 
     /**
-     * 将 Yjs 二进制状态转为纯文本（用于 diff）
+     * 将 Yjs 二进制状态转为 Markdown 文本（用于 diff）
+     * Tiptap Collaboration 扩展默认使用 'prosemirror' 作为 XmlFragment 名称
      */
-    private _yjsStateToText(state: Uint8Array | null): string {
+    private _yjsStateToMarkdown(state: Uint8Array | null): string {
         if (!state || state.length === 0) return '';
 
         try {
             const doc = new Y.Doc();
             Y.applyUpdate(doc, state);
-            const fragment = doc.getXmlFragment('default');
-            const text = fragment.toJSON ? JSON.stringify(fragment.toJSON()) : '';
+            const fragment = doc.getXmlFragment('prosemirror');
+            const lines = this._xmlToMarkdownLines(fragment);
             doc.destroy();
-            return text;
+            return lines.join('\n');
         } catch {
             return '';
         }
+    }
+
+    /**
+     * 递归将 Yjs XmlFragment/XmlElement 转换为 Markdown 行数组
+     */
+    private _xmlToMarkdownLines(node: Y.XmlFragment | Y.XmlElement): string[] {
+        const lines: string[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (node as any).forEach((child: Y.XmlElement | Y.XmlText) => {
+            if (!(child instanceof Y.XmlElement)) return;
+
+            const name = child.nodeName;
+
+            if (name === 'heading') {
+                const level = Number(child.getAttribute('level') ?? 1);
+                const prefix = '#'.repeat(Math.min(level, 6)) + ' ';
+                lines.push(prefix + this._xmlToText(child));
+            } else if (name === 'paragraph') {
+                lines.push(this._xmlToText(child));
+            } else if (name === 'bulletList') {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (child as any).forEach((item: Y.XmlElement | Y.XmlText) => {
+                    if (item instanceof Y.XmlElement && item.nodeName === 'listItem') {
+                        lines.push('- ' + this._xmlToText(item));
+                    }
+                });
+            } else if (name === 'orderedList') {
+                let idx = 1;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (child as any).forEach((item: Y.XmlElement | Y.XmlText) => {
+                    if (item instanceof Y.XmlElement && item.nodeName === 'listItem') {
+                        lines.push(`${idx}. ` + this._xmlToText(item));
+                        idx++;
+                    }
+                });
+            } else if (name === 'codeBlock') {
+                const lang = (child.getAttribute('language') as string) ?? '';
+                lines.push('```' + lang, this._xmlToText(child), '```');
+            } else if (name === 'blockquote') {
+                lines.push('> ' + this._xmlToText(child));
+            } else if (name === 'horizontalRule') {
+                lines.push('---');
+            } else {
+                lines.push(...this._xmlToMarkdownLines(child));
+            }
+        });
+        return lines;
+    }
+
+    /**
+     * 从 XmlElement 中递归提取纯文本内容
+     */
+    private _xmlToText(element: Y.XmlElement | Y.XmlFragment): string {
+        const parts: string[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (element as any).forEach((child: Y.XmlElement | Y.XmlText) => {
+            if (child instanceof Y.XmlText) {
+                parts.push(child.toString());
+            } else if (child instanceof Y.XmlElement) {
+                parts.push(child.nodeName === 'hardBreak' ? '\n' : this._xmlToText(child));
+            }
+        });
+        return parts.join('');
     }
 
     /**
@@ -279,6 +376,7 @@ export class VersionsService {
         id: string;
         documentId: string;
         version: number;
+        type: VersionType;
         changeLog: string | null;
         createdBy: string;
         createdAt: Date;
@@ -288,6 +386,7 @@ export class VersionsService {
             id: version.id,
             documentId: version.documentId,
             version: version.version,
+            type: version.type,
             changeLog: version.changeLog,
             createdBy: version.createdBy,
             createdAt: version.createdAt.toISOString(),

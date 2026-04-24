@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDocuments, type DocumentFilter } from '@/hooks/use-documents';
 import { DocumentTable } from '@/components/documents/document-table';
-import { CreateDocumentDialog } from '@/components/documents/create-document-dialog';
 import { DeleteDocumentDialog } from '@/components/documents/delete-document-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ const filterTitles: Record<DocumentFilter, string> = {
 };
 
 export default function DocumentsPage() {
+    const router = useRouter();
     const [activeFilter, setActiveFilter] = useState<DocumentFilter>('all');
     const [searchInput, setSearchInput] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -30,6 +31,7 @@ export default function DocumentsPage() {
     }>({ open: false, document: null });
 
     const {
+        documents,
         filteredDocuments,
         counts,
         isLoading,
@@ -58,13 +60,13 @@ export default function DocumentsPage() {
         }
     }, [error]);
 
-    const handleCreateDocument = async (data: { title: string; description?: string }) => {
+    const handleCreateDocument = async () => {
         try {
-            await createDocument(data);
+            const newDocument = await createDocument({ title: '未命名文档' });
             toast.success('文档创建成功');
+            router.push(`/documents/${newDocument.id}/edit`);
         } catch (err) {
             toast.error(err instanceof Error ? err.message : '创建文档失败');
-            throw err;
         }
     };
 
@@ -118,6 +120,7 @@ export default function DocumentsPage() {
         return (
             <DocumentTable
                 documents={filteredDocuments[filter]}
+                allDocuments={documents}
                 onArchive={(id) => void handleArchive(id)}
                 onRestore={(id) => void handleRestore(id)}
                 onDelete={(id) => {
@@ -140,15 +143,10 @@ export default function DocumentsPage() {
                             最近访问、归我所有、共享文档一站管理
                         </p>
                     </div>
-                    <CreateDocumentDialog
-                        trigger={
-                            <Button>
-                                <Plus className="h-4 w-4 mr-2" />
-                                新建文档
-                            </Button>
-                        }
-                        onSubmit={handleCreateDocument}
-                    />
+                    <Button onClick={() => void handleCreateDocument()}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        新建文档
+                    </Button>
                 </div>
 
                 <div className="flex items-center gap-3">

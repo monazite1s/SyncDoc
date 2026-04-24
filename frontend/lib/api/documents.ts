@@ -24,7 +24,7 @@ export const documentsApi = {
     // 获取文档二进制内容（Base64）
     getContent: (id: string) => api.get<DocumentContentResponse>(`/documents/${id}/content`),
 
-    // 创建文档
+    // 创建文档（parentId 可选，传入时创建子文档）
     create: (data: CreateDocumentRequest) => api.post<DocumentListItem>('/documents', data),
 
     // 更新文档
