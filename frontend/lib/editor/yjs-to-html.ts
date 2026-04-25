@@ -4,6 +4,11 @@ import * as Y from 'yjs';
 import { Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Collaboration from '@tiptap/extension-collaboration';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import Image from '@tiptap/extension-image';
 
 /**
  * 将 Yjs 二进制状态转换为 HTML 字符串
@@ -17,6 +22,11 @@ export function yjsStateToHtml(state: Uint8Array): string {
         extensions: [
             StarterKit.configure({ history: false }),
             Collaboration.configure({ document: doc }),
+            Table.configure({ resizable: false }),
+            TableRow,
+            TableCell,
+            TableHeader,
+            Image.configure({ inline: false, allowBase64: true }),
         ],
         editable: false,
     });

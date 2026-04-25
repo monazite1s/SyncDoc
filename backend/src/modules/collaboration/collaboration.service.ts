@@ -183,7 +183,6 @@ export class CollaborationService {
      * 检查用户是否有文档的访问权限
      */
     async checkDocumentAccess(documentId: string, userId: string): Promise<boolean> {
-        // 文档作者自动有权限
         const document = await this._prisma.document.findUnique({
             where: { id: documentId },
             select: { authorId: true, isPublic: true },
@@ -197,7 +196,6 @@ export class CollaborationService {
             return true;
         }
 
-        // 检查是否为协作者
         const collaborator = await this._prisma.documentCollaborator.findUnique({
             where: {
                 documentId_userId: { documentId, userId },
@@ -205,5 +203,49 @@ export class CollaborationService {
         });
 
         return !!collaborator;
+    }
+
+    /**
+     * 获取文档最新版本号
+     */
+    async getLatestVersionNumber(documentId: string): Promise<number> {
+        const latest = await this._prisma.documentVersion.findFirst({
+            where: { documentId },
+            orderBy: { version: 'desc' },
+            select: { version: true },
+        });
+        return latest?.version ?? 0;
+    }
+
+    /**
+     * 记录编辑归属：仅在用户 ID 变化时写入，减少记录量
+     */
+    async recordEdit(
+        documentId: string,
+        userId: string,
+        operation: Uint8Array,
+        version: number
+    ): Promise<void> {
+        try {
+            const lastEdit = await this._prisma.documentEdit.findFirst({
+                where: { documentId },
+                orderBy: { timestamp: 'desc' },
+                select: { userId: true },
+            });
+
+            // 同一用户连续编辑不重复记录
+            if (lastEdit?.userId === userId) return;
+
+            await this._prisma.documentEdit.create({
+                data: {
+                    documentId,
+                    userId,
+                    operation: Buffer.from(operation),
+                    version,
+                },
+            });
+        } catch (error) {
+            this._logger.error(`记录文档 ${documentId} 编辑归属失败: ${(error as Error).message}`);
+        }
     }
 }

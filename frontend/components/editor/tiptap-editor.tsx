@@ -7,6 +7,11 @@ import Placeholder from '@tiptap/extension-placeholder';
 import CharacterCount from '@tiptap/extension-character-count';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import Image from '@tiptap/extension-image';
 import { useAuthStore } from '@/stores/auth.store';
 import { getCursorColor } from '@/lib/editor/cursor-colors';
 import { useEditorContext } from './editor-provider';
@@ -35,6 +40,16 @@ export function TiptapEditor({ className }: TiptapEditorProps) {
                     placeholder: '开始编写文档...',
                 }),
                 CharacterCount,
+                Table.configure({
+                    resizable: false,
+                }),
+                TableRow,
+                TableCell,
+                TableHeader,
+                Image.configure({
+                    inline: false,
+                    allowBase64: true,
+                }),
                 ...(ydoc
                     ? [
                           Collaboration.configure({ document: ydoc }),

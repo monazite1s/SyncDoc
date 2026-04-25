@@ -1,18 +1,23 @@
 'use client';
 
+import { useState } from 'react';
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { History, Loader2, RefreshCw, Save, Zap } from 'lucide-react';
+import { History, Loader2, RefreshCw, Save, Zap, Tag, Pencil } from 'lucide-react';
 import { VersionType } from '@collab/types';
 import { versionsApi } from '@/lib/api/versions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 interface VersionTimelineProps {
     versions: Awaited<ReturnType<typeof versionsApi.list>>['data']['items'];
     selectedVersion: number | null;
+    compareMode?: boolean;
+    compareFrom?: number | null;
+    compareTo?: number | null;
     total: number;
     totalLoaded: number;
     hasMore: boolean;
@@ -21,6 +26,7 @@ interface VersionTimelineProps {
     onTypeFilterChange: (filter: VersionType | 'ALL') => void;
     onSelectVersion: (version: number) => void;
     onLoadMore: () => void;
+    onLabelUpdate?: (version: number, label: string | undefined) => void;
 }
 
 function formatRelativeTime(dateStr: string): { label: string; full: string } {
@@ -71,6 +77,9 @@ const TYPE_FILTER_OPTIONS: Array<{ value: VersionType | 'ALL'; label: string }> 
 export function VersionTimeline({
     versions,
     selectedVersion,
+    compareMode,
+    compareFrom,
+    compareTo,
     total,
     totalLoaded,
     hasMore,
@@ -79,6 +88,7 @@ export function VersionTimeline({
     onTypeFilterChange,
     onSelectVersion,
     onLoadMore,
+    onLabelUpdate,
 }: VersionTimelineProps) {
     return (
         <aside className="w-[320px] border-l border-border bg-card flex-shrink-0 overflow-hidden flex flex-col">
@@ -119,6 +129,8 @@ export function VersionTimeline({
                 <div className="flex-1 overflow-auto p-3 space-y-1.5">
                     {versions.map((item) => {
                         const selected = selectedVersion === item.version;
+                        const isFrom = compareMode && compareFrom === item.version;
+                        const isTo = compareMode && compareTo === item.version;
                         const nickname = item.author.nickname || item.author.username;
                         const typeConfig =
                             VERSION_TYPE_CONFIG[item.type as VersionType] ??
@@ -129,10 +141,14 @@ export function VersionTimeline({
                         );
 
                         return (
-                            <button
+                            <div
                                 key={item.id}
-                                type="button"
+                                role="button"
+                                tabIndex={0}
                                 onClick={() => onSelectVersion(item.version)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') onSelectVersion(item.version);
+                                }}
                                 className={cn(
                                     'w-full text-left rounded-md border px-3 py-2.5 transition-colors',
                                     selected
@@ -155,11 +171,34 @@ export function VersionTimeline({
                                             {typeConfig.label}
                                         </span>
                                     </div>
-                                    {selected && (
-                                        <Badge className="text-[10px] h-5 flex-shrink-0">
-                                            已选中
-                                        </Badge>
-                                    )}
+                                    <div className="flex items-center gap-1">
+                                        {isFrom && (
+                                            <span className="flex items-center gap-0.5 text-[10px] text-red-500">
+                                                <span className="w-2 h-2 rounded-full bg-red-500" />
+                                                起点
+                                            </span>
+                                        )}
+                                        {isTo && (
+                                            <span className="flex items-center gap-0.5 text-[10px] text-green-500">
+                                                <span className="w-2 h-2 rounded-full bg-green-500" />
+                                                终点
+                                            </span>
+                                        )}
+                                        {item.label && (
+                                            <Badge
+                                                variant="secondary"
+                                                className="text-[10px] h-5 max-w-[100px] truncate"
+                                            >
+                                                <Tag className="h-2.5 w-2.5 mr-0.5" />
+                                                {item.label}
+                                            </Badge>
+                                        )}
+                                        {selected && (
+                                            <Badge className="text-[10px] h-5 flex-shrink-0">
+                                                已选中
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* 备注：仅手动/恢复版本 */}
@@ -173,18 +212,30 @@ export function VersionTimeline({
                                     <span className="text-xs text-muted-foreground truncate">
                                         {nickname}
                                     </span>
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <span className="text-xs text-muted-foreground whitespace-nowrap cursor-default">
-                                                    {timeLabel}
-                                                </span>
-                                            </TooltipTrigger>
-                                            <TooltipContent>{timeFull}</TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
+                                    <div className="flex items-center gap-1">
+                                        {onLabelUpdate && (
+                                            <VersionLabelEditor
+                                                documentId={item.documentId}
+                                                version={item.version}
+                                                label={item.label}
+                                                onUpdated={(newLabel) =>
+                                                    onLabelUpdate(item.version, newLabel)
+                                                }
+                                            />
+                                        )}
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <span className="text-xs text-muted-foreground whitespace-nowrap cursor-default">
+                                                        {timeLabel}
+                                                    </span>
+                                                </TooltipTrigger>
+                                                <TooltipContent>{timeFull}</TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
                                 </div>
-                            </button>
+                            </div>
                         );
                     })}
 
@@ -202,5 +253,79 @@ export function VersionTimeline({
                 </div>
             )}
         </aside>
+    );
+}
+
+/** 行内版本标签编辑器 */
+function VersionLabelEditor({
+    documentId,
+    version,
+    label,
+    onUpdated,
+}: {
+    documentId: string;
+    version: number;
+    label?: string;
+    onUpdated: (label: string | undefined) => void;
+}) {
+    const [editing, setEditing] = useState(false);
+    const [value, setValue] = useState(label ?? '');
+    const [saving, setSaving] = useState(false);
+
+    const handleSave = async () => {
+        const trimmed = value.trim();
+        if (trimmed === (label ?? '')) {
+            setEditing(false);
+            return;
+        }
+        setSaving(true);
+        try {
+            await versionsApi.updateLabel(documentId, version, trimmed || undefined);
+            onUpdated(trimmed || undefined);
+            setEditing(false);
+        } catch {
+            // 静默失败，恢复原值
+            setValue(label ?? '');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (editing) {
+        return (
+            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <Input
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') void handleSave();
+                        if (e.key === 'Escape') {
+                            setValue(label ?? '');
+                            setEditing(false);
+                        }
+                    }}
+                    onBlur={() => void handleSave()}
+                    placeholder="输入标签..."
+                    className="h-5 w-24 text-[11px] px-1.5 py-0"
+                    disabled={saving}
+                    autoFocus
+                />
+            </div>
+        );
+    }
+
+    return (
+        <button
+            type="button"
+            onClick={(e) => {
+                e.stopPropagation();
+                setEditing(true);
+                setValue(label ?? '');
+            }}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            title="编辑标签"
+        >
+            <Pencil className="h-2.5 w-2.5" />
+        </button>
     );
 }

@@ -33,6 +33,12 @@ export const versionsApi = {
     restore: (documentId: string, version: number) =>
         api.post<DocumentVersionItem>(`/documents/${documentId}/versions/${version}/restore`),
 
+    // 更新版本标签
+    updateLabel: (documentId: string, version: number, label?: string) =>
+        api.patch<DocumentVersionItem>(`/documents/${documentId}/versions/${version}/label`, {
+            label,
+        }),
+
     // 版本 Diff
     diff: (documentId: string, data: VersionDiffRequest) =>
         api.post<VersionDiffResponse>(`/documents/${documentId}/versions/diff`, data),

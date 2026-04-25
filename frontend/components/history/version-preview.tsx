@@ -1,20 +1,31 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { Loader2, RefreshCw, Save, Zap } from 'lucide-react';
-import { VersionType } from '@collab/types';
+import { Loader2, RefreshCw, Save, Zap, Columns2, AlignLeft } from 'lucide-react';
+import { VersionType, type VersionDiffChange } from '@collab/types';
 import { versionsApi } from '@/lib/api/versions';
 import { base64ToHtml } from '@/lib/editor/yjs-to-html';
-import { generateInlineDiff } from '@/lib/editor/html-diff';
+import {
+    generateInlineDiff,
+    structuredDiffToInlineHtml,
+    structuredDiffToSideBySideHtml,
+} from '@/lib/editor/html-diff';
 import { ViewerContent } from '@/components/viewer/viewer-content';
+import { Button } from '@/components/ui/button';
+
+type DiffMode = 'inline' | 'side-by-side';
 
 interface VersionPreviewProps {
     detail: Awaited<ReturnType<typeof versionsApi.get>>['data'] | null;
     isLoading: boolean;
     activeVersion: number | null;
     showDiff: boolean;
+    /** 结构化 diff 数据（由 history-page 请求后传入） */
+    structuredChanges?: VersionDiffChange[];
+    diffStats?: { additions: number; deletions: number; unchanged: number };
+    diffTruncated?: boolean;
 }
 
 function formatVersionTime(dateStr: string): string {
@@ -37,13 +48,30 @@ export function VersionPreview({
     isLoading,
     activeVersion,
     showDiff,
+    structuredChanges,
+    diffStats,
+    diffTruncated,
 }: VersionPreviewProps) {
+    const [diffMode, setDiffMode] = useState<DiffMode>('inline');
+
     const contentHtml = useMemo(() => {
         if (!detail?.contentBase64) return '';
+
         try {
             if (!showDiff) {
                 return base64ToHtml(detail.contentBase64);
             }
+
+            // 优先使用结构化 diff
+            if (structuredChanges && structuredChanges.length > 0) {
+                if (diffMode === 'side-by-side') {
+                    const { left, right } = structuredDiffToSideBySideHtml(structuredChanges);
+                    return `__SPLIT__${JSON.stringify({ left, right })}`;
+                }
+                return `<div class="version-diff-content">${structuredDiffToInlineHtml(structuredChanges)}</div>`;
+            }
+
+            // 降级到 Base64 inline diff
             const inlineDiffHtml = generateInlineDiff(
                 detail.contentBase64,
                 detail.prevContentBase64 ?? null
@@ -52,7 +80,11 @@ export function VersionPreview({
         } catch {
             return '<p class="text-destructive">版本内容解析失败</p>';
         }
-    }, [detail, showDiff]);
+    }, [detail, showDiff, structuredChanges, diffMode]);
+
+    // 判断是否为 side-by-side 模式
+    const isSideBySide = contentHtml.startsWith('__SPLIT__');
+    const sideBySideData = isSideBySide ? JSON.parse(contentHtml.slice('__SPLIT__'.length)) : null;
 
     if (isLoading) {
         return (
@@ -92,20 +124,70 @@ export function VersionPreview({
                     <p className="text-xs text-muted-foreground">
                         {formatVersionTime(detail.createdAt)}
                     </p>
-                    <span className="text-xs text-muted-foreground">·</span>
-                    <p className="text-xs text-muted-foreground">
-                        {showDiff ? '显示更改' : '仅看内容'}
-                    </p>
+                    {showDiff && diffStats && (
+                        <>
+                            <span className="text-xs text-muted-foreground">·</span>
+                            <span className="text-xs text-green-600 dark:text-green-400">
+                                +{diffStats.additions}
+                            </span>
+                            <span className="text-xs text-red-600 dark:text-red-400">
+                                -{diffStats.deletions}
+                            </span>
+                        </>
+                    )}
+                    {showDiff && (
+                        <>
+                            <div className="flex-1" />
+                            <div className="flex items-center gap-0.5 border border-border rounded-md p-0.5">
+                                <Button
+                                    variant={diffMode === 'inline' ? 'secondary' : 'ghost'}
+                                    size="sm"
+                                    className="h-6 px-2 text-[11px]"
+                                    onClick={() => setDiffMode('inline')}
+                                >
+                                    <AlignLeft className="h-3 w-3 mr-1" />
+                                    内联
+                                </Button>
+                                <Button
+                                    variant={diffMode === 'side-by-side' ? 'secondary' : 'ghost'}
+                                    size="sm"
+                                    className="h-6 px-2 text-[11px]"
+                                    onClick={() => setDiffMode('side-by-side')}
+                                >
+                                    <Columns2 className="h-3 w-3 mr-1" />
+                                    对比
+                                </Button>
+                            </div>
+                        </>
+                    )}
                 </div>
                 {detail.changeLog && (
                     <p className="text-xs text-foreground/70 mt-1 pl-6">{detail.changeLog}</p>
                 )}
+                {diffTruncated && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 pl-6">
+                        内容过长，部分差异已截断
+                    </p>
+                )}
             </div>
             <div className="flex-1 min-h-0 flex overflow-hidden bg-muted/40">
-                <div className="min-w-0 flex-1 hidden sm:block" aria-hidden />
-                <div className="flex-1 min-h-0 min-w-0 max-w-[900px] w-full shrink-0 border-l-2 border-border bg-background flex flex-col shadow-sm">
-                    <ViewerContent contentHtml={contentHtml} />
-                </div>
+                {isSideBySide ? (
+                    <div className="flex-1 flex gap-0 overflow-hidden">
+                        <div className="flex-1 min-w-0 border-r border-border overflow-auto">
+                            <ViewerContent contentHtml={sideBySideData!.left} />
+                        </div>
+                        <div className="flex-1 min-w-0 overflow-auto">
+                            <ViewerContent contentHtml={sideBySideData!.right} />
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <div className="min-w-0 flex-1 hidden sm:block" aria-hidden />
+                        <div className="flex-1 min-h-0 min-w-0 max-w-[900px] w-full shrink-0 border-l-2 border-border bg-background flex flex-col shadow-sm">
+                            <ViewerContent contentHtml={contentHtml} />
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

@@ -16,6 +16,9 @@ import {
     Heading2,
     Heading3,
     Pilcrow,
+    Eye,
+    Table as TableIcon,
+    Image as ImageIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -58,7 +61,11 @@ function ToolbarButton({
             </TooltipTrigger>
             <TooltipContent side="bottom">
                 <span>{tooltip}</span>
-                {shortcut && <span className="ml-2 opacity-60 text-[10px]">{shortcut}</span>}
+                {shortcut && (
+                    <kbd className="ml-2 rounded border border-border bg-muted px-1 py-0.5 font-mono text-[10px] leading-none">
+                        {shortcut}
+                    </kbd>
+                )}
             </TooltipContent>
         </Tooltip>
     );
@@ -69,14 +76,19 @@ export function EditorToolbar() {
 
     if (!editor) return null;
 
+    // 只读模式：显示精简提示条替代完整工具栏
+    if (isReadonly) {
+        return (
+            <div className="h-10 border-b border-border bg-muted/30 flex items-center px-4 gap-2 flex-shrink-0">
+                <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">只读模式 — 您只能查看此文档</span>
+            </div>
+        );
+    }
+
     return (
         <TooltipProvider delayDuration={300}>
-            <div
-                className={cn(
-                    'h-10 border-b border-border bg-card flex items-center px-3 gap-0.5 flex-shrink-0 overflow-x-auto',
-                    isReadonly && 'pointer-events-none opacity-40'
-                )}
-            >
+            <div className="h-10 border-b border-border bg-card flex items-center px-3 gap-0.5 flex-shrink-0 overflow-x-auto">
                 {/* 文本格式 */}
                 <ToolbarButton
                     onClick={() => editor.chain().focus().toggleBold().run()}
@@ -204,6 +216,34 @@ export function EditorToolbar() {
                     tooltip="分割线"
                 >
                     <Minus className="h-3.5 w-3.5" />
+                </ToolbarButton>
+
+                <Separator orientation="vertical" className="mx-1 h-5" />
+
+                {/* 表格与图片 */}
+                <ToolbarButton
+                    onClick={() =>
+                        editor
+                            .chain()
+                            .focus()
+                            .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+                            .run()
+                    }
+                    tooltip="插入表格"
+                >
+                    <TableIcon className="h-3.5 w-3.5" />
+                </ToolbarButton>
+
+                <ToolbarButton
+                    onClick={() => {
+                        const url = window.prompt('请输入图片 URL:');
+                        if (url) {
+                            editor.chain().focus().setImage({ src: url }).run();
+                        }
+                    }}
+                    tooltip="插入图片"
+                >
+                    <ImageIcon className="h-3.5 w-3.5" />
                 </ToolbarButton>
 
                 <Separator orientation="vertical" className="mx-1 h-5" />

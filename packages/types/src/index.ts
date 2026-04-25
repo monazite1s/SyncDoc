@@ -241,6 +241,7 @@ export interface DocumentVersionItem {
     version: number;
     type: VersionType;
     changeLog?: string;
+    label?: string;
     createdBy: string;
     createdAt: string;
     author: Pick<User, 'id' | 'username' | 'nickname'>;
@@ -263,9 +264,26 @@ export interface VersionDiffRequest {
     toVersion: number;
 }
 
+/** 结构化 diff 变更行 */
+export interface VersionDiffChange {
+    type: 'added' | 'removed' | 'unchanged';
+    content: string;
+}
+
 /** POST /api/documents/:id/versions/diff 响应 */
 export interface VersionDiffResponse {
     fromVersion: number;
     toVersion: number;
-    diffHtml: string;
+    changes: VersionDiffChange[];
+    stats: {
+        additions: number;
+        deletions: number;
+        unchanged: number;
+    };
+    truncated: boolean;
+}
+
+/** PATCH /api/documents/:id/versions/:version/label 请求 */
+export interface UpdateVersionLabelRequest {
+    label?: string;
 }

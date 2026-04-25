@@ -166,7 +166,7 @@ export class VersionsService {
     }
 
     /**
-     * 版本 Diff：将两个版本转为 Markdown 后做行级 diff，输出人类可读的对比 HTML
+     * 版本 Diff：将两个版本转为 Markdown 后做行级 diff，返回结构化变更数据
      */
     async diffVersions(documentId: string, fromVersion: number, toVersion: number, userId: string) {
         await this._requireReadAccess(documentId, userId);
@@ -188,37 +188,38 @@ export class VersionsService {
         const fromText = this._yjsStateToMarkdown(fromRecord.content);
         const toText = this._yjsStateToMarkdown(toRecord.content);
 
-        // 行级 diff：每行（段落/标题）作为最小比较单位
-        const changes = Diff.diffLines(fromText, toText);
+        // 行级 diff
+        const rawChanges = Diff.diffLines(fromText, toText);
 
-        const MAX_LINES = 2000;
+        const MAX_LINES = 5000;
         let lineCount = 0;
-        const htmlParts: string[] = [];
+        let truncated = false;
 
-        for (const change of changes) {
+        const changes: Array<{ type: 'added' | 'removed' | 'unchanged'; content: string }> = [];
+        const stats = { additions: 0, deletions: 0, unchanged: 0 };
+
+        for (const change of rawChanges) {
+            if (truncated) break;
+
             const lines = change.value.split('\n').filter((l, i, arr) => {
-                // diffLines 末尾可能有空字符串
                 return !(i === arr.length - 1 && l === '');
             });
 
             for (const line of lines) {
                 if (lineCount >= MAX_LINES) {
-                    htmlParts.push(
-                        '<div class="diff-truncated">…（内容过长，已截断剩余部分）</div>'
-                    );
+                    truncated = true;
                     break;
                 }
-                const escaped = line
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
 
                 if (change.added) {
-                    htmlParts.push(`<div class="diff-line diff-added">+ ${escaped}</div>`);
+                    changes.push({ type: 'added', content: line });
+                    stats.additions++;
                 } else if (change.removed) {
-                    htmlParts.push(`<div class="diff-line diff-removed">- ${escaped}</div>`);
+                    changes.push({ type: 'removed', content: line });
+                    stats.deletions++;
                 } else {
-                    htmlParts.push(`<div class="diff-line diff-unchanged">  ${escaped}</div>`);
+                    changes.push({ type: 'unchanged', content: line });
+                    stats.unchanged++;
                 }
                 lineCount++;
             }
@@ -227,7 +228,9 @@ export class VersionsService {
         return {
             fromVersion,
             toVersion,
-            diffHtml: htmlParts.join(''),
+            changes,
+            stats,
+            truncated,
         };
     }
 
@@ -378,6 +381,7 @@ export class VersionsService {
         version: number;
         type: VersionType;
         changeLog: string | null;
+        label: string | null;
         createdBy: string;
         createdAt: Date;
         author: { id: string; username: string; nickname: string | null };
@@ -388,9 +392,35 @@ export class VersionsService {
             version: version.version,
             type: version.type,
             changeLog: version.changeLog,
+            label: version.label,
             createdBy: version.createdBy,
             createdAt: version.createdAt.toISOString(),
             author: version.author,
         };
+    }
+
+    /**
+     * 更新版本标签
+     */
+    async updateLabel(documentId: string, version: number, userId: string, label?: string) {
+        await this._requireWriteAccess(documentId, userId);
+
+        const versionRecord = await this._prisma.documentVersion.findUnique({
+            where: { documentId_version: { documentId, version } },
+        });
+
+        if (!versionRecord) {
+            throw new NotFoundException(`版本 ${version} 不存在`);
+        }
+
+        const updated = await this._prisma.documentVersion.update({
+            where: { id: versionRecord.id },
+            data: { label: label ?? null },
+            include: {
+                author: { select: { id: true, username: true, nickname: true } },
+            },
+        });
+
+        return this._formatVersionItem(updated);
     }
 }

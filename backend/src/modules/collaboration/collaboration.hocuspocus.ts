@@ -105,6 +105,16 @@ export class CollaborationHocuspocus {
                         userId,
                         stateBuffer
                     );
+
+                    // 记录编辑归属（仅在用户变化时写入）
+                    const latestVersion =
+                        await collaborationService.getLatestVersionNumber(documentName);
+                    await collaborationService.recordEdit(
+                        documentName,
+                        userId,
+                        stateBuffer,
+                        latestVersion
+                    );
                 }
             },
 
@@ -138,6 +148,31 @@ export class CollaborationHocuspocus {
             await this._server.destroy();
             this._server = null;
             this._logger.log('Hocuspocus 服务器已关闭');
+        }
+    }
+
+    /**
+     * 向文档的所有在线客户端广播自定义消息
+     */
+    async broadcastMessage(documentId: string, payload: Record<string, unknown>): Promise<void> {
+        if (!this._server) return;
+
+        try {
+            const server = this._server as unknown as {
+                documents: Map<
+                    string,
+                    { connections: Map<number, { send: (msg: unknown) => void }> }
+                >;
+            };
+            const docEntry = server.documents.get(documentId);
+            if (!docEntry) return;
+
+            const message = JSON.stringify({ type: 'custom', payload });
+            for (const connection of docEntry.connections.values()) {
+                connection.send(message);
+            }
+        } catch (error) {
+            this._logger.error(`广播消息到文档 ${documentId} 失败: ${(error as Error).message}`);
         }
     }
 }

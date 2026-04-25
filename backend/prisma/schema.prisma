@@ -136,6 +136,7 @@ model DocumentVersion {
   type        VersionType @default(AUTO)
   content     Bytes       // Yjs document state snapshot (binary)
   changeLog   String?     // 版本备注
+  label       String?     // 用户自定义标签
   summary     String?     // 自动生成摘要（预留）
   createdBy   String
   createdAt   DateTime    @default(now())

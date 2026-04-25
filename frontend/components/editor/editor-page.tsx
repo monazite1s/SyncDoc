@@ -14,6 +14,8 @@ import { EditorDocumentChrome } from './editor-document-chrome';
 import { EditorToolbar } from './editor-toolbar';
 import { TiptapEditor } from './tiptap-editor';
 import { EditorStatusBar } from './editor-status-bar';
+import { ConnectionBanner } from './connection-banner';
+import { EditorStyles } from './editor-styles';
 
 interface EditorPageProps {
     paramsPromise: Promise<{ id: string }>;
@@ -126,9 +128,11 @@ export default function EditorPage({ paramsPromise }: EditorPageProps) {
 
     return (
         <EditorProvider documentId={documentId} wsToken={wsToken} isReadonly={isReadonly}>
+            <EditorStyles />
             <div className="h-full flex min-h-0 flex-col overflow-hidden bg-background">
                 {/* 上：操作区（全宽） */}
                 <EditorHeader document={document} isReadonly={isReadonly} />
+                <ConnectionBanner />
                 {/* 下：编辑区 — 文档标题/元信息 → 工具栏 → 正文 */}
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/25">
                     <div className="w-full shrink-0 border-b border-border/60 bg-background px-4 py-4 sm:px-6">

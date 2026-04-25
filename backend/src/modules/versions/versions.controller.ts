@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { VersionsService } from './versions.service';
 import { CreateVersionDto } from './dto/create-version.dto';
 import { VersionDiffDto } from './dto/version-diff.dto';
+import { UpdateVersionLabelDto } from './dto/update-version-label.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { Request } from 'express';
 import type { RequestUser } from '@collab/types';
@@ -63,6 +64,22 @@ export class VersionsController {
         @Req() req: AuthRequest
     ) {
         return this._versionsService.restoreVersion(documentId, parseInt(version), req.user.userId);
+    }
+
+    // 更新版本标签
+    @Patch(':version/label')
+    async updateLabel(
+        @Param('documentId') documentId: string,
+        @Param('version') version: string,
+        @Body() dto: UpdateVersionLabelDto,
+        @Req() req: AuthRequest
+    ) {
+        return this._versionsService.updateLabel(
+            documentId,
+            parseInt(version),
+            req.user.userId,
+            dto.label
+        );
     }
 
     // 版本 Diff

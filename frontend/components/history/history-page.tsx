@@ -7,6 +7,7 @@ import {
     ArrowLeft,
     ChevronLeft,
     ChevronRight,
+    GitCompareArrows,
     Loader2,
     RotateCcw,
 } from 'lucide-react';
@@ -25,7 +26,7 @@ import {
 import { VersionTimeline } from './version-timeline';
 import { VersionPreview } from './version-preview';
 import { VersionType } from '@collab/types';
-import type { DocumentVersionItem } from '@collab/types';
+import type { DocumentVersionItem, VersionDiffChange } from '@collab/types';
 import { format, isToday, isYesterday } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
@@ -86,6 +87,16 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
     const [selectedDetail, setSelectedDetail] = useState<
         Awaited<ReturnType<typeof versionsApi.get>>['data'] | null
     >(null);
+    const [structuredChanges, setStructuredChanges] = useState<VersionDiffChange[] | undefined>();
+    const [diffStats, setDiffStats] = useState<{
+        additions: number;
+        deletions: number;
+        unchanged: number;
+    }>();
+    const [diffTruncated, setDiffTruncated] = useState(false);
+    const [compareMode, setCompareMode] = useState(false);
+    const [compareFrom, setCompareFrom] = useState<number | null>(null);
+    const [compareTo, setCompareTo] = useState<number | null>(null);
 
     const filteredItems = useMemo(() => {
         if (typeFilter === 'ALL') return listState.items;
@@ -160,13 +171,42 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
         let cancelled = false;
         async function loadSelectedData() {
             setSelectedDetail(null);
+            setStructuredChanges(undefined);
+            setDiffStats(undefined);
+            setDiffTruncated(false);
 
             if (!selectedVersion) return;
 
             try {
                 setIsPreviewLoading(true);
-                const response = await versionsApi.get(documentId, selectedVersion);
-                if (!cancelled) setSelectedDetail(response.data);
+                const [detailRes, ...diffResult] = await Promise.all([
+                    versionsApi.get(documentId, selectedVersion),
+                    // 获取与前一版本的 diff
+                    selectedVersion > 1
+                        ? versionsApi
+                              .diff(documentId, {
+                                  fromVersion: selectedVersion - 1,
+                                  toVersion: selectedVersion,
+                              })
+                              .catch(() => null)
+                        : Promise.resolve(null),
+                ]);
+
+                if (cancelled) return;
+
+                setSelectedDetail(detailRes.data);
+
+                const diffRes = diffResult[0];
+                if (diffRes?.data) {
+                    const d = diffRes.data as {
+                        changes: VersionDiffChange[];
+                        stats: { additions: number; deletions: number; unchanged: number };
+                        truncated: boolean;
+                    };
+                    setStructuredChanges(d.changes);
+                    setDiffStats(d.stats);
+                    setDiffTruncated(d.truncated);
+                }
             } catch (error) {
                 if (!cancelled) {
                     const message = error instanceof Error ? error.message : '加载版本内容失败';
@@ -185,7 +225,60 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
     }, [documentId, selectedVersion]);
 
     const handleSelectVersion = (version: number) => {
+        if (compareMode) {
+            // 对比模式：第一次点击选 from，第二次选 to
+            if (compareFrom === null) {
+                setCompareFrom(version);
+            } else if (compareTo === null && version !== compareFrom) {
+                setCompareTo(version);
+            } else {
+                // 重新选择
+                setCompareFrom(version);
+                setCompareTo(null);
+                setStructuredChanges(undefined);
+                setDiffStats(undefined);
+            }
+            return;
+        }
         setSelectedVersion((prev) => (prev === version ? null : version));
+    };
+
+    // 对比模式下，两个版本都选定后获取 diff
+    useEffect(() => {
+        if (!compareMode || !compareFrom || !compareTo) return;
+        let cancelled = false;
+
+        async function loadCompareDiff() {
+            try {
+                const res = await versionsApi.diff(documentId, {
+                    fromVersion: Math.min(compareFrom!, compareTo!),
+                    toVersion: Math.max(compareFrom!, compareTo!),
+                });
+                if (cancelled) return;
+                const d = res.data as {
+                    changes: VersionDiffChange[];
+                    stats: { additions: number; deletions: number; unchanged: number };
+                    truncated: boolean;
+                };
+                setStructuredChanges(d.changes);
+                setDiffStats(d.stats);
+                setDiffTruncated(d.truncated);
+                setSelectedDetail(null); // 对比模式不使用单版本 detail
+            } catch {
+                if (!cancelled) toast.error('加载对比数据失败');
+            }
+        }
+        void loadCompareDiff();
+        return () => {
+            cancelled = true;
+        };
+    }, [compareMode, compareFrom, compareTo, documentId]);
+
+    const handleLabelUpdate = (version: number, label: string | undefined) => {
+        setListState((prev) => ({
+            ...prev,
+            items: prev.items.map((item) => (item.version === version ? { ...item, label } : item)),
+        }));
     };
 
     const handleLoadMore = async () => {
@@ -306,15 +399,31 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
                         <div className="flex items-center gap-2">
                             <Button
                                 size="sm"
-                                variant={showDiff ? 'default' : 'outline'}
-                                onClick={() => setShowDiff((prev) => !prev)}
-                                disabled={!selectedVersion}
+                                variant={compareMode ? 'default' : 'outline'}
+                                onClick={() => {
+                                    setCompareMode((prev) => !prev);
+                                    setCompareFrom(null);
+                                    setCompareTo(null);
+                                    setStructuredChanges(undefined);
+                                    setDiffStats(undefined);
+                                }}
                             >
-                                {showDiff ? '显示更改' : '仅看内容'}
+                                <GitCompareArrows className="h-4 w-4 mr-1.5" />
+                                {compareMode ? '退出对比' : '版本对比'}
                             </Button>
+                            {!compareMode && (
+                                <Button
+                                    size="sm"
+                                    variant={showDiff ? 'default' : 'outline'}
+                                    onClick={() => setShowDiff((prev) => !prev)}
+                                    disabled={!selectedVersion}
+                                >
+                                    {showDiff ? '显示更改' : '仅看内容'}
+                                </Button>
+                            )}
                             <Button
                                 size="sm"
-                                disabled={!restoreTargetVersion || isRestoring}
+                                disabled={compareMode ? true : !restoreTargetVersion || isRestoring}
                                 onClick={() => setRestoreConfirmOpen(true)}
                             >
                                 {isRestoring ? (
@@ -330,13 +439,19 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
                     <VersionPreview
                         detail={selectedDetail}
                         isLoading={isPreviewLoading}
-                        activeVersion={selectedVersion}
-                        showDiff={showDiff}
+                        activeVersion={compareMode ? compareFrom : selectedVersion}
+                        showDiff={compareMode ? true : showDiff}
+                        structuredChanges={structuredChanges}
+                        diffStats={diffStats}
+                        diffTruncated={diffTruncated}
                     />
                 </div>
                 <VersionTimeline
                     versions={filteredItems}
-                    selectedVersion={selectedVersion}
+                    selectedVersion={compareMode ? compareFrom : selectedVersion}
+                    compareMode={compareMode}
+                    compareFrom={compareFrom}
+                    compareTo={compareTo}
                     total={listState.total}
                     totalLoaded={listState.items.length}
                     hasMore={listState.hasMore}
@@ -345,6 +460,7 @@ export default function HistoryPage({ paramsPromise }: HistoryPageProps) {
                     onTypeFilterChange={setTypeFilter}
                     onSelectVersion={handleSelectVersion}
                     onLoadMore={() => void handleLoadMore()}
+                    onLabelUpdate={handleLabelUpdate}
                 />
             </div>
 
