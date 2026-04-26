@@ -27,4 +27,10 @@ export const authApi = {
 
     // 获取 WebSocket 认证 token（用于 Hocuspocus 握手）
     getWsToken: () => api.get<WsTokenResponse>('/auth/ws-token'),
+
+    // 搜索用户
+    searchUsers: (keyword: string) =>
+        api.get<Array<Pick<User, 'id' | 'username' | 'nickname' | 'avatar'>>>(
+            `/auth/search?keyword=${encodeURIComponent(keyword)}`
+        ),
 };

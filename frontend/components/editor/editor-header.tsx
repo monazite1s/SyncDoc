@@ -11,6 +11,7 @@ import {
     MoreVertical,
     Save,
     Trash2,
+    UserPlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { DocumentDetail } from '@collab/types';
@@ -37,6 +38,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Textarea } from '@/components/ui/textarea';
 import { useEditorContext } from './editor-provider';
 import { getCursorColor } from '@/lib/editor/cursor-colors';
+import { ShareDialog } from '@/components/documents/share-dialog';
 
 interface EditorHeaderProps {
     document: DocumentDetail;
@@ -55,6 +57,7 @@ export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
     const [saveVersionOpen, setSaveVersionOpen] = useState(false);
     const [changeLog, setChangeLog] = useState('');
     const [isSavingVersion, setIsSavingVersion] = useState(false);
+    const [shareOpen, setShareOpen] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isOwner = document.userRole === 'OWNER';
     const canWrite = document.userRole === 'OWNER' || document.userRole === 'EDITOR';
@@ -147,6 +150,11 @@ export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
         }
     }
 
+    async function refreshDocument() {
+        // 由父组件重新获取文档数据，此处仅作为 placeholder
+        // ShareDialog 的 onUpdate 触发后，父页面会重新加载数据
+    }
+
     const exitTooltip =
         connectionStatus === 'disconnected'
             ? '网络断开，建议稍后确认内容是否已保存'
@@ -202,6 +210,16 @@ export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
                     >
                         <History className="h-4 w-4" />
                         历史版本
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5"
+                        onClick={() => setShareOpen(true)}
+                    >
+                        <UserPlus className="h-4 w-4" />
+                        分享
                     </Button>
 
                     {isReadonly && (
@@ -269,6 +287,17 @@ export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
                     </div>
                 </div>
             </header>
+
+            {/* 分享弹窗 */}
+            <ShareDialog
+                documentId={document.id}
+                isPublic={document.isPublic}
+                collaborators={document.collaborators}
+                currentUserId={document.authorId}
+                open={shareOpen}
+                onOpenChange={setShareOpen}
+                onUpdate={refreshDocument}
+            />
 
             {/* 保存版本弹窗 */}
             <Dialog open={saveVersionOpen} onOpenChange={setSaveVersionOpen}>

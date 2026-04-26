@@ -50,4 +50,14 @@ export const documentsApi = {
     // 移除协作者
     removeCollaborator: (documentId: string, userId: string) =>
         api.delete<void>(`/documents/${documentId}/collaborators/${userId}`),
+
+    // 更新协作者角色
+    updateCollaboratorRole: (documentId: string, userId: string, role: 'EDITOR' | 'VIEWER') =>
+        api.patch<{ success: boolean; role: string }>(
+            `/documents/${documentId}/collaborators/${userId}`,
+            {
+                userId,
+                role,
+            }
+        ),
 };

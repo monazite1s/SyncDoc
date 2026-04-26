@@ -426,4 +426,31 @@ export class DocumentsService {
 
         return { success: true };
     }
+
+    /**
+     * 更新协作者角色
+     */
+    async updateCollaboratorRole(
+        documentId: string,
+        targetUserId: string,
+        role: 'EDITOR' | 'VIEWER',
+        userId: string
+    ) {
+        await this._requireOwnerAccess(documentId, userId);
+
+        const collaborator = await this._prisma.documentCollaborator.findUnique({
+            where: { documentId_userId: { documentId, userId: targetUserId } },
+        });
+
+        if (!collaborator) {
+            throw new NotFoundException('该用户不是此文档的协作者');
+        }
+
+        const updated = await this._prisma.documentCollaborator.update({
+            where: { id: collaborator.id },
+            data: { role },
+        });
+
+        return { success: true, role: updated.role };
+    }
 }

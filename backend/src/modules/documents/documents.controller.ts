@@ -4,6 +4,7 @@ import {
     Post,
     Put,
     Delete,
+    Patch,
     Body,
     Param,
     Query,
@@ -87,5 +88,16 @@ export class DocumentsController {
         @Req() req: AuthRequest
     ) {
         return this._documentsService.removeCollaborator(id, userId, req.user.userId);
+    }
+
+    // 更新协作者角色
+    @Patch(':id/collaborators/:userId')
+    async updateCollaboratorRole(
+        @Param('id') id: string,
+        @Param('userId') userId: string,
+        @Body() dto: AddCollaboratorDto,
+        @Req() req: AuthRequest
+    ) {
+        return this._documentsService.updateCollaboratorRole(id, userId, dto.role, req.user.userId);
     }
 }

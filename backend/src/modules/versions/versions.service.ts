@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nest
 import { PrismaService } from '../../prisma/prisma.service';
 import { DocumentStatus, CollaboratorRole, VersionType } from '@prisma/client';
 import { CreateVersionDto } from './dto/create-version.dto';
+import { CollaborationHocuspocus } from '../collaboration/collaboration.hocuspocus';
 import * as Y from 'yjs';
 import * as Diff from 'diff';
 
@@ -9,7 +10,10 @@ import * as Diff from 'diff';
 export class VersionsService {
     private readonly _logger = new Logger(VersionsService.name);
 
-    constructor(private _prisma: PrismaService) {}
+    constructor(
+        private _prisma: PrismaService,
+        private _hocuspocus: CollaborationHocuspocus
+    ) {}
 
     // ==================== 权限检查 ====================
 
@@ -284,6 +288,12 @@ export class VersionsService {
         });
 
         this._logger.log(`文档 ${documentId} 已恢复到版本 ${version}，新快照 v${nextVersion}`);
+
+        // 通知所有在线客户端
+        await this._hocuspocus.broadcastMessage(documentId, {
+            type: 'version-restored',
+            message: `文档已被恢复到版本 v${version}`,
+        });
 
         return this._formatVersionItem(snapshot);
     }

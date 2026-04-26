@@ -4,7 +4,16 @@ import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
-import { Archive, Eye, FileText, MoreHorizontal, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import {
+    Archive,
+    Eye,
+    FileText,
+    MoreHorizontal,
+    Pencil,
+    RotateCcw,
+    Share2,
+    Trash2,
+} from 'lucide-react';
 import type { DocumentListItem } from '@collab/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,6 +39,7 @@ interface DocumentTableProps {
     onArchive: (id: string) => void;
     onRestore: (id: string) => void;
     onDelete: (id: string) => void;
+    onShare?: (id: string) => void;
 }
 
 function canEdit(document: DocumentListItem): boolean {
@@ -46,6 +56,7 @@ export function DocumentTable({
     onArchive,
     onRestore,
     onDelete,
+    onShare,
 }: DocumentTableProps) {
     const router = useRouter();
     const [colWidths, setColWidths] = useState<number[]>([200, 150, 140, 160, 160]);
@@ -197,6 +208,14 @@ export function DocumentTable({
                                                 <Eye className="h-4 w-4 mr-2" />
                                                 查看
                                             </DropdownMenuItem>
+                                            {canEdit(document) && !archived && onShare && (
+                                                <DropdownMenuItem
+                                                    onClick={() => onShare(document.id)}
+                                                >
+                                                    <Share2 className="h-4 w-4 mr-2" />
+                                                    分享
+                                                </DropdownMenuItem>
+                                            )}
                                             {canEdit(document) && !archived && (
                                                 <DropdownMenuItem
                                                     onClick={() =>

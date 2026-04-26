@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
+import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { VersionsModule } from './modules/versions/versions.module';
@@ -25,6 +26,9 @@ import configuration from './config/configuration';
 
         // Database
         PrismaModule,
+
+        // Cache
+        RedisModule,
 
         // Feature modules
         AuthModule,

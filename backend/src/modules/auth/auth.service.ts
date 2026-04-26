@@ -241,4 +241,36 @@ export class AuthService {
 
         return { token, refreshToken };
     }
+
+    /**
+     * 搜索用户（按 username 或 email 模糊匹配）
+     */
+    async searchUsers(keyword: string, field?: 'username' | 'email') {
+        const searchField = field ?? 'username';
+        const where =
+            searchField === 'email'
+                ? { email: { contains: keyword, mode: 'insensitive' as const } }
+                : {
+                      OR: [
+                          { username: { contains: keyword, mode: 'insensitive' as const } },
+                          { nickname: { contains: keyword, mode: 'insensitive' as const } },
+                      ],
+                  };
+
+        const users = await this._prisma.user.findMany({
+            where: {
+                ...where,
+                status: 'ACTIVE',
+            },
+            select: {
+                id: true,
+                username: true,
+                nickname: true,
+                avatar: true,
+            },
+            take: 10,
+        });
+
+        return users;
+    }
 }

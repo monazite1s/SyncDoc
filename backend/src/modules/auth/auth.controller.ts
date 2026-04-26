@@ -4,6 +4,7 @@ import {
     Get,
     Patch,
     Body,
+    Query,
     UseGuards,
     Req,
     Res,
@@ -12,6 +13,8 @@ import {
     UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { ThrottleGuard } from '../../common/guards/throttle.guard';
+import { Throttle } from '../../common/decorators/throttle.decorator';
 import { Request, Response } from 'express';
 import type { RequestUser } from '@collab/types';
 import { AuthService } from './auth.service';
@@ -29,6 +32,8 @@ export class AuthController {
     constructor(private readonly _authService: AuthService) {}
 
     @Post('register')
+    @UseGuards(ThrottleGuard)
+    @Throttle(3, 60)
     async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
         const result = await this._authService.register(dto);
         this._setTokenCookies(res, result.token, result.refreshToken);
@@ -36,6 +41,8 @@ export class AuthController {
     }
 
     @Post('login')
+    @UseGuards(ThrottleGuard)
+    @Throttle(5, 60)
     @HttpCode(HttpStatus.OK)
     async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
         const result = await this._authService.login(dto);
@@ -98,6 +105,15 @@ export class AuthController {
             throw new UnauthorizedException('缺少认证 token');
         }
         return { token };
+    }
+
+    // 搜索用户
+    @Get('search')
+    async searchUsers(
+        @Query('keyword') keyword: string,
+        @Query('field') field?: 'username' | 'email'
+    ) {
+        return this._authService.searchUsers(keyword, field);
     }
 
     /**

@@ -4,6 +4,8 @@ import { CreateVersionDto } from './dto/create-version.dto';
 import { VersionDiffDto } from './dto/version-diff.dto';
 import { UpdateVersionLabelDto } from './dto/update-version-label.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ThrottleGuard } from '../../common/guards/throttle.guard';
+import { Throttle } from '../../common/decorators/throttle.decorator';
 import type { Request } from 'express';
 import type { RequestUser } from '@collab/types';
 
@@ -58,6 +60,8 @@ export class VersionsController {
 
     // 恢复版本
     @Post(':version/restore')
+    @UseGuards(ThrottleGuard)
+    @Throttle(10, 60)
     async restoreVersion(
         @Param('documentId') documentId: string,
         @Param('version') version: string,
