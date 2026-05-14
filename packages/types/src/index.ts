@@ -15,6 +15,7 @@ export enum DocumentStatus {
 
 export enum CollaboratorRole {
     OWNER = 'OWNER',
+    ADMIN = 'ADMIN',
     EDITOR = 'EDITOR',
     VIEWER = 'VIEWER',
 }
@@ -183,6 +184,7 @@ export interface DocumentDetail {
     isPublic: boolean;
     status: DocumentStatus;
     authorId: string;
+    pendingOwnerId?: string | null;
     createdAt: string;
     updatedAt: string;
     author: Pick<User, 'id' | 'username' | 'nickname' | 'avatar'>;

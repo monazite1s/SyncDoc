@@ -41,7 +41,7 @@ export function EditorStatusBar({ isReadonly }: EditorStatusBarProps) {
 
             {/* 中间：在线人数和输入状态 */}
             {onlineCount > 0 && (
-                <div className="flex items-center gap-1 mr-4">
+                <div className="flex items-center gap-1.5 mr-3 pl-3 border-l border-border">
                     <Users className="h-3 w-3" />
                     <span>{onlineCount} 人在线</span>
                     {typingUsers.length > 0 && (
@@ -54,7 +54,7 @@ export function EditorStatusBar({ isReadonly }: EditorStatusBarProps) {
 
             {/* 右侧：字数统计 */}
             {editor && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 pl-3 border-l border-border">
                     <span>{wordCount} 词</span>
                     <span className="opacity-40">·</span>
                     <span>{charCount} 字符</span>

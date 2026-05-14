@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     ArrowLeft,
@@ -10,10 +11,12 @@ import {
     Trash2,
     Globe,
     Lock,
+    UserPlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { DocumentViewContent } from '@collab/types';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -23,16 +26,24 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { documentsApi } from '@/lib/api/documents';
+import { DOCUMENT_ROLE_LABELS } from '@/lib/document-roles';
+import { ShareDialog } from '@/components/documents/share-dialog';
+import { useAuthStore } from '@/stores/auth.store';
 import { ViewerMetaBar } from './viewer-meta-bar';
 
 interface ViewerHeaderProps {
     document: DocumentViewContent;
     canEdit: boolean;
+    /** 分享/协作者变更后刷新文档元数据与展示用内容 */
+    onDocumentMetaRefresh?: () => Promise<void>;
 }
 
-export function ViewerHeader({ document, canEdit }: ViewerHeaderProps) {
+export function ViewerHeader({ document, canEdit, onDocumentMetaRefresh }: ViewerHeaderProps) {
     const router = useRouter();
+    const currentUser = useAuthStore((s) => s.user);
     const isOwner = document.userRole === 'OWNER';
+    const canShareDoc = document.userRole === 'OWNER' || document.userRole === 'ADMIN';
+    const [shareOpen, setShareOpen] = useState(false);
 
     async function handleArchive() {
         try {
@@ -93,6 +104,15 @@ export function ViewerHeader({ document, canEdit }: ViewerHeaderProps) {
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
+                    {document.userRole ? (
+                        <Badge
+                            variant="secondary"
+                            className="hidden sm:inline-flex h-7 px-2 text-xs font-normal shrink-0 max-w-[8rem]"
+                            title="您在此文档中的权限"
+                        >
+                            {DOCUMENT_ROLE_LABELS[document.userRole]}
+                        </Badge>
+                    ) : null}
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -106,6 +126,18 @@ export function ViewerHeader({ document, canEdit }: ViewerHeaderProps) {
                         <History className="h-4 w-4" />
                         历史版本
                     </Button>
+
+                    {canShareDoc && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5"
+                            onClick={() => setShareOpen(true)}
+                        >
+                            <UserPlus className="h-4 w-4" />
+                            分享
+                        </Button>
+                    )}
 
                     {/* 编辑按钮 */}
                     {canEdit && (
@@ -150,6 +182,17 @@ export function ViewerHeader({ document, canEdit }: ViewerHeaderProps) {
 
             {/* 第二行：元数据 */}
             <ViewerMetaBar document={document} />
+
+            <ShareDialog
+                documentId={document.id}
+                isPublic={document.isPublic}
+                collaborators={document.collaborators}
+                currentUserId={currentUser?.id ?? ''}
+                currentUserRole={document.userRole}
+                open={shareOpen}
+                onOpenChange={setShareOpen}
+                onUpdate={() => void (onDocumentMetaRefresh?.() ?? Promise.resolve())}
+            />
         </header>
     );
 }

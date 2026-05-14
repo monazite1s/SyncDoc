@@ -45,8 +45,12 @@ export function RegisterForm() {
     };
 
     return (
-        <div className="bg-card p-8 rounded-lg shadow-md border border-border">
-            <h1 className="text-2xl font-bold text-center mb-6 text-foreground">注册</h1>
+        <div className="bg-card p-8 sm:p-10 rounded-xl shadow-sm border border-border">
+            <div className="text-center mb-8">
+                <div className="mx-auto mb-4 h-1 w-8 rounded-full bg-primary" />
+                <h1 className="text-2xl font-bold text-foreground">注册</h1>
+                <p className="mt-1.5 text-sm text-muted-foreground">创建账号，开始协作</p>
+            </div>
 
             <Form {...form}>
                 <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-4">
@@ -136,12 +140,12 @@ export function RegisterForm() {
                 </form>
             </Form>
 
-            <p className="mt-4 text-center text-sm text-muted-foreground">
+            <div className="mt-6 pt-4 border-t border-border text-center text-sm text-muted-foreground">
                 已有账号？{' '}
-                <Link href="/login" className="text-primary hover:underline">
+                <Link href="/login" className="text-primary font-medium hover:underline">
                     登录
                 </Link>
-            </p>
+            </div>
         </div>
     );
 }

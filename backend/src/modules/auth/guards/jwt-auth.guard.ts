@@ -1,14 +1,17 @@
 import { Injectable, ExecutionContext } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Reflector } from '@nestjs/core';
+import { IS_PUBLIC_KEY } from '../../../common/decorators/public.decorator';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-    canActivate(context: ExecutionContext) {
-        const request = context.switchToHttp().getRequest();
+    constructor(private readonly _reflector: Reflector) {
+        super();
+    }
 
-        // 公开路由：注册和登录不需要认证
-        const publicPaths = ['/api/auth/register', '/api/auth/login', '/api/auth/refresh'];
-        if (publicPaths.includes(request.url)) {
+    canActivate(context: ExecutionContext) {
+        const isPublic = this._reflector.get<boolean>(IS_PUBLIC_KEY, context.getHandler());
+        if (isPublic) {
             return true;
         }
 

@@ -15,6 +15,8 @@ import { DocumentsService } from './documents.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { AddCollaboratorDto } from './dto/add-collaborator.dto';
+import { TransferOwnershipDto } from './dto/transfer-ownership.dto';
+import { MoveDocumentDto } from './dto/move-document.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { Request } from 'express';
 import type { RequestUser } from '@collab/types';
@@ -64,6 +66,12 @@ export class DocumentsController {
         return this._documentsService.update(id, req.user.userId, dto);
     }
 
+    // 移动文档（修改层级和排序）
+    @Patch(':id/move')
+    async move(@Param('id') id: string, @Body() dto: MoveDocumentDto, @Req() req: AuthRequest) {
+        return this._documentsService.moveDocument(id, req.user.userId, dto);
+    }
+
     // 删除文档 (软删除)
     @Delete(':id')
     async remove(@Param('id') id: string, @Req() req: AuthRequest) {
@@ -99,5 +107,47 @@ export class DocumentsController {
         @Req() req: AuthRequest
     ) {
         return this._documentsService.updateCollaboratorRole(id, userId, dto.role, req.user.userId);
+    }
+
+    // 发起所有权转让
+    @Post(':id/transfer-ownership')
+    async requestTransferOwnership(
+        @Param('id') id: string,
+        @Body() dto: TransferOwnershipDto,
+        @Req() req: AuthRequest
+    ) {
+        return this._documentsService.requestTransferOwnership(
+            id,
+            req.user.userId,
+            dto.targetUserId
+        );
+    }
+
+    // 接受所有权转让
+    @Post(':id/accept-ownership')
+    async acceptTransferOwnership(@Param('id') id: string, @Req() req: AuthRequest) {
+        return this._documentsService.acceptTransferOwnership(id, req.user.userId);
+    }
+
+    // 取消所有权转让
+    @Delete(':id/transfer-ownership')
+    async cancelTransferOwnership(@Param('id') id: string, @Req() req: AuthRequest) {
+        return this._documentsService.cancelTransferOwnership(id, req.user.userId);
+    }
+
+    // 获取活动日志
+    @Get(':id/activity-logs')
+    async getActivityLogs(
+        @Param('id') id: string,
+        @Query('page') page: string = '1',
+        @Query('limit') limit: string = '20',
+        @Req() req: AuthRequest
+    ) {
+        return this._documentsService.getActivityLogs(
+            id,
+            req.user.userId,
+            Number(page),
+            Number(limit)
+        );
     }
 }

@@ -102,10 +102,10 @@ export class AuthService {
     }
 
     /**
-     * 刷新 access token
+     * 刷新 access token（refresh 轮换：旧 session 作废后签发新对，降低被盗用窗口）
      */
     async refreshToken(oldRefreshToken: string) {
-        // 查找 session
+        // 按 refresh 查库，与登录时写入的 Session 行对应
         const session = await this._prisma.session.findUnique({
             where: { refreshToken: oldRefreshToken },
             include: { user: true },
@@ -115,13 +115,13 @@ export class AuthService {
             throw new UnauthorizedException('无效的 refresh token');
         }
 
-        // 检查是否过期
+        // 服务端以 expiresAt 为准，过期则清理并要求重新登录
         if (new Date() > session.expiresAt) {
             await this._prisma.session.delete({ where: { id: session.id } });
             throw new UnauthorizedException('refresh token 已过期，请重新登录');
         }
 
-        // 删除旧 session，生成新的 token
+        // 轮换：删旧 Session → 新 access + 新 refresh；控制器再 Set-Cookie 写回浏览器
         await this._prisma.session.delete({ where: { id: session.id } });
         const { token, refreshToken } = await this._generateTokens(
             session.user.id,

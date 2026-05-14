@@ -34,8 +34,8 @@ export function ViewerContent({ contentHtml }: ViewerContentProps) {
     }, [contentHtml]);
 
     return (
-        <main className="flex-1 overflow-auto" data-doc-scroll-root>
-            <div className="max-w-[800px] mx-auto px-6 py-8">
+        <main className="flex-1 overflow-auto bg-muted/30" data-doc-scroll-root>
+            <div className="max-w-[800px] mx-auto bg-card min-h-full shadow-sm border-x border-border/50">
                 <div
                     data-doc-content
                     className="prose-editor ProseMirror"

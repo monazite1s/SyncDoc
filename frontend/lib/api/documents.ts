@@ -40,8 +40,12 @@ export const documentsApi = {
     // 删除文档 (软删除)
     delete: (id: string) => api.delete<void>(`/documents/${id}`),
 
+    // 移动文档（修改层级和排序）
+    move: (id: string, data: { parentId?: string | null; position?: number }) =>
+        api.patch<DocumentListItem>(`/documents/${id}/move`, data),
+
     // 添加协作者
-    addCollaborator: (documentId: string, userId: string, role: 'EDITOR' | 'VIEWER') =>
+    addCollaborator: (documentId: string, userId: string, role: 'ADMIN' | 'EDITOR' | 'VIEWER') =>
         api.post<void>(`/documents/${documentId}/collaborators`, {
             userId,
             role,
@@ -52,7 +56,11 @@ export const documentsApi = {
         api.delete<void>(`/documents/${documentId}/collaborators/${userId}`),
 
     // 更新协作者角色
-    updateCollaboratorRole: (documentId: string, userId: string, role: 'EDITOR' | 'VIEWER') =>
+    updateCollaboratorRole: (
+        documentId: string,
+        userId: string,
+        role: 'ADMIN' | 'EDITOR' | 'VIEWER'
+    ) =>
         api.patch<{ success: boolean; role: string }>(
             `/documents/${documentId}/collaborators/${userId}`,
             {

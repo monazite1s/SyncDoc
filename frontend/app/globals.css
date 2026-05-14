@@ -8,10 +8,8 @@ body {
 
 /* ========== Editor Core Styles ========== */
 
-/* 编辑区容器：居中内容，最大宽度 800px */
+/* 编辑区容器 */
 .prose-editor {
-  max-width: 800px;
-  margin: 0 auto;
   padding: 2.5rem 3rem;
   min-height: 100%;
 }

@@ -15,6 +15,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ThrottleGuard } from '../../common/guards/throttle.guard';
 import { Throttle } from '../../common/decorators/throttle.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { Request, Response } from 'express';
 import type { RequestUser } from '@collab/types';
 import { AuthService } from './auth.service';
@@ -31,6 +32,7 @@ interface AuthRequest extends Request {
 export class AuthController {
     constructor(private readonly _authService: AuthService) {}
 
+    @Public()
     @Post('register')
     @UseGuards(ThrottleGuard)
     @Throttle(3, 60)
@@ -40,6 +42,7 @@ export class AuthController {
         return { user: result.user };
     }
 
+    @Public()
     @Post('login')
     @UseGuards(ThrottleGuard)
     @Throttle(5, 60)
@@ -61,6 +64,7 @@ export class AuthController {
         return { success: true };
     }
 
+    @Public()
     @Post('refresh')
     @HttpCode(HttpStatus.OK)
     async refreshToken(
@@ -107,21 +111,27 @@ export class AuthController {
         return { token };
     }
 
-    // 搜索用户
+    // 搜索用户（限流保护）
     @Get('search')
+    @UseGuards(ThrottleGuard)
+    @Throttle(10, 60)
     async searchUsers(
         @Query('keyword') keyword: string,
         @Query('field') field?: 'username' | 'email'
     ) {
+        if (!keyword || keyword.trim().length < 2) {
+            return [];
+        }
         return this._authService.searchUsers(keyword, field);
     }
 
     /**
-     * 设置 HttpOnly cookie
+     * HttpOnly：JS 不可读，降 XSS 窃 token；业务 API 带 access，刷新专用收窄 path
      */
     private _setTokenCookies(res: Response, token: string, refreshToken: string) {
         const isProduction = process.env.NODE_ENV === 'production';
 
+        // 短效访问令牌，全站 path，JWT Strategy 从 Cookie 优先取
         res.cookie('access_token', token, {
             httpOnly: true,
             secure: isProduction,
@@ -130,6 +140,7 @@ export class AuthController {
             path: '/',
         });
 
+        // 长效刷新令牌仅刷新接口可见，缩小泄露面（非 /api/auth/refresh 请求不携带）
         res.cookie('refresh_token', refreshToken, {
             httpOnly: true,
             secure: isProduction,

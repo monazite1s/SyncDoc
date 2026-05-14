@@ -6,6 +6,7 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import type { Editor } from '@tiptap/react';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/stores/auth.store';
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:3002';
 
@@ -20,6 +21,7 @@ interface EditorContextValue {
     connectionStatus: ConnectionStatus;
     isSynced: boolean;
     reconnect: () => void;
+    effectiveRole: string | null;
 }
 
 const EditorContext = createContext<EditorContextValue>({
@@ -31,6 +33,7 @@ const EditorContext = createContext<EditorContextValue>({
     connectionStatus: 'connecting',
     isSynced: false,
     reconnect: () => {},
+    effectiveRole: null,
 });
 
 export function useEditorContext() {
@@ -44,12 +47,20 @@ interface EditorProviderProps {
     children: React.ReactNode;
 }
 
-export function EditorProvider({ documentId, wsToken, isReadonly, children }: EditorProviderProps) {
+export function EditorProvider({
+    documentId,
+    wsToken,
+    isReadonly: isReadonlyProp,
+    children,
+}: EditorProviderProps) {
+    const userId = useAuthStore((s) => s.user?.id);
     const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
     const [provider, setProvider] = useState<HocuspocusProvider | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
     const [isSynced, setIsSynced] = useState(false);
     const [editor, setEditor] = useState<Editor | null>(null);
+    const [isReadonly, setIsReadonly] = useState(isReadonlyProp);
+    const [effectiveRole, setEffectiveRole] = useState<string | null>(null);
 
     const initializedRef = useRef(false);
     const providerRef = useRef<HocuspocusProvider | null>(null);
@@ -87,12 +98,37 @@ export function EditorProvider({ documentId, wsToken, isReadonly, children }: Ed
                 setIsSynced(true);
             },
             onMessage: (data) => {
-                // 监听服务端推送的恢复通知
                 const payload = data as unknown as Record<string, unknown> | undefined;
                 if (payload && typeof payload === 'object' && 'type' in payload) {
-                    const msg = payload as { type: string; message?: string };
+                    const msg = payload as {
+                        type: string;
+                        message?: string;
+                        payload?: { userId?: string; newRole?: string | null };
+                    };
                     if (msg.type === 'version-restored') {
                         toast.info(msg.message ?? '文档已被恢复到历史版本');
+                    } else if (msg.type === 'permission-changed' && msg.payload) {
+                        const { userId: changedUserId, newRole } = msg.payload;
+                        // 检查是否是当前用户
+                        if (changedUserId === userId) {
+                            if (newRole === null) {
+                                toast.error('您已被移除此文档的协作者');
+                                setEffectiveRole(null);
+                                setTimeout(() => (window.location.href = '/documents'), 5000);
+                            } else if (newRole === 'VIEWER') {
+                                toast.info('您已被降级为查看者');
+                                setIsReadonly(true);
+                                setEffectiveRole('VIEWER');
+                            } else {
+                                toast.info(
+                                    `您的角色已变更为${newRole === 'ADMIN' ? '管理员' : '编辑者'}`
+                                );
+                                setEffectiveRole(newRole ?? null);
+                                if (newRole === 'EDITOR' || newRole === 'ADMIN') {
+                                    setIsReadonly(false);
+                                }
+                            }
+                        }
                     }
                 }
             },
@@ -125,6 +161,7 @@ export function EditorProvider({ documentId, wsToken, isReadonly, children }: Ed
 
         return () => {
             channel?.close();
+            setEditor(null);
             hocuspocusProvider.destroy();
             void persistence.destroy();
             doc.destroy();
@@ -133,7 +170,7 @@ export function EditorProvider({ documentId, wsToken, isReadonly, children }: Ed
             providerRef.current = null;
             initializedRef.current = false;
         };
-    }, [documentId, wsToken]);
+    }, [documentId, wsToken, userId]);
 
     // 手动重连
     const reconnect = () => {
@@ -153,6 +190,7 @@ export function EditorProvider({ documentId, wsToken, isReadonly, children }: Ed
                 connectionStatus,
                 isSynced,
                 reconnect,
+                effectiveRole,
             }}
         >
             {children}

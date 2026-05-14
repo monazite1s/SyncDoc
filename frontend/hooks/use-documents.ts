@@ -10,6 +10,15 @@ export interface DocumentTreeNode extends DocumentListItem {
     children: DocumentTreeNode[];
 }
 
+/** 文档列表变更时广播，各消费方（侧边栏等）可监听刷新 */
+const DOCUMENTS_CHANGED_EVENT = 'documents-changed';
+
+export function notifyDocumentsChanged() {
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent(DOCUMENTS_CHANGED_EVENT));
+    }
+}
+
 export function buildDocumentTree(documents: DocumentListItem[]): DocumentTreeNode[] {
     const nodeMap = new Map<string, DocumentTreeNode>();
     const roots: DocumentTreeNode[] = [];
@@ -104,6 +113,7 @@ export function useDocuments() {
             const response = await documentsApi.create(data);
             const newDoc = response.data;
             setDocuments((prev) => [newDoc, ...prev]);
+            notifyDocumentsChanged();
             return newDoc;
         },
         []
@@ -114,6 +124,7 @@ export function useDocuments() {
         const response = await documentsApi.archive(id);
         const updatedDoc = response.data;
         setDocuments((prev) => prev.map((d) => (d.id === id ? updatedDoc : d)));
+        notifyDocumentsChanged();
         return updatedDoc;
     }, []);
 
@@ -122,6 +133,7 @@ export function useDocuments() {
         const response = await documentsApi.restore(id);
         const updatedDoc = response.data;
         setDocuments((prev) => prev.map((d) => (d.id === id ? updatedDoc : d)));
+        notifyDocumentsChanged();
         return updatedDoc;
     }, []);
 
@@ -129,7 +141,19 @@ export function useDocuments() {
     const deleteDocument = useCallback(async (id: string) => {
         await documentsApi.delete(id);
         setDocuments((prev) => prev.filter((d) => d.id !== id));
+        notifyDocumentsChanged();
     }, []);
+
+    // 移动文档
+    const moveDocument = useCallback(
+        async (id: string, data: { parentId?: string | null; position?: number }) => {
+            const response = await documentsApi.move(id, data);
+            setDocuments((prev) => prev.map((d) => (d.id === id ? response.data : d)));
+            notifyDocumentsChanged();
+            return response.data;
+        },
+        []
+    );
 
     return {
         documents,
@@ -142,12 +166,18 @@ export function useDocuments() {
         archiveDocument,
         restoreDocument,
         deleteDocument,
+        moveDocument,
     };
 }
 
 // 检查用户是否有编辑权限
 export function canEdit(userRole: CollaboratorRole | null): boolean {
-    return userRole === 'OWNER' || userRole === 'EDITOR';
+    return userRole === 'OWNER' || userRole === 'ADMIN' || userRole === 'EDITOR';
+}
+
+// 检查用户是否有管理权限（分享、管理协作者）
+export function canShare(userRole: CollaboratorRole | null): boolean {
+    return userRole === 'OWNER' || userRole === 'ADMIN';
 }
 
 // 检查用户是否有所有者权限

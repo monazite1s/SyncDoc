@@ -27,12 +27,13 @@ export class CollaborationService {
     }
 
     /**
-     * 持久化文档的 Yjs 二进制状态
+     * 持久化当前协同状态 → documents.content（答辩：在线「当前稿」与历史快照分表存）
      */
     async storeDocumentState(documentName: string, state: Uint8Array): Promise<void> {
         try {
             await this._prisma.document.update({
                 where: { id: documentName },
+                // documentName 即文档 id，与 Hocuspocus documentName 一致
                 data: { content: Buffer.from(state) },
             });
         } catch (error) {
@@ -46,6 +47,7 @@ export class CollaborationService {
      * force=true 时忽略时间间隔（用于断开连接时兜底快照）。
      * 包含短时去重：同一用户 5 分钟内若已有自动快照，直接覆盖而非新增。
      */
+    // eslint-disable-next-line max-lines-per-function -- 自动快照：查询、去重、节流、建版本同一流程
     async maybeCreateAutoSnapshot(
         documentName: string,
         userId: string,
@@ -76,6 +78,7 @@ export class CollaborationService {
             });
 
             const currentState = Buffer.from(state);
+            // 与最新版本二进制相同则跳过，避免无意义版本膨胀
             if (
                 latestVersion?.content &&
                 Buffer.compare(Buffer.from(latestVersion.content), currentState) === 0
@@ -100,6 +103,7 @@ export class CollaborationService {
                 }
             }
 
+            // 默认 30 分钟内不新建 AUTO（force 时跳过，供 onDisconnect 兜底）
             if (!options?.force && latestVersion) {
                 const elapsed = Date.now() - latestVersion.createdAt.getTime();
                 if (elapsed < CollaborationService.AUTO_SNAPSHOT_INTERVAL_MS) {
@@ -108,6 +112,7 @@ export class CollaborationService {
             }
 
             const nextVersion = (latestVersion?.version ?? 0) + 1;
+            // 历史时间点：整份 Yjs 状态快照，供回溯/对比（非增量 OT 操作链）
             await this._prisma.documentVersion.create({
                 data: {
                     documentId: documentName,
@@ -169,6 +174,7 @@ export class CollaborationService {
             return {
                 canAccess: true,
                 readOnly: collaborator.role === 'VIEWER',
+                // ADMIN、EDITOR 可编辑，VIEWER 只读
             };
         }
 

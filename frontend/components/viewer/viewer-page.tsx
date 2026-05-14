@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { AlertCircle, Lock } from 'lucide-react';
 import { documentsApi } from '@/lib/api/documents';
-import { base64ToHtml } from '@/lib/editor/yjs-to-html';
+import { buildViewerContentHtml } from '@/lib/viewer-content-html';
+import { canEdit } from '@/hooks/use-documents';
 import type { DocumentViewContent } from '@collab/types';
 import { Button } from '@/components/ui/button';
 import { ViewerHeader } from './viewer-header';
@@ -39,14 +40,7 @@ export default function ViewerPage({ paramsPromise }: ViewerPageProps) {
                 if (cancelled) return;
 
                 // 将 Base64 编码的 Yjs 状态转换为 HTML
-                let contentHtml = '';
-                if (viewRes.data.contentBase64) {
-                    try {
-                        contentHtml = base64ToHtml(viewRes.data.contentBase64);
-                    } catch {
-                        contentHtml = '<p>内容加载失败</p>';
-                    }
-                }
+                const contentHtml = buildViewerContentHtml(viewRes.data.contentBase64);
 
                 setPageState({
                     status: 'ready',
@@ -125,12 +119,28 @@ export default function ViewerPage({ paramsPromise }: ViewerPageProps) {
     }
 
     const { document, contentHtml } = pageState;
-    const canEdit = document.userRole === 'OWNER' || document.userRole === 'EDITOR';
+    const editable = canEdit(document.userRole);
 
     return (
         <div className="h-full flex bg-background">
             <div className="flex-1 min-w-0 flex flex-col">
-                <ViewerHeader document={document} canEdit={canEdit} />
+                <ViewerHeader
+                    document={document}
+                    canEdit={editable}
+                    onDocumentMetaRefresh={async () => {
+                        try {
+                            const viewRes = await documentsApi.getView(documentId);
+                            setPageState({
+                                status: 'ready',
+                                document: viewRes.data,
+                                contentHtml: buildViewerContentHtml(viewRes.data.contentBase64),
+                            });
+                        } catch (err) {
+                            const apiErr = err as { message?: string };
+                            toast.error(apiErr.message ?? '刷新文档信息失败');
+                        }
+                    }}
+                />
                 <div className="flex flex-1 min-h-0">
                     <ViewerContent contentHtml={contentHtml} />
                     <TableOfContents contentVersion={contentHtml} />

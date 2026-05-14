@@ -14,9 +14,11 @@ import {
     UserPlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { DocumentDetail } from '@collab/types';
+import type { CollaboratorRole, DocumentDetail } from '@collab/types';
 import { documentsApi } from '@/lib/api/documents';
 import { versionsApi } from '@/lib/api/versions';
+import { ownershipApi } from '@/lib/api/ownership';
+import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -38,19 +40,22 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Textarea } from '@/components/ui/textarea';
 import { useEditorContext } from './editor-provider';
 import { getCursorColor } from '@/lib/editor/cursor-colors';
+import { DOCUMENT_ROLE_LABELS } from '@/lib/document-roles';
 import { ShareDialog } from '@/components/documents/share-dialog';
 
 interface EditorHeaderProps {
     document: DocumentDetail;
     isReadonly: boolean;
+    onDocumentUpdate?: () => void;
 }
 
 /**
  * 编辑页顶部操作区：完成编辑、保存版本、历史版本、在线协作头像、更多操作。
  */
-export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
+export function EditorHeader({ document, isReadonly, onDocumentUpdate }: EditorHeaderProps) {
     const router = useRouter();
-    const { provider, isSynced, connectionStatus } = useEditorContext();
+    const currentUser = useAuthStore((s) => s.user);
+    const { provider, isSynced, connectionStatus, effectiveRole } = useEditorContext();
     const [onlineUsers, setOnlineUsers] = useState<
         Array<{ id: string; name: string; color: string }>
     >([]);
@@ -59,8 +64,10 @@ export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
     const [isSavingVersion, setIsSavingVersion] = useState(false);
     const [shareOpen, setShareOpen] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const isOwner = document.userRole === 'OWNER';
-    const canWrite = document.userRole === 'OWNER' || document.userRole === 'EDITOR';
+    const activeRole = effectiveRole ?? document.userRole;
+    const isOwner = activeRole === 'OWNER';
+    const canWrite = activeRole === 'OWNER' || activeRole === 'ADMIN' || activeRole === 'EDITOR';
+    const canShare = isOwner || activeRole === 'ADMIN';
 
     useEffect(() => {
         if (!provider) return;
@@ -150,9 +157,30 @@ export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
         }
     }
 
-    async function refreshDocument() {
-        // 由父组件重新获取文档数据，此处仅作为 placeholder
-        // ShareDialog 的 onUpdate 触发后，父页面会重新加载数据
+    function refreshDocument() {
+        onDocumentUpdate?.();
+    }
+
+    const isPendingOwner = document.pendingOwnerId === currentUser?.id;
+
+    async function handleAcceptOwnership() {
+        try {
+            await ownershipApi.accept(document.id);
+            toast.success('你已成为文档所有者');
+            refreshDocument();
+        } catch {
+            toast.error('接受所有权失败');
+        }
+    }
+
+    async function handleRejectOwnership() {
+        try {
+            await ownershipApi.cancel(document.id);
+            toast.success('已拒绝所有权转让');
+            refreshDocument();
+        } catch {
+            toast.error('操作失败');
+        }
     }
 
     const exitTooltip =
@@ -164,8 +192,34 @@ export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
 
     return (
         <>
+            {/* 所有权转让接受横幅 */}
+            {isPendingOwner && (
+                <div className="shrink-0 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/60 px-4 py-2.5 flex items-center justify-between">
+                    <span className="text-sm text-amber-800 dark:text-amber-200">
+                        你被邀请成为此文档的所有者
+                    </span>
+                    <div className="flex gap-2">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => void handleRejectOwnership()}
+                        >
+                            拒绝
+                        </Button>
+                        <Button
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => void handleAcceptOwnership()}
+                        >
+                            接受
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             <header className="shrink-0 border-b border-border bg-card/95">
-                <div className="w-full px-4 sm:px-6 py-3 flex items-center gap-2 flex-wrap">
+                <div className="w-full px-4 sm:px-6 py-3 flex items-center gap-2.5 flex-wrap">
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -212,15 +266,27 @@ export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
                         历史版本
                     </Button>
 
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 gap-1.5"
-                        onClick={() => setShareOpen(true)}
-                    >
-                        <UserPlus className="h-4 w-4" />
-                        分享
-                    </Button>
+                    {canShare && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1.5"
+                            onClick={() => setShareOpen(true)}
+                        >
+                            <UserPlus className="h-4 w-4" />
+                            分享
+                        </Button>
+                    )}
+
+                    {activeRole ? (
+                        <Badge
+                            variant="outline"
+                            className="hidden sm:inline-flex h-8 px-2 text-xs font-normal"
+                            title="您在此文档中的权限"
+                        >
+                            {DOCUMENT_ROLE_LABELS[activeRole as CollaboratorRole]}
+                        </Badge>
+                    ) : null}
 
                     {isReadonly && (
                         <Badge variant="secondary" className="h-8 gap-1 px-2">
@@ -293,7 +359,8 @@ export function EditorHeader({ document, isReadonly }: EditorHeaderProps) {
                 documentId={document.id}
                 isPublic={document.isPublic}
                 collaborators={document.collaborators}
-                currentUserId={document.authorId}
+                currentUserId={currentUser?.id ?? ''}
+                currentUserRole={document.userRole}
                 open={shareOpen}
                 onOpenChange={setShareOpen}
                 onUpdate={refreshDocument}

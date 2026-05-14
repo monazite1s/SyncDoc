@@ -107,8 +107,10 @@ export function TiptapEditor({ className }: TiptapEditorProps) {
     }
 
     return (
-        <div className={cn('flex-1 overflow-auto bg-background', className)}>
-            <EditorContent editor={editor} className="h-full" />
+        <div className={cn('flex-1 overflow-auto bg-muted/30', className)}>
+            <div className="max-w-[800px] mx-auto bg-card min-h-full shadow-sm border-x border-border/50">
+                <EditorContent editor={editor} className="h-full" />
+            </div>
         </div>
     );
 }

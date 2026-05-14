@@ -56,8 +56,21 @@ export class VersionsService {
         await this._requireReadAccess(documentId, userId);
 
         const role = await this._getUserRole(documentId, userId);
-        if (role !== CollaboratorRole.OWNER && role !== CollaboratorRole.EDITOR) {
+        if (
+            role !== CollaboratorRole.OWNER &&
+            role !== CollaboratorRole.ADMIN &&
+            role !== CollaboratorRole.EDITOR
+        ) {
             throw new ForbiddenException('无权编辑此文档');
+        }
+    }
+
+    private async _requireAdminAccess(documentId: string, userId: string): Promise<void> {
+        await this._requireReadAccess(documentId, userId);
+
+        const role = await this._getUserRole(documentId, userId);
+        if (role !== CollaboratorRole.OWNER && role !== CollaboratorRole.ADMIN) {
+            throw new ForbiddenException('需要管理员权限执行此操作');
         }
     }
 
@@ -242,7 +255,7 @@ export class VersionsService {
      * 恢复版本：用目标版本 content 覆盖当前文档，并创建恢复快照（type = RESTORE）
      */
     async restoreVersion(documentId: string, version: number, userId: string) {
-        await this._requireWriteAccess(documentId, userId);
+        await this._requireAdminAccess(documentId, userId);
 
         const versionRecord = await this._prisma.documentVersion.findUnique({
             where: { documentId_version: { documentId, version } },

@@ -13,8 +13,10 @@ import {
     RotateCcw,
     Share2,
     Trash2,
+    Loader2,
 } from 'lucide-react';
 import type { DocumentListItem } from '@collab/types';
+import { DOCUMENT_ROLE_LABELS } from '@/lib/document-roles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,10 +42,20 @@ interface DocumentTableProps {
     onRestore: (id: string) => void;
     onDelete: (id: string) => void;
     onShare?: (id: string) => void;
+    /** 正在为「分享」拉取文档详情的 id，用于行内禁用/加载反馈 */
+    shareLoadingDocumentId?: string;
 }
 
 function canEdit(document: DocumentListItem): boolean {
-    return document.userRole === 'OWNER' || document.userRole === 'EDITOR';
+    return (
+        document.userRole === 'OWNER' ||
+        document.userRole === 'ADMIN' ||
+        document.userRole === 'EDITOR'
+    );
+}
+
+function canShareDoc(document: DocumentListItem): boolean {
+    return document.userRole === 'OWNER' || document.userRole === 'ADMIN';
 }
 
 function canDelete(document: DocumentListItem): boolean {
@@ -57,6 +69,7 @@ export function DocumentTable({
     onRestore,
     onDelete,
     onShare,
+    shareLoadingDocumentId,
 }: DocumentTableProps) {
     const router = useRouter();
     const [colWidths, setColWidths] = useState<number[]>([200, 150, 140, 160, 160]);
@@ -106,16 +119,19 @@ export function DocumentTable({
 
     if (documents.length === 0) {
         return (
-            <div className="rounded-lg border border-border bg-card p-12 text-center">
-                <p className="text-base font-medium">暂无匹配的文档</p>
-                <p className="mt-1 text-sm text-muted-foreground">尝试切换筛选条件或新建文档</p>
+            <div className="rounded-xl border border-dashed border-border bg-card/50 py-16 text-center">
+                <div className="mx-auto h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-3">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium text-muted-foreground">暂无匹配的文档</p>
+                <p className="mt-1 text-xs text-muted-foreground/70">尝试切换筛选条件或新建文档</p>
             </div>
         );
     }
 
     return (
         <div className="rounded-lg border border-border bg-card">
-            <Table className="table-fixed min-w-[860px]">
+            <Table className="table-fixed min-w-[940px]">
                 <colgroup>
                     {columns.map((column) => (
                         <col key={column.key} style={{ width: column.width }} />
@@ -168,6 +184,15 @@ export function DocumentTable({
                                                 已归档
                                             </Badge>
                                         )}
+                                        {document.userRole && (
+                                            <Badge
+                                                variant="outline"
+                                                className="h-5 px-1.5 text-[10px] font-normal shrink-0"
+                                                title="您在此文档中的权限"
+                                            >
+                                                {DOCUMENT_ROLE_LABELS[document.userRole]}
+                                            </Badge>
+                                        )}
                                     </div>
                                 </TableCell>
                                 <TableCell className="px-3 py-3 text-sm text-muted-foreground">
@@ -208,11 +233,18 @@ export function DocumentTable({
                                                 <Eye className="h-4 w-4 mr-2" />
                                                 查看
                                             </DropdownMenuItem>
-                                            {canEdit(document) && !archived && onShare && (
+                                            {canShareDoc(document) && !archived && onShare && (
                                                 <DropdownMenuItem
+                                                    disabled={
+                                                        shareLoadingDocumentId === document.id
+                                                    }
                                                     onClick={() => onShare(document.id)}
                                                 >
-                                                    <Share2 className="h-4 w-4 mr-2" />
+                                                    {shareLoadingDocumentId === document.id ? (
+                                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                    ) : (
+                                                        <Share2 className="h-4 w-4 mr-2" />
+                                                    )}
                                                     分享
                                                 </DropdownMenuItem>
                                             )}

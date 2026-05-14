@@ -4,8 +4,9 @@ import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { FileText, MoreHorizontal, Pencil, Archive, RotateCcw, Trash2, Eye } from 'lucide-react';
-import type { CollaboratorRole, DocumentListItem } from '@collab/types';
+import type { DocumentListItem } from '@collab/types';
 import { cn } from '@/lib/utils';
+import { canEdit, canDelete } from '@/hooks/use-documents';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,14 +21,6 @@ interface DocumentListItemProps {
     onArchive: (id: string) => void;
     onRestore: (id: string) => void;
     onDelete: (id: string) => void;
-}
-
-function canEdit(userRole: CollaboratorRole | null): boolean {
-    return userRole === 'OWNER' || userRole === 'EDITOR';
-}
-
-function canDelete(userRole: CollaboratorRole | null): boolean {
-    return userRole === 'OWNER';
 }
 
 export function DocumentListItemRow({

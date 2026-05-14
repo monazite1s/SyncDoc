@@ -50,7 +50,7 @@ function ToolbarButton({
                     variant="ghost"
                     size="icon"
                     className={cn(
-                        'h-7 w-7 rounded',
+                        'h-7 w-7 rounded transition-colors duration-150',
                         isActive && 'bg-accent text-accent-foreground'
                     )}
                     onClick={onClick}
@@ -88,7 +88,7 @@ export function EditorToolbar() {
 
     return (
         <TooltipProvider delayDuration={300}>
-            <div className="h-10 border-b border-border bg-card flex items-center px-3 gap-0.5 flex-shrink-0 overflow-x-auto">
+            <div className="h-10 border-b border-border bg-card flex items-center px-3 gap-1 flex-shrink-0 overflow-x-auto">
                 {/* 文本格式 */}
                 <ToolbarButton
                     onClick={() => editor.chain().focus().toggleBold().run()}
