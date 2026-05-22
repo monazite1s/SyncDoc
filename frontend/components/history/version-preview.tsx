@@ -1,21 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { Loader2, RefreshCw, Save, Zap, Columns2, AlignLeft } from 'lucide-react';
+import { Loader2, RefreshCw, Save, Zap } from 'lucide-react';
 import { VersionType, type VersionDiffChange } from '@collab/types';
 import { versionsApi } from '@/lib/api/versions';
 import { base64ToHtml } from '@/lib/editor/yjs-to-html';
-import {
-    generateInlineDiff,
-    structuredDiffToInlineHtml,
-    structuredDiffToSideBySideHtml,
-} from '@/lib/editor/html-diff';
+import { generateInlineDiff, structuredDiffToInlineHtml } from '@/lib/editor/html-diff';
 import { ViewerContent } from '@/components/viewer/viewer-content';
-import { Button } from '@/components/ui/button';
-
-type DiffMode = 'inline' | 'side-by-side';
 
 interface VersionPreviewProps {
     detail: Awaited<ReturnType<typeof versionsApi.get>>['data'] | null;
@@ -52,8 +45,6 @@ export function VersionPreview({
     diffStats,
     diffTruncated,
 }: VersionPreviewProps) {
-    const [diffMode, setDiffMode] = useState<DiffMode>('inline');
-
     const contentHtml = useMemo(() => {
         if (!detail?.contentBase64) return '';
 
@@ -64,10 +55,6 @@ export function VersionPreview({
 
             // 优先使用结构化 diff
             if (structuredChanges && structuredChanges.length > 0) {
-                if (diffMode === 'side-by-side') {
-                    const { left, right } = structuredDiffToSideBySideHtml(structuredChanges);
-                    return `__SPLIT__${JSON.stringify({ left, right })}`;
-                }
                 return `<div class="version-diff-content">${structuredDiffToInlineHtml(structuredChanges)}</div>`;
             }
 
@@ -80,11 +67,7 @@ export function VersionPreview({
         } catch {
             return '<p class="text-destructive">版本内容解析失败</p>';
         }
-    }, [detail, showDiff, structuredChanges, diffMode]);
-
-    // 判断是否为 side-by-side 模式
-    const isSideBySide = contentHtml.startsWith('__SPLIT__');
-    const sideBySideData = isSideBySide ? JSON.parse(contentHtml.slice('__SPLIT__'.length)) : null;
+    }, [detail, showDiff, structuredChanges]);
 
     if (isLoading) {
         return (
@@ -138,26 +121,6 @@ export function VersionPreview({
                     {showDiff && (
                         <>
                             <div className="flex-1" />
-                            <div className="flex items-center gap-0.5 border border-border rounded-md p-0.5">
-                                <Button
-                                    variant={diffMode === 'inline' ? 'secondary' : 'ghost'}
-                                    size="sm"
-                                    className="h-6 px-2 text-[11px]"
-                                    onClick={() => setDiffMode('inline')}
-                                >
-                                    <AlignLeft className="h-3 w-3 mr-1" />
-                                    内联
-                                </Button>
-                                <Button
-                                    variant={diffMode === 'side-by-side' ? 'secondary' : 'ghost'}
-                                    size="sm"
-                                    className="h-6 px-2 text-[11px]"
-                                    onClick={() => setDiffMode('side-by-side')}
-                                >
-                                    <Columns2 className="h-3 w-3 mr-1" />
-                                    对比
-                                </Button>
-                            </div>
                         </>
                     )}
                 </div>
@@ -170,24 +133,10 @@ export function VersionPreview({
                     </p>
                 )}
             </div>
-            <div className="flex-1 min-h-0 flex overflow-hidden bg-muted/40">
-                {isSideBySide ? (
-                    <div className="flex-1 flex gap-0 overflow-hidden">
-                        <div className="flex-1 min-w-0 border-r border-border overflow-auto">
-                            <ViewerContent contentHtml={sideBySideData!.left} />
-                        </div>
-                        <div className="flex-1 min-w-0 overflow-auto">
-                            <ViewerContent contentHtml={sideBySideData!.right} />
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <div className="min-w-0 flex-1 hidden sm:block" aria-hidden />
-                        <div className="flex-1 min-h-0 min-w-0 max-w-[900px] w-full shrink-0 border-l-2 border-border bg-background flex flex-col shadow-sm">
-                            <ViewerContent contentHtml={contentHtml} />
-                        </div>
-                    </>
-                )}
+            <div className="flex-1 min-h-0 overflow-auto bg-muted/30">
+                <div className="max-w-[800px] mx-auto bg-card min-h-full shadow-sm border-x border-border/50">
+                    <ViewerContent contentHtml={contentHtml} />
+                </div>
             </div>
         </div>
     );
