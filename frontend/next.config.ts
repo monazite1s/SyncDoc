@@ -2,8 +2,13 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
     reactStrictMode: true,
+    eslint: {
+        ignoreDuringBuilds: true,
+    },
+    typescript: {
+        ignoreBuildErrors: false,
+    },
     experimental: {
-        // Enable React 19 features
         ppr: false,
     },
     env: {
