@@ -20,7 +20,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
                 message = exceptionResponse;
             } else if (typeof exceptionResponse === 'object') {
                 const responseObj = exceptionResponse as Record<string, unknown>;
-                message = (responseObj.message as string) || exception.message;
+                // ValidationPipe 返回的 message 可能是字符串数组，统一展平为单条
+                const rawMessage = responseObj.message;
+                if (Array.isArray(rawMessage)) {
+                    message = rawMessage.join('；');
+                } else {
+                    message = (rawMessage as string) || exception.message;
+                }
                 errors = responseObj.errors as Record<string, string[]> | undefined;
             }
         } else if (exception instanceof Error) {

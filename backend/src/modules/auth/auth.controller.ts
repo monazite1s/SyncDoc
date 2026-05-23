@@ -6,12 +6,20 @@ import {
     Body,
     Query,
     UseGuards,
+    UseInterceptors,
+    UploadedFile,
     Req,
     Res,
     HttpCode,
     HttpStatus,
     UnauthorizedException,
+    BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import { AuthGuard } from '@nestjs/passport';
 import { ThrottleGuard } from '../../common/guards/throttle.guard';
 import { Throttle } from '../../common/decorators/throttle.decorator';
@@ -23,6 +31,22 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+const uploadDir = join(process.cwd(), 'uploads', 'avatars');
+if (!existsSync(uploadDir)) {
+    mkdirSync(uploadDir, { recursive: true });
+}
+
+const avatarStorage = diskStorage({
+    destination: uploadDir,
+    filename: (_req, file, cb) => {
+        const ext = extname(file.originalname).toLowerCase() || '.jpg';
+        cb(null, `${uuidv4()}${ext}`);
+    },
+});
 
 interface AuthRequest extends Request {
     user: RequestUser;
@@ -94,6 +118,29 @@ export class AuthController {
     @UseGuards(AuthGuard('jwt'))
     async updateProfile(@Req() req: AuthRequest, @Body() dto: UpdateProfileDto) {
         return this._authService.updateProfile(req.user.userId, dto);
+    }
+
+    @Post('profile/avatar')
+    @UseGuards(AuthGuard('jwt'))
+    @UseInterceptors(
+        FileInterceptor('avatar', {
+            storage: avatarStorage,
+            limits: { fileSize: MAX_FILE_SIZE },
+            fileFilter: (_req, file, cb) => {
+                if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+                    cb(new BadRequestException('仅支持 JPG、PNG、WebP 格式'), false);
+                    return;
+                }
+                cb(null, true);
+            },
+        })
+    )
+    async uploadAvatar(@Req() req: AuthRequest, @UploadedFile() file: Express.Multer.File) {
+        if (!file) {
+            throw new BadRequestException('请选择要上传的图片');
+        }
+        const avatarUrl = `/uploads/avatars/${file.filename}`;
+        return this._authService.updateAvatar(req.user.userId, avatarUrl);
     }
 
     /**

@@ -1,12 +1,24 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { CollaborationHocuspocus } from './modules/collaboration/collaboration.hocuspocus';
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+    // 确保上传目录存在
+    const uploadsDir = join(process.cwd(), 'uploads');
+    if (!existsSync(uploadsDir)) {
+        mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // 静态资源服务：/uploads/avatars/<filename>
+    app.useStaticAssets(uploadsDir, { prefix: '/uploads' });
 
     // Cookie 解析（用于 HttpOnly cookie 认证）
     app.use(cookieParser());

@@ -25,6 +25,13 @@ export const authApi = {
     // 更新当前用户资料
     updateProfile: (data: UpdateProfileRequest) => api.patch<User>('/auth/profile', data),
 
+    // 上传头像（图片文件），返回更新后的完整用户信息
+    uploadAvatar: (file: File) => {
+        const form = new FormData();
+        form.append('avatar', file);
+        return api.postForm<User>('/auth/profile/avatar', form);
+    },
+
     // 获取 WebSocket 认证 token（用于 Hocuspocus 握手）
     getWsToken: () => api.get<WsTokenResponse>('/auth/ws-token'),
 

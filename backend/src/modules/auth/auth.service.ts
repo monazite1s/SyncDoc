@@ -58,6 +58,10 @@ export class AuthService {
                 username: true,
                 nickname: true,
                 avatar: true,
+                bio: true,
+                phone: true,
+                website: true,
+                location: true,
                 status: true,
                 createdAt: true,
                 updatedAt: true,
@@ -144,6 +148,10 @@ export class AuthService {
                 username: true,
                 nickname: true,
                 avatar: true,
+                bio: true,
+                phone: true,
+                website: true,
+                location: true,
                 status: true,
                 createdAt: true,
                 updatedAt: true,
@@ -158,14 +166,17 @@ export class AuthService {
     }
 
     /**
-     * 更新当前用户资料（昵称、头像）
+     * 更新当前用户资料（昵称、个人简介、手机号、网站、所在地）
      */
     async updateProfile(userId: string, dto: UpdateProfileDto) {
         const user = await this._prisma.user.update({
             where: { id: userId },
             data: {
                 ...(dto.nickname !== undefined ? { nickname: dto.nickname.trim() || null } : {}),
-                ...(dto.avatar !== undefined ? { avatar: dto.avatar.trim() || null } : {}),
+                ...(dto.bio !== undefined ? { bio: dto.bio.trim() || null } : {}),
+                ...(dto.phone !== undefined ? { phone: dto.phone.trim() || null } : {}),
+                ...(dto.website !== undefined ? { website: dto.website.trim() || null } : {}),
+                ...(dto.location !== undefined ? { location: dto.location.trim() || null } : {}),
             },
             select: {
                 id: true,
@@ -173,6 +184,36 @@ export class AuthService {
                 username: true,
                 nickname: true,
                 avatar: true,
+                bio: true,
+                phone: true,
+                website: true,
+                location: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true,
+            },
+        });
+
+        return user;
+    }
+
+    /**
+     * 更新用户头像 URL（由文件上传接口调用）
+     */
+    async updateAvatar(userId: string, avatarUrl: string) {
+        const user = await this._prisma.user.update({
+            where: { id: userId },
+            data: { avatar: avatarUrl },
+            select: {
+                id: true,
+                email: true,
+                username: true,
+                nickname: true,
+                avatar: true,
+                bio: true,
+                phone: true,
+                website: true,
+                location: true,
                 status: true,
                 createdAt: true,
                 updatedAt: true,

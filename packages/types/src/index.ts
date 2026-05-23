@@ -32,8 +32,12 @@ export interface User {
     id: string;
     email: string;
     username: string;
-    nickname?: string;
-    avatar?: string;
+    nickname?: string | null;
+    avatar?: string | null;
+    bio?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    location?: string | null;
     status: UserStatus;
     createdAt: string;
     updatedAt: string;
@@ -109,7 +113,10 @@ export interface RegisterCredentials {
 
 export interface UpdateProfileRequest {
     nickname?: string;
-    avatar?: string;
+    bio?: string;
+    phone?: string;
+    website?: string;
+    location?: string;
 }
 
 export interface AuthResponse {

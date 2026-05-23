@@ -45,6 +45,14 @@ export const api = {
             .delete<ApiResponse<T>>(url)
             .then((res) => res.data)
             .catch((error) => Promise.reject(extractApiError(error))),
+
+    postForm: <T>(url: string, data: FormData) =>
+        axiosInstance
+            .post<ApiResponse<T>>(url, data, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            })
+            .then((res) => res.data)
+            .catch((error) => Promise.reject(extractApiError(error))),
 };
 
 /**
